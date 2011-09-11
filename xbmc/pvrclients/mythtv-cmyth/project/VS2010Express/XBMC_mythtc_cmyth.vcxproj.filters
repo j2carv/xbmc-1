@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\pvrclient-mythtv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\addons\library.xbmc.addon\dlfcn-win32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client.h">
@@ -50,5 +53,11 @@
     <ClInclude Include="..\..\libcmyth.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\addons\library.xbmc.addon\dlfcn-win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\lib\cmyth\cmythimport.txt" />
   </ItemGroup>
 </Project>

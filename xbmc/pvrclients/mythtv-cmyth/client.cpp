@@ -81,7 +81,10 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   XBMC->Log(LOG_DEBUG, "Loading cmyth library");
   CMYTH = new CHelper_libcmyth;
   if (!CMYTH->RegisterMe(hdl))
+  {
+    XBMC->Log(LOG_ERROR, "Failed to load cmyth library!");
     return ADDON_STATUS_UNKNOWN;
+  }
 
   XBMC->Log(LOG_DEBUG, "Creating MythTV cmyth PVR-Client");
 
@@ -273,12 +276,12 @@ void ADDON_FreeSettings()
 
 PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
 {
-  pCapabilities->bSupportsTimeshift          = false;
+  pCapabilities->bSupportsTimeshift          = true;
   pCapabilities->bSupportsEPG                = true;
-  pCapabilities->bSupportsRecordings         = false;
-  pCapabilities->bSupportsTimers             = false;
-  pCapabilities->bSupportsTV                 = false;
-  pCapabilities->bSupportsRadio              = false;
+  pCapabilities->bSupportsRecordings         = true;
+  pCapabilities->bSupportsTimers             = true;
+  pCapabilities->bSupportsTV                 = true;
+  pCapabilities->bSupportsRadio              = true;
   pCapabilities->bSupportsChannelSettings    = false;
   pCapabilities->bSupportsChannelGroups      = false;
   pCapabilities->bHandlesInputStream         = false;
@@ -313,10 +316,10 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
   return g_client->GetDriveSpace(iTotal,iUsed)?PVR_ERROR_NO_ERROR:PVR_ERROR_UNKNOWN;
 }
 
-PVR_ERROR GetBackendTime(time_t *localTime, int *gmtOffset)
+/*PVR_ERROR GetBackendTime(time_t *localTime, int *gmtOffset)
 {
   return PVR_ERROR_NOT_IMPLEMENTED;
-}
+}*/
 
 PVR_ERROR DialogChannelScan()
 {
@@ -342,7 +345,7 @@ PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t
 /*******************************************/
 /** PVR Channel Functions                 **/
 
-int GetNumChannels()
+int GetChannelsAmount()
 {
 	if (g_client == NULL)
 		return PVR_ERROR_SERVER_ERROR;
@@ -352,10 +355,10 @@ int GetNumChannels()
 
 PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 {
-	if (MythXmlApi == NULL)
+	if (g_client == NULL)
 			return PVR_ERROR_SERVER_ERROR;
 
-	return MythXmlApi->requestChannelList(handle, bRadio);
+	return g_client->GetChannels(handle, bRadio);
 }
 
 PVR_ERROR DeleteChannel(const PVR_CHANNEL &channel)
@@ -389,17 +392,26 @@ PVR_ERROR DialogAddChannel(const PVR_CHANNEL &channel)
 
 int GetRecordingsAmount(void)
 {
-  return 0;
+  	if (g_client == NULL)
+			return 0;
+
+    return g_client->GetRecordingsAmount();
 }
 
 PVR_ERROR GetRecordings(PVR_HANDLE handle)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+  	if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+    return g_client->GetRecordings(handle);
 }
 
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+   if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+      return g_client->DeleteRecording(recording);
 }
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
@@ -412,27 +424,42 @@ PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 
 int GetTimersAmount(void)
 {
-  return 0;
+  if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+  return g_client->GetTimersAmount();
 }
 
 PVR_ERROR GetTimers(PVR_HANDLE handle)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+  if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+  return g_client->GetTimers(handle);
 }
 
 PVR_ERROR AddTimer(const PVR_TIMER &timer)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+  if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+  return g_client->AddTimer(timer);
 }
 
 PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForceDelete)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+  if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+  return g_client->DeleteTimer(timer,bForceDelete);
 }
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+  if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+  return g_client->UpdateTimer(timer);
 }
 
 
@@ -441,27 +468,40 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
-  return false;
+  if (g_client == NULL)
+			return false;
+
+  return g_client->OpenLiveStream(channel);
 }
 
 void CloseLiveStream(void)
 {
-  return;
+    if (g_client == NULL)
+			return;
+
+  g_client->CloseLiveStream();
 }
 
 int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-	return -1;
+  if (g_client == NULL)
+			return -1;
+
+  return g_client->ReadLiveStream(pBuffer,iBufferSize);
 }
 
 int GetCurrentClientChannel()
 {
-  return m_iCurrentChannel;
+  if (g_client == NULL)
+			return -1;
+  return g_client->GetCurrentClientChannel();
 }
 
 bool SwitchChannel(const PVR_CHANNEL &channelinfo)
 {
-  return false;
+  if (g_client == NULL)
+			return false;
+  return g_client->SwitchChannel(channelinfo);
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
@@ -469,38 +509,74 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
   return PVR_ERROR_NOT_IMPLEMENTED;
 }
 
+long long SeekLiveStream(long long iPosition, int iWhence) 
+{ 
+    if (g_client == NULL)
+			return -1;
+    return g_client->SeekLiveStream(iPosition,iWhence);
+}
+
+long long PositionLiveStream(void) 
+{
+        if (g_client == NULL)
+			return -1;
+    return g_client->SeekLiveStream(0,SEEK_CUR);
+
+}
+
+long long LengthLiveStream(void) 
+{
+   if (g_client == NULL)
+			return -1;
+    return g_client->LengthLiveStream();
+}
 
 /*******************************************/
 /** PVR Recording Stream Functions        **/
 
 bool OpenRecordedStream(const PVR_RECORDING &recinfo)
 {
-  return false;
+   if (g_client == NULL)
+			return false;
+
+   return g_client->OpenRecordedStream(recinfo);
 }
 
 void CloseRecordedStream(void)
 {
-  return;
+  if (g_client == NULL)
+			return;
+
+  g_client->CloseRecordedStream();
 }
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-  return 0;
+  if (g_client == NULL)
+			return -1;
+
+  return g_client->ReadRecordedStream(pBuffer,iBufferSize);
 }
 
 long long SeekRecordedStream(long long iPosition, int iWhence)
 {
-	return -1;
+    if (g_client == NULL)
+			return -1;
+    return g_client->SeekRecordedStream(iPosition,iWhence);
 }
 
 long long PositionRecordedStream(void)
 {
-  return -1;
+    if (g_client == NULL)
+			return -1;
+    return g_client->SeekRecordedStream(0,SEEK_CUR);
 }
 
 long long LengthRecordedStream(void)
 {
-	return 0;
+   if (g_client == NULL)
+			return -1;
+    return g_client->LengthRecordedStream();
 }
 
 
@@ -509,9 +585,35 @@ DemuxPacket* DemuxRead() { return NULL; }
 void DemuxAbort() {}
 void DemuxReset() {}
 void DemuxFlush() {}
-long long SeekLiveStream(long long iPosition, int iWhence) { return -1; }
-long long PositionLiveStream(void) { return -1; }
-long long LengthLiveStream(void) { return -1; }
+
 const char * GetLiveStreamURL(const PVR_CHANNEL &channelinfo) { return ""; }
 
+  //@}
+  /** @name PVR channel group methods */
+  //@{
+
+  /*!
+    * @return The total amount of channel groups on the server or -1 on error.
+    */
+int GetChannelGroupsAmount(void){return -1;}
+
+  /*!
+   * @brief Request the list of all channel groups from the backend.
+   * @param bRadio True to get the radio channel groups, false to get the TV channel groups.
+   * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
+   */
+  PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
+  {
+      return PVR_ERROR_NOT_IMPLEMENTED;
+  }
+
+  /*!
+   * @brief Request the list of all group members of a group.
+   * @param handle Callback.
+   * @param group The group to get the members for.
+   * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
+   */
+  PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group){
+    return PVR_ERROR_NOT_IMPLEMENTED;
+  }
 } //end extern "C"

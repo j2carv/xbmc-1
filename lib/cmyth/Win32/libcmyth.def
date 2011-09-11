@@ -216,3 +216,19 @@ EXPORTS
 	cmyth_file_read
 	cmyth_livetv_read
 	cmyth_get_cutlist
+	cmyth_mysql_update_timer
+	cmyth_mysql_delete_timer
+	cmyth_mysql_add_timer
+	cmyth_mysql_get_timers
+	cmyth_mysql_is_radio
+	cmyth_livetv_chain_duration
+	cmyth_timer_recordid      
+	cmyth_timer_chanid
+	cmyth_timer_starttime
+	cmyth_timer_endtime   
+	cmyth_timer_title
+	cmyth_timer_description
+	cmyth_timer_type 
+	cmyth_timer_category
+	cmyth_timerlist_get_item
+	cmyth_timerlist_get_count

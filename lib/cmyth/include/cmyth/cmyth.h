@@ -524,6 +524,8 @@ extern cmyth_livetv_chain_t cmyth_livetv_chain_create(char * chainid);
 
 extern cmyth_file_t cmyth_livetv_get_cur_file(cmyth_recorder_t rec);
 
+extern long long cmyth_livetv_chain_duration(cmyth_recorder_t rec);
+
 extern int cmyth_livetv_chain_switch(cmyth_recorder_t rec, int dir);
 
 extern int cmyth_livetv_chain_switch_last(cmyth_recorder_t rec);
@@ -1076,4 +1078,34 @@ extern int cmyth_get_delete_list(cmyth_conn_t, char *, cmyth_proglist_t);
 extern int cmyth_mythtv_remove_previos_recorded(cmyth_database_t db,char *query);
 
 extern cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db);
+
+/*tsp*/ 
+extern int cmyth_mysql_is_radio(cmyth_database_t db, long channum);
+
+/* timers */
+struct cmyth_timer;
+typedef struct cmyth_timer* cmyth_timer_t;
+
+struct cmyth_timerlist;
+typedef struct cmyth_timerlist* cmyth_timerlist_t;
+
+extern int cmyth_timer_recordid(cmyth_timer_t timer);      
+extern int cmyth_timer_chanid(cmyth_timer_t timer); 
+extern time_t cmyth_timer_starttime(cmyth_timer_t timer);  
+extern time_t cmyth_timer_endtime(cmyth_timer_t timer);    
+extern char* cmyth_timer_title(cmyth_timer_t timer);        
+extern char* cmyth_timer_description(cmyth_timer_t timer);  
+extern int cmyth_timer_type(cmyth_timer_t timer);      
+extern char* cmyth_timer_category(cmyth_timer_t timer);
+
+extern cmyth_timer_t cmyth_timerlist_get_item(cmyth_timerlist_t pl, int index);
+extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
+
+extern cmyth_timerlist_t cmyth_mysql_get_timers(cmyth_database_t db); 
+
+
+extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title); 
+extern int cmyth_mysql_delete_timer(cmyth_database_t db, int recordid);
+extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title); 
+
 #endif /* __CMYTH_H */

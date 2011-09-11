@@ -1287,6 +1287,8 @@ cmyth_conn_get_protocol_version(cmyth_conn_t conn)
 }
 
 
+
+
 int
 cmyth_conn_get_free_recorder_count(cmyth_conn_t conn)
 {

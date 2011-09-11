@@ -805,6 +805,34 @@ int cmyth_livetv_chain_read(cmyth_recorder_t rec, char *buf, unsigned long len)
 }
 
 /*
+ * cmyth_livetv_chain_duration(cmyth_recorder_t file)
+ * 
+ * Scope: PUBLIC
+ *
+ * Description
+ *
+ * Get current chain duration
+ *
+ * Return Value:
+ *
+ * Sucess: chain duration
+ *
+ * Failure: an int containing -errno
+ */
+
+long long
+cmyth_livetv_chain_duration(cmyth_recorder_t rec)
+{
+  int cur, ct;
+  long long ret=0;
+  ct  = rec->rec_livetv_chain->chain_ct;
+  for (cur = 0; cur < ct; cur++) {
+			ret += rec->rec_livetv_chain->chain_files[cur]->file_length;
+		}
+  return ret;
+}
+
+/*
  * cmyth_livetv_chain_seek(cmyth_recorder_t file, long long offset, int whence)
  * 
  * Scope: PUBLIC

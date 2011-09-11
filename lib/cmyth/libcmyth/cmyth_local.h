@@ -142,6 +142,25 @@ struct cmyth_chanlist {
 	int chanlist_count;
 };
 
+
+/* tsp: Added timer */
+
+struct cmyth_timer {
+    int recordid;      
+    int chanid; 
+    time_t starttime;  
+    time_t endtime;    
+	char* title;        
+	char* description;  
+    int type;      
+	char* category;      
+  };
+
+struct cmyth_timerlist {
+	cmyth_timer_t *timerlist_list;
+	int timerlist_count;
+};
+
 /* Sergio: Added to support the tvguide functionality */
 struct cmyth_tvguide_progs {
 	cmyth_program_t * progs;

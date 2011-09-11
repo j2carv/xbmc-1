@@ -442,7 +442,7 @@ cmyth_mysql_get_guide(cmyth_database_t db, cmyth_program_t **prog, time_t startt
 {
 	MYSQL_RES *res= NULL;
 	MYSQL_ROW row;
-        const char *query_str = "SELECT program.chanid,UNIX_TIMESTAMP(program.starttime),UNIX_TIMESTAMP(program.endtime),program.title,program.description,program.subtitle,program.programid,program.seriesid,program.category,channel.channum,channel.callsign,channel.name,channel.sourceid FROM program INNER JOIN channel ON program.chanid=channel.chanid WHERE ( ( starttime>=? and starttime<? ) OR ( starttime <? and endtime > ?) ) ORDER BY (channel.channum + 0), program.starttime ASC ";
+        const char *query_str = "SELECT program.chanid,program.starttime,program.endtime,program.title,program.description,program.subtitle,program.programid,program.seriesid,program.category,channel.channum,channel.callsign,channel.name,channel.sourceid FROM program INNER JOIN channel ON program.chanid=channel.chanid WHERE (program.starttime >=? and program.endtime <= ?) ORDER BY (channel.channum + 0), program.starttime ASC ";
 	int rows=0;
 	int n=0;
 	cmyth_mysql_query_t * query;
@@ -450,8 +450,7 @@ cmyth_mysql_get_guide(cmyth_database_t db, cmyth_program_t **prog, time_t startt
 
 	if(cmyth_mysql_query_param_unixtime(query,starttime) < 0
 	    || cmyth_mysql_query_param_unixtime(query,endtime) < 0
-	    || cmyth_mysql_query_param_unixtime(query,starttime) < 0
-	    || cmyth_mysql_query_param_unixtime(query,starttime) < 0)
+)
 	{
 	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
 	    ref_release(query);
@@ -1259,3 +1258,386 @@ int cmyth_livetv_keep_recording(cmyth_recorder_t rec, cmyth_database_t db, int k
 	return 1;
 }
 
+/*Will only return the first occurence of channum. Add rec as parameter and use it in the query to fix it*/
+
+int cmyth_mysql_is_radio(cmyth_database_t db, long channum)
+{
+  cmyth_mysql_query_t * query;
+  MYSQL_RES *res = NULL;
+	MYSQL_ROW row;
+  int retval=-1;
+
+  if(cmyth_db_check_connection(db) != 0)
+	{
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_db_check_connection failed\n", __FUNCTION__);
+		return -1;
+	}
+
+  query = cmyth_mysql_query_create(db,"SELECT is_audio_service FROM channelscan_channel WHERE service_id = ? ;");
+	
+  if(cmyth_mysql_query_param_long(query,channum) < 0) 
+	{
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+
+  res = cmyth_mysql_query_result(query);
+	ref_release(query);
+
+	if (res == NULL) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s, finalisation/execution of query failed!\n", __FUNCTION__);
+		return -1;
+	}
+
+  if (row = mysql_fetch_row(res)) {
+    retval = safe_atoi(row[0]);
+  }
+  else
+  {
+    cmyth_dbg(CMYTH_DBG_ERROR, "%s, Channum %i not found\n", __FUNCTION__,channum);
+    return -1;
+  }
+  mysql_free_result(res);
+	return retval;
+}
+
+
+static void
+cmyth_timer_destroy(cmyth_timer_t pl)
+{
+
+	cmyth_dbg(CMYTH_DBG_DEBUG, "%s\n", __FUNCTION__);
+	if (!pl) {
+		return;
+	}
+
+	if(pl->title)
+		ref_release(pl->title);
+	if(pl->description)
+		ref_release(pl->description);
+	if(pl->category)
+		ref_release(pl->category);
+}
+
+
+cmyth_timer_t
+cmyth_timer_create(void)
+{
+	cmyth_timer_t ret = ref_alloc(sizeof(*ret));
+  memset(ret, 0, sizeof(*ret));
+
+	cmyth_dbg(CMYTH_DBG_DEBUG, "%s {\n", __FUNCTION__);
+	if (!ret) {
+		cmyth_dbg(CMYTH_DBG_DEBUG, "%s }!\n", __FUNCTION__);
+		return NULL;
+	}
+	ref_set_destroy(ret, (ref_destroy_t)cmyth_timer_destroy);
+
+	return ret;
+}
+
+
+static void
+cmyth_timerlist_destroy(cmyth_timerlist_t pl)
+{
+	int i;
+
+	cmyth_dbg(CMYTH_DBG_DEBUG, "%s\n", __FUNCTION__);
+	if (!pl) {
+		return;
+	}
+	for (i  = 0; i < pl->timerlist_count; ++i) {
+		if (pl->timerlist_list[i]) {
+			ref_release(pl->timerlist_list[i]);
+		}
+		pl->timerlist_list[i] = NULL;
+	}
+	if (pl->timerlist_list) {
+		free(pl->timerlist_list);
+	}
+}
+
+cmyth_timerlist_t
+cmyth_timerlist_create(void)
+{
+	cmyth_timerlist_t ret;
+
+	cmyth_dbg(CMYTH_DBG_DEBUG, "%s\n", __FUNCTION__);
+	ret = ref_alloc(sizeof(*ret));
+	if (!ret) {
+		return(NULL);
+	}
+	ref_set_destroy(ret, (ref_destroy_t)cmyth_timerlist_destroy);
+
+	ret->timerlist_list = NULL;
+	ret->timerlist_count = 0;
+	return ret;
+}
+
+
+cmyth_timerlist_t
+cmyth_mysql_get_timers(cmyth_database_t db) 
+{
+	MYSQL_RES *res= NULL;
+	MYSQL_ROW row;
+  const char *query_str = "SELECT recordid, chanid, UNIX_TIMESTAMP(ADDTIME(startdate,starttime)), UNIX_TIMESTAMP(ADDTIME(enddate,endtime)),title,description, type, category FROM record ORDER BY recordid";
+	int rows=0;
+  cmyth_timer_t timer;
+	cmyth_timerlist_t timerlist;
+
+	cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+
+	res = cmyth_mysql_query_result(query);
+	ref_release(query);
+	if(res == NULL)
+	{
+	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
+	    return NULL;
+	}
+
+
+  timerlist = cmyth_timerlist_create();
+
+	timerlist->timerlist_count = (int)mysql_num_rows(res);
+	timerlist->timerlist_list = malloc(timerlist->timerlist_count * sizeof(cmyth_timerlist_t));
+	if (!timerlist->timerlist_list) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: malloc() failed for list\n",
+			__FUNCTION__);
+                ref_release(timerlist);
+		return NULL;
+	}
+	memset(timerlist->timerlist_list, 0, timerlist->timerlist_count * sizeof(cmyth_timerlist_t));
+
+	
+	while ((row = mysql_fetch_row(res))) {
+		timer = cmyth_timer_create();
+		timer->recordid = safe_atol(row[0]);
+		timer->chanid = safe_atoi(row[1]);
+    timer->starttime = (time_t)safe_atol(row[2]);
+    timer->endtime = (time_t)safe_atol(row[3]);
+		timer->title = ref_strdup(row[4]);
+		timer->description = ref_strdup(row[5]);
+		timer->type = safe_atoi(row[6]);
+    timer->category = ref_strdup(row[7]);
+		timerlist->timerlist_list[rows] = timer;
+		rows++;
+	}
+
+	mysql_free_result(res);
+	cmyth_dbg(CMYTH_DBG_ERROR, "%s: rows= %d\n", __FUNCTION__, rows);
+	return timerlist;
+}
+
+
+
+int 
+cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title) 
+{
+	MYSQL_RES *res = NULL;
+  int id=0;
+
+	const char *query_str = "INSERT INTO record (type, chanid, startime, startdate, endtime, enddate,title, description) VALUES 1 , ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ? ;";
+	
+  cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+	if (cmyth_mysql_query_param_long(query, chanid) < 0
+		|| cmyth_mysql_query_param_unixtime(query, starttime ) < 0
+    || cmyth_mysql_query_param_unixtime(query, starttime ) < 0
+    || cmyth_mysql_query_param_unixtime(query, endtime ) < 0
+    || cmyth_mysql_query_param_unixtime(query, endtime ) < 0
+    || cmyth_mysql_query_param_str(query, title ) < 0
+    || cmyth_mysql_query_param_str(query, description ) < 0
+		) {
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+
+	res = cmyth_mysql_query_result(query);
+ 
+ // int rrrr; 
+  id = mysql_insert_id(res->handle);	
+  
+  ref_release(query);
+	
+  if (res == NULL) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s, finalisation/execution of query failed!\n", __FUNCTION__);
+		return -1;
+	}
+  
+	
+  mysql_free_result(res);
+	
+  return id;
+}
+
+int 
+cmyth_mysql_delete_timer(cmyth_database_t db, int recordid) 
+{
+	MYSQL_RES *res = NULL;
+  int id=0;
+
+	const char *query_str = "DELETE FROM record WHERE recordid = ?;";
+	
+  cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+	if (cmyth_mysql_query_param_long(query, recordid) < 0
+		) {
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+
+	res = cmyth_mysql_query_result(query);
+ 
+ // int rrrr; 
+  
+  if (res == NULL) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s, finalisation/execution of query failed!\n", __FUNCTION__);
+		return -1;
+	}
+
+  mysql_free_result(res);
+	
+  return 0;
+}
+
+int 
+cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title) 
+{
+	MYSQL_RES *res = NULL;
+  int id=0;
+
+	const char *query_str = "UPDATE record SET chanid = ?, startime = TIME(FROM_UNIXTIME( ? )), startdate = DATE(FROM_UNIXTIME( ? )), endtime = TIME(FROM_UNIXTIME( ? )), enddate = DATE(FROM_UNIXTIME( ? )) ,title = ?, description = ? WHERE recordid= ?;";
+	
+  cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+	if (cmyth_mysql_query_param_long(query, chanid) < 0
+		|| cmyth_mysql_query_param_unixtime(query, starttime ) < 0
+    || cmyth_mysql_query_param_unixtime(query, starttime ) < 0
+    || cmyth_mysql_query_param_unixtime(query, endtime ) < 0
+    || cmyth_mysql_query_param_unixtime(query, endtime ) < 0
+    || cmyth_mysql_query_param_str(query, title ) < 0
+    || cmyth_mysql_query_param_str(query, description ) < 0
+    || cmyth_mysql_query_param_long(query, recordid) < 0
+		) {
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+
+	res = cmyth_mysql_query_result(query);
+ 
+  ref_release(query);
+	
+  if (res == NULL) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s, finalisation/execution of query failed!\n", __FUNCTION__);
+		return -1;
+	}
+
+
+	
+  mysql_free_result(res);
+	
+  return 0;
+}
+
+
+int cmyth_timer_recordid(cmyth_timer_t timer)
+{
+	if (!timer) {
+		return -EINVAL;
+	}
+	return timer->recordid;
+}
+
+
+int cmyth_timer_chanid(cmyth_timer_t timer)
+  {
+	if (!timer) {
+		return -EINVAL;
+	}
+	return timer->chanid;
+}
+
+time_t cmyth_timer_starttime(cmyth_timer_t timer)
+  {
+	if (!timer) {
+		return -EINVAL;
+	}
+	return timer->starttime;
+}
+
+time_t cmyth_timer_endtime(cmyth_timer_t timer)
+{
+	if (!timer) {
+		return -EINVAL;
+	}
+	return timer->endtime;
+}
+
+char* cmyth_timer_title(cmyth_timer_t timer)
+{
+	if (!timer) {
+		return NULL;
+	}
+	return ref_hold(timer->title);
+}
+
+char* cmyth_timer_description(cmyth_timer_t timer)
+{
+	if (!timer) {
+		return NULL;
+	}
+	return ref_hold(timer->description);
+}
+
+int cmyth_timer_type(cmyth_timer_t timer)
+  {
+	if (!timer) {
+		return -EINVAL;
+	}
+	return timer->type;
+}
+
+
+char* cmyth_timer_category(cmyth_timer_t timer)
+{
+	if (!timer) {
+		return NULL;
+	}
+	return ref_hold(timer->category);
+}
+
+cmyth_timer_t cmyth_timerlist_get_item(cmyth_timerlist_t pl, int index)
+{
+	if (!pl) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: NULL timer list\n",
+			  __FUNCTION__);
+		return NULL;
+	}
+	if (!pl->timerlist_list) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: NULL list\n",
+			  __FUNCTION__);
+		return NULL;
+	}
+	if ((index < 0) || (index >= pl->timerlist_count)) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: index %d out of range\n",
+			  __FUNCTION__, index);
+		return NULL;
+	}
+	ref_hold(pl->timerlist_list[index]);
+	return pl->timerlist_list[index];
+}
+
+extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl)
+{
+	if (!pl) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: NULL timer list\n",
+			  __FUNCTION__);
+		return -EINVAL;
+	}
+	return pl->timerlist_count;
+}
