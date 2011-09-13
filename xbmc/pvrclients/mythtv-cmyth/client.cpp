@@ -283,8 +283,8 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
   pCapabilities->bSupportsTV                 = true;
   pCapabilities->bSupportsRadio              = true;
   pCapabilities->bSupportsChannelSettings    = false;
-  pCapabilities->bSupportsChannelGroups      = false;
-  pCapabilities->bHandlesInputStream         = false;
+  pCapabilities->bSupportsChannelGroups      = true;
+  pCapabilities->bHandlesInputStream         = true;//??
   pCapabilities->bHandlesDemuxing            = false;
   pCapabilities->bSupportsChannelScan        = false;
 
@@ -486,8 +486,9 @@ int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
   if (g_client == NULL)
 			return -1;
-
-  return g_client->ReadLiveStream(pBuffer,iBufferSize);
+  int dataread=g_client->ReadLiveStream(pBuffer,iBufferSize);
+  XBMC->Log(LOG_NOTICE,"LiveTV: Data read: %i",dataread);
+  return dataread;
 }
 
 int GetCurrentClientChannel()
@@ -588,32 +589,42 @@ void DemuxFlush() {}
 
 const char * GetLiveStreamURL(const PVR_CHANNEL &channelinfo) { return ""; }
 
-  //@}
-  /** @name PVR channel group methods */
-  //@{
+//@}
+/** @name PVR channel group methods */
+//@{
 
-  /*!
-    * @return The total amount of channel groups on the server or -1 on error.
-    */
-int GetChannelGroupsAmount(void){return -1;}
+/*!
+* @return The total amount of channel groups on the server or -1 on error.
+*/
+int GetChannelGroupsAmount(void)
+{
+  if (g_client == NULL)
+    return -1;
+  return g_client->GetChannelGroupsAmount();
+}
 
-  /*!
-   * @brief Request the list of all channel groups from the backend.
-   * @param bRadio True to get the radio channel groups, false to get the TV channel groups.
-   * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
-   */
-  PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
-  {
-      return PVR_ERROR_NOT_IMPLEMENTED;
-  }
+/*!
+* @brief Request the list of all channel groups from the backend.
+* @param bRadio True to get the radio channel groups, false to get the TV channel groups.
+* @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
+*/
+PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
+{
+  if (g_client == NULL)
+    return PVR_ERROR_SERVER_ERROR;
+  return g_client->GetChannelGroups(handle,bRadio);
 
-  /*!
-   * @brief Request the list of all group members of a group.
-   * @param handle Callback.
-   * @param group The group to get the members for.
-   * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
-   */
-  PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group){
-    return PVR_ERROR_NOT_IMPLEMENTED;
-  }
+}
+
+/*!
+* @brief Request the list of all group members of a group.
+* @param handle Callback.
+* @param group The group to get the members for.
+* @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
+*/
+PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group){
+  if (g_client == NULL)
+    return PVR_ERROR_SERVER_ERROR;
+  return g_client->GetChannelGroupMembers(handle,group);
+}
 } //end extern "C"

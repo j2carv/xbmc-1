@@ -56,6 +56,15 @@ void CLog::Close()
   m_repeatLine.clear();
 }
 
+int ThreadID()
+{
+#ifdef _LINUX
+  return (int)pthread_self();
+#else
+  return ::GetCurrentThreadId();
+#endif
+}
+
 void CLog::Log(int loglevel, const char *format, ... )
 {
   static const char* prefixFormat = "%02.2d:%02.2d:%02.2d T:%"PRIu64" %7s: ";
@@ -67,17 +76,18 @@ void CLog::Log(int loglevel, const char *format, ... )
   {
     if (!m_file)
       return;
-
+    
     SYSTEMTIME time;
     GetLocalTime(&time);
 
     CStdString strPrefix, strData;
-
+    
     strData.reserve(16384);
     va_list va;
     va_start(va, format);
     strData.FormatV(format,va);
     va_end(va);
+    strData.Format("%i - %s",ThreadID(),strData);
 
     if (m_repeatLogLevel == loglevel && m_repeatLine == strData)
     {

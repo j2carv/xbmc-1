@@ -13,6 +13,7 @@
 #include <boost/shared_ptr.hpp>
 #include "utils/StdString.h"
 #include "libcmyth.h"
+#include "thread.h"
 
 template <class T> class MythPointer;
 template <class T> class MythPointerThreadSafe;
@@ -20,6 +21,7 @@ template <class T> class MythPointerThreadSafe;
 class MythChannel;
 class MythRecorder;
 class MythProgramInfo;
+class MythEventHandler;
 typedef std::vector<MythChannel> MythChannelList;
 
 class MythRecorder 
@@ -40,15 +42,43 @@ public:
 private:
   boost::shared_ptr<MythPointerThreadSafe<cmyth_recorder_t>> m_recorder_t;
   static void prog_update_callback(cmyth_proginfo_t prog);
+  boost::shared_ptr<int> livechainupdated;
+  
 };
 
+class MythSignal
+{
+  friend class MythEventHandler;
+public:
+    MythSignal();
+    CStdString  AdapterName();       /*!< @brief (optional) name of the adapter that's being used */
+    CStdString  AdapterStatus();     /*!< @brief (optional) status of the adapter that's being used */
+    int    SNR();                       /*!< @brief (optional) signal/noise ratio */
+    int    Signal();                    /*!< @brief (optional) signal strength */
+    long   BER();                       /*!< @brief (optional) bit error rate */
+    long   UNC();                       /*!< @brief (optional) uncorrected blocks */
+    double VideoBitrate();              /*!< @brief (optional) video bitrate */
+    double AudioBitrate();              /*!< @brief (optional) audio bitrate */
+    double DolbyBitrate();              /*!< @brief (optional) dolby bitrate */
+private:
+    CStdString  m_AdapterName;       /*!< @brief (optional) name of the adapter that's being used */
+    CStdString  m_AdapterStatus;     /*!< @brief (optional) status of the adapter that's being used */
+    int    m_SNR;                       /*!< @brief (optional) signal/noise ratio */
+    int    m_Signal;                    /*!< @brief (optional) signal strength */
+    long   m_BER;                       /*!< @brief (optional) bit error rate */
+    long   m_UNC;                       /*!< @brief (optional) uncorrected blocks */
+    double m_VideoBitrate;              /*!< @brief (optional) video bitrate */
+    double m_AudioBitrate;              /*!< @brief (optional) audio bitrate */
+    double m_DolbyBitrate;              /*!< @brief (optional) dolby bitrate */
+};
 
 class MythEventHandler 
 {
 public:
   MythEventHandler();
   MythEventHandler(CStdString,unsigned short port);
-  void AddRecorder(MythRecorder &rec);
+  void SetRecorder(MythRecorder &rec);
+  MythSignal GetSignal();
 private:
   class ImpMythEventHandler;
   boost::shared_ptr<ImpMythEventHandler> m_imp;
@@ -86,7 +116,7 @@ public:
   bool DeleteTimer(int recordid);
   bool UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title);
 private:
-  boost::shared_ptr<MythPointer<cmyth_database_t>> m_database_t;
+  boost::shared_ptr<MythPointerThreadSafe<cmyth_database_t>> m_database_t;
 };
 
 class MythChannel

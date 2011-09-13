@@ -50,6 +50,22 @@ public:
 };
 
 /*
+ *            MythSignal
+ */
+  
+    MythSignal::MythSignal() : m_AdapterName(),m_AdapterStatus(),m_SNR(0),m_Signal(0),m_BER(0),m_UNC(0),m_VideoBitrate(0.0),m_AudioBitrate(0.0),m_DolbyBitrate(0.0)    {}
+
+    CStdString  MythSignal::AdapterName(){return m_AdapterName;}       /*!< @brief (optional) name of the adapter that's being used */
+    CStdString  MythSignal::AdapterStatus(){return m_AdapterStatus;}     /*!< @brief (optional) status of the adapter that's being used */
+    int    MythSignal::SNR(){return m_SNR;}                       /*!< @brief (optional) signal/noise ratio */
+    int    MythSignal::Signal(){return m_Signal;}                    /*!< @brief (optional) signal strength */
+    long   MythSignal::BER(){return m_BER;}                       /*!< @brief (optional) bit error rate */
+    long   MythSignal::UNC(){return m_UNC;}                       /*!< @brief (optional) uncorrected blocks */
+    double MythSignal::VideoBitrate(){return m_VideoBitrate;}              /*!< @brief (optional) video bitrate */
+    double MythSignal::AudioBitrate(){return m_AudioBitrate;}              /*!< @brief (optional) audio bitrate */
+    double MythSignal::DolbyBitrate(){return m_DolbyBitrate;}              /*!< @brief (optional) dolby bitrate */
+
+/*
 *								MythEventHandler
 */
 
@@ -58,16 +74,17 @@ class MythEventHandler::ImpMythEventHandler : public cThread
 public:
   ImpMythEventHandler(CStdString server,unsigned short port);
   MythRecorder m_rec;
+  MythSignal m_signal;
   virtual void Action(void);	
   cmyth_conn_t m_conn_t;
   virtual ~ImpMythEventHandler();
   };
 
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
-:m_rec(0),m_conn_t(0),cThread("MythEventHandler")
+:m_rec(0),m_conn_t(0),cThread("MythEventHandler"),m_signal()
   {
     char *cserver=_strdup(server.c_str());
-    cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,16*1024, 4096);
+    cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);
     free(cserver);
     m_conn_t=connection; 
   }
@@ -91,13 +108,16 @@ MythEventHandler::MythEventHandler()
 {
 }
 
-void MythEventHandler::AddRecorder(MythRecorder &rec)
+void MythEventHandler::SetRecorder(MythRecorder &rec)
 {
   
   m_imp->m_rec=rec;
 }
 
-
+MythSignal MythEventHandler::GetSignal()
+{
+  return m_imp->m_signal;
+}
 
 
 void MythEventHandler::ImpMythEventHandler::Action(void)
@@ -130,11 +150,20 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
   {
     myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
     std::cout<<"EVENT ID: "<<events[myth_event]<<" EVENT databuf:"<<databuf<<std::endl;
-    if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE&&!m_rec.IsNull())
+    if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
     {
+      if(!m_rec.IsNull())
+      {
+        bool retval=m_rec.LiveTVChainUpdate(CStdString(databuf));
+        XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE: %i",__FUNCTION__,retval);
+      }
+      else
+        XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
 
-      std::cout<<"CHAIN_UPDATE: "<<m_rec.LiveTVChainUpdate(CStdString(databuf))<<std::endl;
-
+    }
+    if(myth_event==CMYTH_EVENT_SIGNAL)
+    {
+      std::cout<<databuf<<std::endl;
     }
     databuf[0]=0;
 
@@ -215,7 +244,7 @@ MythDatabase::MythDatabase()
 
 
 MythDatabase::MythDatabase(CStdString server,CStdString database,CStdString user,CStdString password):
-m_database_t(new MythPointer<cmyth_database_t>())
+m_database_t(new MythPointerThreadSafe<cmyth_database_t>())
 {
   char *cserver=_strdup(server.c_str());
   char *cdatabase=_strdup(database.c_str());
@@ -232,7 +261,9 @@ m_database_t(new MythPointer<cmyth_database_t>())
 std::vector<MythChannel> MythDatabase::ChannelList()
 {
   std::vector<MythChannel> retval;
+  m_database_t->Lock();
   cmyth_chanlist_t cChannels=CMYTH->MysqlGetChanlist(*m_database_t);
+  m_database_t->Unlock();
   int nChannels=CMYTH->ChanlistGetCount(cChannels);
   for(int i=0;i<nChannels;i++)
   {
@@ -247,7 +278,9 @@ std::vector<MythChannel> MythDatabase::ChannelList()
 std::vector<MythProgram> MythDatabase::GetGuide(time_t starttime, time_t endtime)
 {
   MythProgram *programs=0;
+  m_database_t->Lock();
   int len=CMYTH->MysqlGetGuide(*m_database_t,&programs,starttime,endtime);
+  m_database_t->Unlock();
   if(len==0)
     return std::vector<MythProgram>();
   std::vector<MythProgram> retval(programs,programs+len);
@@ -258,7 +291,9 @@ std::vector<MythProgram> MythDatabase::GetGuide(time_t starttime, time_t endtime
 std::vector<MythTimer> MythDatabase::GetTimers()
 {
   std::vector<MythTimer> retval;
+  m_database_t->Lock();
   cmyth_timerlist_t timers=CMYTH->MysqlGetTimers(*m_database_t);
+  m_database_t->Unlock();
   int nTimers=CMYTH->TimerlistGetCount(timers);
   for(int i=0;i<nTimers;i++)
   {
@@ -271,17 +306,26 @@ std::vector<MythTimer> MythDatabase::GetTimers()
 
 int MythDatabase::AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title)
 {
-  return CMYTH->MysqlAddTimer(*m_database_t,chanid,description.Buffer(),starttime, endtime,title.Buffer());
+  m_database_t->Lock();
+  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,description.Buffer(),starttime, endtime,title.Buffer());
+  m_database_t->Unlock();
+  return retval;
 }
 
   bool MythDatabase::DeleteTimer(int recordid)
   {
-    return CMYTH->MysqlDeleteTimer(*m_database_t,recordid)==0;
+  m_database_t->Lock();
+  bool retval= CMYTH->MysqlDeleteTimer(*m_database_t,recordid)==0;
+  m_database_t->Unlock();
+  return retval;
   }
 
   bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title)
   {
-    return CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,description.Buffer(),starttime, endtime,title.Buffer())==0;
+  m_database_t->Lock();
+  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,description.Buffer(),starttime, endtime,title.Buffer())==0;
+  m_database_t->Unlock();
+  return retval;
   }
 
 /*
@@ -519,7 +563,7 @@ MythConnection::MythConnection(CStdString server,unsigned short port):
 m_conn_t(new MythPointer<cmyth_conn_t>),m_server(server),m_port(port)
 {
   char *cserver=_strdup(server.c_str());
-  cmyth_conn_t connection=CMYTH->ConnConnectCtrl(cserver,port,16*1024, 4096);
+  cmyth_conn_t connection=CMYTH->ConnConnectCtrl(cserver,port,64*1024, 16*1024);
   free(cserver);
   *m_conn_t=(connection);
   
@@ -613,7 +657,7 @@ bool MythConnection::UpdateSchedules(int id)
 
 MythFile MythConnection::ConnectFile(MythProgramInfo &recording)
 {
-  return CMYTH->ConnConnectFile(*recording.m_proginfo_t,*m_conn_t,16*1024, 4096);
+  return CMYTH->ConnConnectFile(*recording.m_proginfo_t,*m_conn_t,64*1024, 16*1024);
 }
 /*
 *								Myth Recorder
@@ -621,12 +665,12 @@ MythFile MythConnection::ConnectFile(MythProgramInfo &recording)
 
 
 MythRecorder::MythRecorder():
-m_recorder_t()
+m_recorder_t(),livechainupdated()
 {
 }
 
 MythRecorder::MythRecorder(cmyth_recorder_t cmyth_recorder):
-m_recorder_t(new MythPointerThreadSafe<cmyth_recorder_t>())
+m_recorder_t(new MythPointerThreadSafe<cmyth_recorder_t>()),livechainupdated(new int(0))
 {
   *m_recorder_t=cmyth_recorder;
 }
@@ -637,8 +681,21 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
   CStdString channelNum;
   channelNum.Format("%i",channel.Number());
   m_recorder_t->Lock();
-  *m_recorder_t=(CMYTH->SpawnLiveTv(*m_recorder_t,16*1024, 4096,MythRecorder::prog_update_callback,&pErr,channelNum.GetBuffer()));
+  //check channel
+  *livechainupdated=0;
+  *m_recorder_t=(CMYTH->SpawnLiveTv(*m_recorder_t,64*1024, 16*1024,MythRecorder::prog_update_callback,&pErr,channelNum.GetBuffer()));
+  int i=20;
+  while(*livechainupdated==0&&i--!=0)
+  {
+    m_recorder_t->Unlock();
+    Sleep(100);
+    m_recorder_t->Lock();
+  }
   m_recorder_t->Unlock();
+  ASSERT(*m_recorder_t);
+  
+  MythProgramInfo info=CMYTH->RecorderGetCurProginfo(*m_recorder_t);
+
   if(pErr)
     std::cout<<__FUNCTION__<<pErr<<std::endl;
   return pErr==NULL;
@@ -648,7 +705,10 @@ bool MythRecorder::LiveTVChainUpdate(CStdString chainID)
 {
   char* buffer=_strdup(chainID.c_str());
   m_recorder_t->Lock();
-  bool retval=CMYTH->LivetvChainUpdate(*m_recorder_t,buffer,4096)!=0;
+  bool retval=CMYTH->LivetvChainUpdate(*m_recorder_t,buffer,16*1024)==0;
+  if(!retval)
+    XBMC->Log(LOG_ERROR,"LiveTVChainUpdate failed on chainID: %s",buffer);
+  *livechainupdated=1;
   m_recorder_t->Unlock();
   free(buffer);
   return retval;
@@ -689,13 +749,34 @@ bool MythRecorder::CheckChannel(MythChannel &channel)
 bool MythRecorder::SetChannel(MythChannel &channel)
 {
   m_recorder_t->Lock();
-  bool retval=CheckChannel(channel);
+  //bool retval=CheckChannel(channel);
+  bool retval=IsRecording();
   if(!retval)
     return retval;
   CStdString channelNum;
   channelNum.Format("%i",channel.Number());
+  retval=CMYTH->RecorderPause(*m_recorder_t)==0;
+  retval=CheckChannel(channel);
   retval=CMYTH->RecorderSetChannel(*m_recorder_t,channelNum.GetBuffer())==0;
+  retval=CMYTH->LivetvChainSwitchLast(*m_recorder_t)==1;
+  *livechainupdated=0;
+  int i=20;
+  while(*livechainupdated==0&&i--!=0)
+  {
+    m_recorder_t->Unlock();
+    Sleep(100);
+    m_recorder_t->Lock();
+  }
+
   m_recorder_t->Unlock();
+  for(int i=0;i<20;i++)
+  {
+    if(!IsRecording())
+      Sleep(1);
+    else
+      break;
+  }
+
   return retval;
 }
 
@@ -750,7 +831,7 @@ long long MythRecorder::LiveTVDuration()
 
   bool  MythFile::IsNull()
   {
-    return m_file_t==0;
+    return *m_file_t==0;
   }
 
   int MythFile::Read(void* buffer,long long length)

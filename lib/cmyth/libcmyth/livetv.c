@@ -1075,6 +1075,13 @@ cmyth_spawn_live_tv(cmyth_recorder_t rec, unsigned buflen, int tcp_rcvbuf,
 			goto err;
 		}
  
+    for(i=0; i<20; i++) {
+			if(cmyth_recorder_is_recording(rec) != 1)
+				sleep(1);
+			else
+				break;
+		}
+
 		if ((rtrn = cmyth_livetv_chain_setup(rec, tcp_rcvbuf,
 							prog_update_callback)) == NULL) {
 			*err = "Failed to setup livetv.";

@@ -39,6 +39,10 @@ public:
   long long SeekRecordedStream(long long iPosition, int iWhence);
   long long LengthRecordedStream();
 
+  int GetChannelGroupsAmount();
+  PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio);
+  PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group);
+
 private:
   MythConnection m_con;
   MythEventHandler m_eventHandler;

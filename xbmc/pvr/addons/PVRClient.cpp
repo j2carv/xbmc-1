@@ -807,6 +807,7 @@ bool CPVRClient::OpenLiveStream(const CPVRChannel &channel)
   }
   catch (exception &e)
   {
+    CLog::Log(LOGERROR,"PVRClient expection handled by function %s",__FUNCTION__);
     CLog::Log(LOGERROR, "PVRClient - %s - exception '%s' caught while trying to call OpenLiveStream() on addon '%s'. please contact the developer of this addon: %s",
         __FUNCTION__, e.what(), GetFriendlyName().c_str(), Author().c_str());
   }

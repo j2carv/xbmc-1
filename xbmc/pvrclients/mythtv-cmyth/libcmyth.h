@@ -302,7 +302,7 @@ if (DbgNone == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dl
 dlsym(m_libcmyth, "cmyth_dbg");
 if (Dbg == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    SetDbgMsgcallback      = (void (*)(void (* msgcb)(char* )))
+    SetDbgMsgcallback      = (void (*)(void (* msgcb)(int level, char* )))
 dlsym(m_libcmyth, "cmyth_set_dbg_msgcallback");
 if (SetDbgMsgcallback == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1103,7 +1103,7 @@ void (*DbgLevel)(int l);
 void (*DbgAll)(void);
 void (*DbgNone)(void);
 void (*Dbg)(int level, char* fmt, ...);
-void (*SetDbgMsgcallback)(void (* msgcb)(char* ));
+void (*SetDbgMsgcallback)(void (* msgcb)(int level, char* ));
 cmyth_conn_t (*ConnConnectCtrl)(char* server, unsigned short port, unsigned buflen, int tcp_rcvbuf);
 cmyth_conn_t (*ConnConnectEvent)(char* server,  unsigned short port,  unsigned buflen, int tcp_rcvbuf);
 cmyth_file_t (*ConnConnectFile)(cmyth_proginfo_t prog, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf);

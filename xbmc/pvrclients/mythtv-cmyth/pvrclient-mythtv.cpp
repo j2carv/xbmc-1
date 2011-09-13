@@ -7,9 +7,39 @@ PVRClientMythTV::PVRClientMythTV()
 {
 }
 
+void Log(int l,char* msg)
+{
+   
+  if(msg&&l!=CMYTH_DBG_NONE)
+  {
+    bool doLog=false;
+    addon_log_t loglevel;
+    switch( l)
+    {
+      case CMYTH_DBG_ERROR:
+        loglevel=LOG_ERROR;
+        doLog=true;
+        break;
+      case CMYTH_DBG_WARN:
+      case CMYTH_DBG_INFO:
+        loglevel=LOG_INFO;
+        break;
+      case CMYTH_DBG_DETAIL:
+      case CMYTH_DBG_DEBUG:
+      case CMYTH_DBG_PROTO:
+      case CMYTH_DBG_ALL: 
+        loglevel=LOG_DEBUG;
+        break;
+    }    
+    if(doLog)
+      XBMC->Log(loglevel,"LibCMyth: %s",  msg);
+  }
+}
 
 bool PVRClientMythTV::Connect()
 {
+  CMYTH->DbgAll();
+  CMYTH->SetDbgMsgcallback(Log);
   m_con=MythConnection(g_szHostname,g_iMythPort);
   if(!m_con.IsConnected())
     return false;
@@ -62,7 +92,28 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
       tag.startTime=it->starttime;
       tag.strTitle=it->title;
       tag.strPlot= it->description;
-      tag.iUniqueBroadcastId=atoi(it->seriesid);
+      unsigned int seriesid=atoi(it->seriesid);
+      if(seriesid!=0)
+        tag.iUniqueBroadcastId=atoi(it->seriesid);
+      else
+        tag.iUniqueBroadcastId=(tag.startTime<<16)+(tag.iChannelNumber&0xffff);
+      
+      //unimplemented
+      tag.strEpisodeName="";
+      tag.strGenreDescription="";
+      tag.strIconPath="";
+      tag.strPlotOutline="";
+      tag.bNotify=false;
+      tag.firstAired=0;
+      tag.iEpisodeNumber=0;
+      tag.iEpisodePartNumber=0;
+      tag.iGenreSubType=0;
+      tag.iGenreType=0;
+      tag.iParentalRating=0;
+      tag.iSeriesNumber=0;
+      tag.iStarRating=0;
+      
+      
       PVR->TransferEpgEntry(handle,&tag);
     }
    }
@@ -84,7 +135,7 @@ PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
     if (it->IsRadio()==bRadio)
     {
       PVR_CHANNEL tag;
-      tag.bIsHidden=it->Visible();
+      tag.bIsHidden=!it->Visible();
       tag.bIsRadio=it->IsRadio();
       tag.iUniqueId=it->ID();
       tag.iChannelNumber=it->ID(); //Swap ID and Number?
@@ -92,9 +143,13 @@ PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
       tag.strChannelName = chanName;
       CStdString icon = it->Icon();
       tag.strIconPath = icon;
-      tag.strStreamURL=0;
-      tag.strInputFormat=0;
+
+      //Unimplemented
+      tag.strStreamURL="";
+      tag.strInputFormat="";
       tag.iEncryptionSystem=0;
+      
+
       PVR->TransferChannelEntry(handle,&tag);
     }
   }
@@ -128,11 +183,21 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
     id[sizeof(long long)]=0;
     *reinterpret_cast<long long*>(id)=it->second.uid();
     tag.strRecordingId=id;
-    tag.strDirectory=path;
-    //TODO: tag.iGenreType=it->Category();
+    tag.strDirectory="";
     tag.strTitle=title;
-    tag.strStreamURL=0;
-    tag.strPlotOutline=0;
+
+
+    //TODO: tag.iGenreType=it->Category();
+    //Unimplemented
+    tag.iGenreSubType=0;
+    tag.iGenreType=0;
+    tag.iLifetime=0;
+    tag.iPriority=0;
+    tag.recordingTime=0;
+    tag.strPlotOutline="";
+    tag.strStreamURL="";
+    
+    
     
     PVR->TransferRecordingEntry(handle,&tag);
   }
@@ -171,7 +236,20 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
     CStdString summary=it->Description(); 
     tag.strSummary=summary;
     tag.state=PVR_TIMER_STATE_SCHEDULED;
-    tag.strDirectory=0;
+    
+    //Unimplemented
+    tag.bIsRepeating=false;
+    tag.firstDay=0;
+    tag.iEpgUid=0;
+    tag.iGenreSubType=0;
+    tag.iGenreType=0;
+    tag.iLifetime=0;
+    tag.iMarginEnd=0;
+    tag.iMarginStart=0;
+    tag.iPriority=0;
+    tag.iWeekdays=0;
+    tag.strDirectory="";
+    
     PVR->TransferTimerEntry(handle,&tag);
   }
   return PVR_ERROR_NO_ERROR;
@@ -207,6 +285,7 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
   bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
   {
     m_rec=m_con.GetFreeRecorder();
+    m_eventHandler.SetRecorder(m_rec);
     MythChannel chan=m_channels[m_channelsMap[channel.iUniqueId]];
     return m_rec.SpawnLiveTV(chan);
 
@@ -285,3 +364,34 @@ long long PVRClientMythTV::LengthRecordedStream()
 {
   return m_file.Duration();
 }
+
+
+  int PVRClientMythTV::GetChannelGroupsAmount()
+    {
+  return 2;
+ }
+
+  PVR_ERROR PVRClientMythTV::GetChannelGroups(PVR_HANDLE handle, bool bRadio)
+    {
+      PVR_CHANNEL_GROUP tag;
+      tag.bIsRadio=bRadio;
+      tag.strGroupName=bRadio?"radio":"tv";
+      PVR->TransferChannelGroup(handle,&tag);
+      return PVR_ERROR_NO_ERROR;
+    
+  }
+  PVR_ERROR PVRClientMythTV::GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group)
+    {
+    PVR_CHANNEL_GROUP_MEMBER tag;
+    for(std::vector<MythChannel>::iterator it=m_channels.begin();it!=m_channels.end();it++)
+    {
+      if(it->IsRadio()==group.bIsRadio)
+      {
+        tag.iChannelNumber=it->Number();
+        tag.iChannelUniqueId=it->ID();
+        tag.strGroupName=group.strGroupName;
+        PVR->TransferChannelGroupMember(handle,&tag);
+      }
+    }
+    return PVR_ERROR_NO_ERROR;
+  }

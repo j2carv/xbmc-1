@@ -1400,6 +1400,12 @@ cmyth_conn_get_setting_unlocked(cmyth_conn_t conn, const char* hostname, const c
 		cmyth_dbg(CMYTH_DBG_ERROR, "%s: odd left over data %s\n", __FUNCTION__, buffer);
 	}
 
+  if(!strcmp("-1",result))  {
+    cmyth_dbg(CMYTH_DBG_PROTO,
+		          "%s: Setting: %s or hostname: %s not found.\n",
+		          __FUNCTION__, setting,hostname);
+    return NULL;
+  }
 	return result;
 err:
 	if(result)

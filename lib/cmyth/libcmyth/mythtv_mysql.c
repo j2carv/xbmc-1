@@ -442,7 +442,7 @@ cmyth_mysql_get_guide(cmyth_database_t db, cmyth_program_t **prog, time_t startt
 {
 	MYSQL_RES *res= NULL;
 	MYSQL_ROW row;
-        const char *query_str = "SELECT program.chanid,program.starttime,program.endtime,program.title,program.description,program.subtitle,program.programid,program.seriesid,program.category,channel.channum,channel.callsign,channel.name,channel.sourceid FROM program INNER JOIN channel ON program.chanid=channel.chanid WHERE (program.starttime >=? and program.endtime <= ?) ORDER BY (channel.channum + 0), program.starttime ASC ";
+        const char *query_str = "SELECT program.chanid,UNIX_TIMESTAMP(program.starttime),UNIX_TIMESTAMP(program.endtime),program.title,program.description,program.subtitle,program.programid,program.seriesid,program.category,channel.channum,channel.callsign,channel.name,channel.sourceid FROM program INNER JOIN channel ON program.chanid=channel.chanid WHERE (program.starttime >=? and program.endtime <= ?) ORDER BY (channel.channum + 0), program.starttime ASC ";
 	int rows=0;
 	int n=0;
 	cmyth_mysql_query_t * query;
