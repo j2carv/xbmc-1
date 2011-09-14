@@ -1,7 +1,42 @@
 #include "cppmyth.h"
 #include <sstream>
 #include "client.h"
-#include "thread.h"
+#include <vector>
+
+/*
+ *            Tokenizer
+ */
+template < class ContainerT >
+void tokenize(const std::string& str, ContainerT& tokens,
+              const std::string& delimiters = " ", const bool trimEmpty = false)
+{
+   std::string::size_type pos, lastPos = 0;
+   while(true)
+   {
+      pos = str.find_first_of(delimiters, lastPos);
+      if(pos == std::string::npos)
+      {
+         pos = str.length();
+
+         if(pos != lastPos || !trimEmpty)
+            tokens.push_back(ContainerT::value_type(str.data()+lastPos,
+                  (ContainerT::value_type::size_type)pos-lastPos ));
+
+         break;
+      }
+      else
+      {
+         if(pos != lastPos || !trimEmpty)
+            tokens.push_back(ContainerT::value_type(str.data()+lastPos,
+                  (ContainerT::value_type::size_type)pos-lastPos ));
+      }
+
+      lastPos = pos + 1;
+   }
+};
+
+
+
 /*
  *             MythPointer template
  */
@@ -53,17 +88,14 @@ public:
  *            MythSignal
  */
   
-    MythSignal::MythSignal() : m_AdapterName(),m_AdapterStatus(),m_SNR(0),m_Signal(0),m_BER(0),m_UNC(0),m_VideoBitrate(0.0),m_AudioBitrate(0.0),m_DolbyBitrate(0.0)    {}
+    MythSignal::MythSignal() :m_AdapterStatus(),m_SNR(0),m_Signal(0),m_BER(0),m_UNC(0) {}
 
-    CStdString  MythSignal::AdapterName(){return m_AdapterName;}       /*!< @brief (optional) name of the adapter that's being used */
     CStdString  MythSignal::AdapterStatus(){return m_AdapterStatus;}     /*!< @brief (optional) status of the adapter that's being used */
     int    MythSignal::SNR(){return m_SNR;}                       /*!< @brief (optional) signal/noise ratio */
     int    MythSignal::Signal(){return m_Signal;}                    /*!< @brief (optional) signal strength */
     long   MythSignal::BER(){return m_BER;}                       /*!< @brief (optional) bit error rate */
     long   MythSignal::UNC(){return m_UNC;}                       /*!< @brief (optional) uncorrected blocks */
-    double MythSignal::VideoBitrate(){return m_VideoBitrate;}              /*!< @brief (optional) video bitrate */
-    double MythSignal::AudioBitrate(){return m_AudioBitrate;}              /*!< @brief (optional) audio bitrate */
-    double MythSignal::DolbyBitrate(){return m_DolbyBitrate;}              /*!< @brief (optional) dolby bitrate */
+
 
 /*
 *								MythEventHandler
@@ -78,6 +110,7 @@ public:
   virtual void Action(void);	
   cmyth_conn_t m_conn_t;
   virtual ~ImpMythEventHandler();
+  void UpdateSignal(CStdString &signal);
   };
 
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
@@ -119,6 +152,40 @@ MythSignal MythEventHandler::GetSignal()
   return m_imp->m_signal;
 }
 
+void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
+{
+  std::vector<std::string> tok;
+  tokenize<std::vector<std::string>>(signal,tok,";");
+  
+  for(std::vector<std::string>::iterator it=tok.begin();it!=tok.end();it++)
+  {
+    std::vector<std::string> tok2,tok3;
+    tokenize<std::vector<std::string>>(*it,tok2," ");
+    if(tok2.size()>=2)
+    {
+    if(tok2[0]=="slock")
+    {
+      m_signal.m_AdapterStatus=tok2[1]=="1"?"Locked":"No lock";
+    }
+    else if(tok2[0]=="signal")
+    {
+      m_signal.m_Signal=std::stoi(tok2[1]);
+    }
+    else if(tok2[0]=="snr")
+    {
+      m_signal.m_SNR=std::stoi(tok2[1]);
+    }
+    else if(tok2[0]=="ber")
+    {
+      m_signal.m_BER=std::stoi(tok2[1]);
+    }
+    else if(tok2[0]=="ucb")
+    {
+      m_signal.m_UNC=std::stoi(tok2[1]);
+    }
+    }
+  }
+}
 
 void MythEventHandler::ImpMythEventHandler::Action(void)
 {
@@ -163,7 +230,8 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
     }
     if(myth_event==CMYTH_EVENT_SIGNAL)
     {
-      std::cout<<databuf<<std::endl;
+      CStdString signal=databuf;
+     UpdateSignal(signal);
     }
     databuf[0]=0;
 
@@ -812,6 +880,10 @@ long long MythRecorder::LiveTVDuration()
   return retval;
 }
 
+int MythRecorder::ID()
+{
+  return CMYTH->RecorderGetRecorderId(*m_recorder_t);
+}
 /*
  *        MythFile
  */

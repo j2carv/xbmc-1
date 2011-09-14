@@ -507,7 +507,9 @@ bool SwitchChannel(const PVR_CHANNEL &channelinfo)
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+    if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+    return g_client->SignalStatus(signalStatus);
 }
 
 long long SeekLiveStream(long long iPosition, int iWhence) 

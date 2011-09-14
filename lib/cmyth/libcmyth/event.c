@@ -97,9 +97,9 @@ cmyth_event_get(cmyth_conn_t conn, char * data, int len)
       /* get signalmonitorvalue name */ 
 			consumed = cmyth_rcv_string(conn, &err, tmp, sizeof(tmp) - 1, count); 
 			count -= consumed; 
-      strncat(data,tmp,dstlen-2);
+      /*strncat(data,tmp,dstlen-2);
       strncat(data,"=",2);
-      dstlen -= consumed;
+      dstlen -= consumed;*/
 			/* get signalmonitorvalue status */ 
 			consumed = cmyth_rcv_string(conn, &err, tmp, sizeof(tmp) - 1, count); 
 			count -= consumed; 

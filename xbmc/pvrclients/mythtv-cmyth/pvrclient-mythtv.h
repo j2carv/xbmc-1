@@ -32,6 +32,7 @@ public:
   //SET_SIGNAL_MONITORING_RATE ->signal
   long long SeekLiveStream(long long iPosition, int iWhence);
   long long LengthLiveStream();
+  PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus);
 
   bool OpenRecordedStream(const PVR_RECORDING &recinfo);
   void CloseRecordedStream();

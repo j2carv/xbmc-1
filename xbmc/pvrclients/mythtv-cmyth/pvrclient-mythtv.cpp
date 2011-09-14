@@ -335,6 +335,24 @@ long long PVRClientMythTV::LengthLiveStream()
   return m_rec.LiveTVDuration();
 }
 
+PVR_ERROR PVRClientMythTV::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
+{
+  MythSignal signal=m_eventHandler.GetSignal();
+  signalStatus.dAudioBitrate=0;
+  signalStatus.dDolbyBitrate=0;
+  signalStatus.dVideoBitrate=0;
+  signalStatus.iBER=signal.BER();
+  signalStatus.iSignal=signal.Signal();
+  signalStatus.iSNR=signal.SNR();
+  signalStatus.iUNC=signal.UNC();
+  CStdString ID;
+  CStdString adaptorStatus=signal.AdapterStatus();
+  ID.Format("Myth Recorder %i",m_rec.ID());
+  strcpy(signalStatus.strAdapterName,ID.Buffer());
+  strcpy(signalStatus.strAdapterStatus,adaptorStatus.Buffer());
+  return PVR_ERROR_NO_ERROR;
+}
+
 bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
 {
   long long uid=*reinterpret_cast<const long long*>(recinfo.strRecordingId);
