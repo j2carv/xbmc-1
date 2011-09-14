@@ -233,6 +233,10 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
       CStdString signal=databuf;
      UpdateSignal(signal);
     }
+    if(myth_event==CMYTH_EVENT_SCHEDULE_CHANGE)
+    {
+      XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
+    }
     databuf[0]=0;
 
   }
@@ -459,6 +463,7 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
   :m_proginfo_t(new MythPointer<cmyth_proginfo_t>())
 {
   *m_proginfo_t=cmyth_proginfo;
+
 }
 
   CStdString MythProgramInfo::ProgramID()
@@ -482,7 +487,9 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
   CStdString MythProgramInfo::Path()
    {
     CStdString retval;
+    
     char* path=CMYTH->ProginfoPathname(*m_proginfo_t);
+ //   XBMC->Log(LOG_DEBUG,"ProgInfo path: %s, status %i",path,CMYTH->ProginfoRecStatus(*m_proginfo_t));
     retval=path;
     CMYTH->RefRelease(path);
     return retval;
@@ -521,6 +528,9 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
 
   int MythProgramInfo::Duration()
   {
+    MythTimestamp end=CMYTH->ProginfoRecEnd(*m_proginfo_t);
+    MythTimestamp start=CMYTH->ProginfoRecStart(*m_proginfo_t);
+    return end.UnixTime()-start.UnixTime();
     return CMYTH->ProginfoLengthSec(*m_proginfo_t);
   }
 
@@ -532,6 +542,15 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
     CMYTH->RefRelease(cat);
     return retval;
     }
+
+  CStdString MythProgramInfo::RecordingGroup()
+  {
+    CStdString retval;
+    char* recgroup=CMYTH->ProginfoRecgroup(*m_proginfo_t);
+    retval=recgroup;
+    CMYTH->RefRelease(recgroup);
+    return retval;
+  }
 
   long long MythProgramInfo::uid()
      {
@@ -647,43 +666,49 @@ MythRecorder MythConnection::GetFreeRecorder()
   return MythRecorder(CMYTH->ConnGetFreeRecorder(*m_conn_t));
 }
 
-  std::map<long long, MythProgramInfo>  MythConnection::GetRecordedPrograms()
+  boost::unordered_map<CStdString, MythProgramInfo>  MythConnection::GetRecordedPrograms()
   {
-    std::map<long long, MythProgramInfo>  retval;
+    boost::unordered_map<CStdString, MythProgramInfo>  retval;
     cmyth_proglist_t proglist=CMYTH->ProglistGetAllRecorded(*m_conn_t);
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
-      MythProgramInfo prog=CMYTH->ProglistGetItem(proglist,i);
-      retval.insert(std::pair<long long,MythProgramInfo>(prog.uid(),prog));
+      cmyth_proginfo_t cmprog=CMYTH->ProglistGetItem(proglist,i);
+      MythProgramInfo prog=CMYTH->ProginfoGetDetail(*m_conn_t,cmprog);//Release cmprog????
+      CStdString path=prog.Path();
+      retval.insert(std::pair<CStdString,MythProgramInfo>(path.c_str(),prog));
     }
     CMYTH->RefRelease(proglist);
     return retval;
   }
 
-  std::map<long long, MythProgramInfo>  MythConnection::GetPendingPrograms()
+  boost::unordered_map<CStdString, MythProgramInfo>  MythConnection::GetPendingPrograms()
    {
-    std::map<long long, MythProgramInfo>  retval;
+    boost::unordered_map<CStdString, MythProgramInfo>  retval;
     cmyth_proglist_t proglist=CMYTH->ProglistGetAllPending(*m_conn_t);
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
-      MythProgramInfo prog=CMYTH->ProglistGetItem(proglist,i);
-      retval.insert(std::pair<long long,MythProgramInfo>(prog.uid(),prog));
+      cmyth_proginfo_t cmprog=CMYTH->ProglistGetItem(proglist,i);
+      MythProgramInfo prog=CMYTH->ProginfoGetDetail(*m_conn_t,cmprog);//Release cmprog????
+      CStdString path=prog.Path();
+      retval.insert(std::pair<CStdString,MythProgramInfo>(path.c_str(),prog));
     }
     CMYTH->RefRelease(proglist);
     return retval;
   }
 
-  std::map<long long, MythProgramInfo>  MythConnection::GetScheduledPrograms()
+  boost::unordered_map<CStdString, MythProgramInfo>  MythConnection::GetScheduledPrograms()
    {
-    std::map<long long, MythProgramInfo>  retval;
+    boost::unordered_map<CStdString, MythProgramInfo>  retval;
     cmyth_proglist_t proglist=CMYTH->ProglistGetAllScheduled(*m_conn_t);
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
-      MythProgramInfo prog=CMYTH->ProglistGetItem(proglist,i);
-      retval.insert(std::pair<long long,MythProgramInfo>(prog.uid(),prog));
+      cmyth_proginfo_t cmprog=CMYTH->ProglistGetItem(proglist,i);
+      MythProgramInfo prog=CMYTH->ProginfoGetDetail(*m_conn_t,cmprog);//Release cmprog????
+      CStdString path=prog.Path();
+      retval.insert(std::pair<CStdString,MythProgramInfo>(path.c_str(),prog));
     }
     CMYTH->RefRelease(proglist);
     return retval;
@@ -791,6 +816,8 @@ void MythRecorder::prog_update_callback(cmyth_proginfo_t prog)
 
 bool MythRecorder::IsNull()
 {
+  if(m_recorder_t==NULL)
+    return true;
   return *m_recorder_t==NULL;
 }
 
@@ -809,7 +836,7 @@ bool MythRecorder::CheckChannel(MythChannel &channel)
   m_recorder_t->Lock();
   CStdString channelNum;
   channelNum.Format("%i",channel.Number());
-  bool retval=CMYTH->RecorderCheckChannel(*m_recorder_t,channelNum.GetBuffer())==1;
+  bool retval=CMYTH->RecorderCheckChannel(*m_recorder_t,channelNum.GetBuffer())==0;
   m_recorder_t->Unlock();
   return retval;
 }
@@ -817,16 +844,38 @@ bool MythRecorder::CheckChannel(MythChannel &channel)
 bool MythRecorder::SetChannel(MythChannel &channel)
 {
   m_recorder_t->Lock();
-  //bool retval=CheckChannel(channel);
-  bool retval=IsRecording();
-  if(!retval)
-    return retval;
+  if(!IsRecording())
+  {
+    XBMC->Log(LOG_ERROR,"%s: Recorder %i is not recording",__FUNCTION__,ID(),channel.Name());
+    m_recorder_t->Unlock();
+    return false;
+  }
   CStdString channelNum;
   channelNum.Format("%i",channel.Number());
-  retval=CMYTH->RecorderPause(*m_recorder_t)==0;
-  retval=CheckChannel(channel);
-  retval=CMYTH->RecorderSetChannel(*m_recorder_t,channelNum.GetBuffer())==0;
-  retval=CMYTH->LivetvChainSwitchLast(*m_recorder_t)==1;
+  if(CMYTH->RecorderPause(*m_recorder_t)!=0)
+  {
+    XBMC->Log(LOG_ERROR,"%s: Failed to pause recorder %i",__FUNCTION__,ID());
+    m_recorder_t->Unlock();
+    return false;
+  }
+  if(!CheckChannel(channel))
+  {
+    XBMC->Log(LOG_ERROR,"%s: Recorder %i doesn't provide channel %s",__FUNCTION__,ID(),channel.Name());
+    m_recorder_t->Unlock();
+    return false;
+  }
+  if(CMYTH->RecorderSetChannel(*m_recorder_t,channelNum.GetBuffer())!=0)
+  {
+    XBMC->Log(LOG_ERROR,"%s: Failed to change recorder %i to channel %s",__FUNCTION__,ID(),channel.Name());
+    m_recorder_t->Unlock();
+    return false;
+  }
+  if(CMYTH->LivetvChainSwitchLast(*m_recorder_t)!=1)
+  {
+    XBMC->Log(LOG_ERROR,"%s: Failed to switch chain for recorder %i",__FUNCTION__,ID(),channel.Name());
+    m_recorder_t->Unlock();
+    return false;
+  }
   *livechainupdated=0;
   int i=20;
   while(*livechainupdated==0&&i--!=0)
@@ -845,7 +894,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
       break;
   }
 
-  return retval;
+  return true;
 }
 
 int MythRecorder::ReadLiveTV(void* buffer,long long length)
@@ -884,6 +933,11 @@ int MythRecorder::ID()
 {
   return CMYTH->RecorderGetRecorderId(*m_recorder_t);
 }
+
+ bool  MythRecorder::Stop()
+ {
+   return CMYTH->RecorderStopLivetv(*m_recorder_t)==0;
+ }
 /*
  *        MythFile
  */

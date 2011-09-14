@@ -368,3 +368,4 @@ cmyth_mysql_query(cmyth_mysql_query_t * query)
 	}
 	return 0;
 }
+

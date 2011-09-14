@@ -56,7 +56,7 @@ private:
   time_t m_EPGend;
   std::vector<MythProgram> m_EPG;
   std::vector<MythChannel> m_channels;
-  std::map<long long,MythProgramInfo> m_recordings;
+  boost::unordered_map<CStdString,MythProgramInfo> m_recordings;
   std::map<int,int> m_channelsMap;
 
 };

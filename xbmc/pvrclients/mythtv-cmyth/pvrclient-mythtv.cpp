@@ -31,7 +31,7 @@ void Log(int l,char* msg)
         loglevel=LOG_DEBUG;
         break;
     }    
-    if(doLog)
+    if(XBMC&&doLog)
       XBMC->Log(loglevel,"LibCMyth: %s",  msg);
   }
 }
@@ -167,7 +167,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
 {
   if(m_recordings.size()==0)
     m_recordings=m_con.GetRecordedPrograms();
-for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); it != m_recordings.end(); it++)
+for (boost::unordered_map<CStdString, MythProgramInfo>::iterator it = m_recordings.begin(); it != m_recordings.end(); it++)
   {
     PVR_RECORDING tag;
     tag.iDuration=it->second.Duration();
@@ -179,11 +179,13 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
 
     tag.strChannelName=chanName;
     tag.strPlot=plot;
-    char id[sizeof(long long)+1];
+    /*char id[sizeof(long long)+1];
     id[sizeof(long long)]=0;
-    *reinterpret_cast<long long*>(id)=it->second.uid();
+    *reinterpret_cast<long long*>(id)=it->second.uid();*/
+    CStdString id=it->second.Path();
     tag.strRecordingId=id;
-    tag.strDirectory="";
+    CStdString group=it->second.RecordingGroup();
+    tag.strDirectory=group=="Default"?"":group;
     tag.strTitle=title;
 
 
@@ -193,7 +195,7 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
     tag.iGenreType=0;
     tag.iLifetime=0;
     tag.iPriority=0;
-    tag.recordingTime=0;
+    //tag.recordingTime=0;
     tag.strPlotOutline="";
     tag.strStreamURL="";
     
@@ -207,10 +209,15 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
  PVR_ERROR PVRClientMythTV::DeleteRecording(const PVR_RECORDING &recording)
  {
    
-   long long uid=*reinterpret_cast<const long long*>(recording.strRecordingId);
-   bool ret = m_con.DeleteRecording(m_recordings[uid]);
-   if(ret && m_recordings.erase(uid))
+   //long long uid=*reinterpret_cast<const long long*>(recording.strRecordingId);
+   CStdString id=recording.strRecordingId;
+   bool ret = m_con.DeleteRecording(m_recordings[id]);
+   if(ret && m_recordings.erase(recording.strRecordingId))
+   {
+     PVR->TriggerRecordingUpdate();
      return PVR_ERROR_NO_ERROR;
+
+   }
    else
      return PVR_ERROR_NOT_DELETED;
  }
@@ -263,6 +270,7 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
       return PVR_ERROR_NOT_POSSIBLE;
     if(!m_con.UpdateSchedules(id))
       return PVR_ERROR_NOT_POSSIBLE;
+    PVR->TriggerTimerUpdate();
     return PVR_ERROR_NO_ERROR;
   }
 
@@ -271,7 +279,8 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
     if(!m_db.DeleteTimer(timer.iClientIndex))
       return PVR_ERROR_NOT_POSSIBLE;
     m_con.UpdateSchedules(-1);
-    return PVR_ERROR_NOT_POSSIBLE;
+    PVR->TriggerTimerUpdate();
+    return PVR_ERROR_NO_ERROR;
   }
   
   PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
@@ -282,18 +291,26 @@ for (std::map<long long, MythProgramInfo>::iterator it = m_recordings.begin(); i
     return PVR_ERROR_NO_ERROR;
   }
 
+
   bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
   {
-    m_rec=m_con.GetFreeRecorder();
-    m_eventHandler.SetRecorder(m_rec);
-    MythChannel chan=m_channels[m_channelsMap[channel.iUniqueId]];
-    return m_rec.SpawnLiveTV(chan);
+    if(m_rec.IsNull())
+    {
+      m_rec=m_con.GetFreeRecorder();
+      XBMC->Log(LOG_DEBUG,"%s: Opening new recorder %i",__FUNCTION__,m_rec.ID());
+      m_eventHandler.SetRecorder(m_rec);
+      MythChannel chan=m_channels[m_channelsMap[channel.iUniqueId]];
+      return m_rec.SpawnLiveTV(chan);
+    }
+    else
+      return true;
 
   }
 
 
   void PVRClientMythTV::CloseLiveStream()
 {
+  m_rec.Stop();
   m_rec=NULL;
   return;
 }
@@ -355,8 +372,9 @@ PVR_ERROR PVRClientMythTV::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 
 bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
 {
-  long long uid=*reinterpret_cast<const long long*>(recinfo.strRecordingId);
-  m_file=m_con.ConnectFile(m_recordings[uid]);
+  //long long uid=*reinterpret_cast<const long long*>(recinfo.strRecordingId);
+  CStdString id=recinfo.strRecordingId;
+  m_file=m_con.ConnectFile(m_recordings[id]);
 
   return !m_file.IsNull();
 }

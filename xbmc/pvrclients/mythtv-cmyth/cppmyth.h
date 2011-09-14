@@ -10,6 +10,7 @@
 //#include <string>
 #include <vector>
 #include <map>
+#include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include "utils/StdString.h"
 #include "libcmyth.h"
@@ -40,6 +41,7 @@ public:
   MythProgramInfo GetCurrentProgram();
   long long LiveTVSeek(long long offset, int whence);
   long long LiveTVDuration();
+  bool Stop();
 private:
   boost::shared_ptr<MythPointerThreadSafe<cmyth_recorder_t>> m_recorder_t;
   static void prog_update_callback(cmyth_proginfo_t prog);
@@ -144,6 +146,7 @@ public:
   time_t RecStart();
   int Duration();
   CStdString Category();
+  CStdString RecordingGroup();
   long long uid();
 private:
   boost::shared_ptr<MythPointer<cmyth_proginfo_t>> m_proginfo_t;
@@ -194,9 +197,9 @@ public:
   MythRecorder GetFreeRecorder();
   MythEventHandler CreateEventHandler();
 
-  std::map<long long, MythProgramInfo> GetRecordedPrograms();
-  std::map<long long, MythProgramInfo> GetPendingPrograms();
-  std::map<long long, MythProgramInfo> GetScheduledPrograms();
+  boost::unordered_map<CStdString, MythProgramInfo> GetRecordedPrograms();
+  boost::unordered_map<CStdString, MythProgramInfo> GetPendingPrograms();
+  boost::unordered_map<CStdString, MythProgramInfo> GetScheduledPrograms();
   bool DeleteRecording(MythProgramInfo &recording);
 
   bool IsConnected();
