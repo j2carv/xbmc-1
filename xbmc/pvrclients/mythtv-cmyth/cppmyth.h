@@ -109,9 +109,9 @@ public:
   std::map<int,MythChannel> ChannelList();
   std::vector<MythProgram> GetGuide(time_t starttime, time_t endtime);
   std::vector<MythTimer> GetTimers();
-  int AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
+  int AddTimer(int chanid,CStdString channame, CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
   bool DeleteTimer(int recordid);
-  bool UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
+  bool UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
   boost::unordered_map<CStdString, std::vector<int>> GetChannelGroups();
 
 private:

@@ -1104,9 +1104,9 @@ extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
 extern cmyth_timerlist_t cmyth_mysql_get_timers(cmyth_database_t db); 
 
 
-extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category); 
+extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category); 
 extern int cmyth_mysql_delete_timer(cmyth_database_t db, int recordid);
-extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category); 
+extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category); 
 
 typedef struct cmyth_channelgroups {
 	char channelgroup[65];

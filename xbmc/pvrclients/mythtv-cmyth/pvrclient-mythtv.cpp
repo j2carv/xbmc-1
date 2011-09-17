@@ -366,7 +366,8 @@ for (boost::unordered_map<CStdString, MythProgramInfo>::iterator it = m_recordin
   PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   {
     CStdString category=Genre(timer.iGenreType);
-    int id=m_db.AddTimer(timer.iClientChannelUid,timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category);
+
+    int id=m_db.AddTimer(timer.iClientChannelUid,m_channels[timer.iClientChannelUid].Name(),timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category);
     if(id<0)
       return PVR_ERROR_NOT_POSSIBLE;
     if(!m_con.UpdateSchedules(id))
@@ -387,7 +388,7 @@ for (boost::unordered_map<CStdString, MythProgramInfo>::iterator it = m_recordin
   PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   {
     CStdString category=Genre(timer.iGenreType);
-    if(!m_db.UpdateTimer(timer.iClientIndex,timer.iClientChannelUid,timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category))
+    if(!m_db.UpdateTimer(timer.iClientIndex,timer.iClientChannelUid,m_channels[timer.iClientChannelUid].Name(),timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category))
        return PVR_ERROR_NOT_POSSIBLE;
     m_con.UpdateSchedules(timer.iClientIndex);
     return PVR_ERROR_NO_ERROR;

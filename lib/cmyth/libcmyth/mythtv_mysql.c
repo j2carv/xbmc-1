@@ -1433,12 +1433,12 @@ cmyth_mysql_get_timers(cmyth_database_t db)
 
 
 int 
-cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category) 
+cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* description, time_t starttime, time_t endtime,char* title,char* category) 
 {
 	int ret = -1;
   int id=0;
   MYSQL* sql=cmyth_db_get_connection(db);
-	const char *query_str = "INSERT INTO record (record.type, chanid, starttime, startdate, endtime, enddate,title, description, category) VALUES (1 , ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ?, ?);";
+	const char *query_str = "INSERT INTO record (record.type,autocommflag, autoexpire, chanid, starttime, startdate, endtime, enddate,title, description, category, findid, findtime, station) VALUES (1 , 1, 1, ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ?, ?, TO_DAYS(DATE(FROM_UNIXTIME( ? ))), TIME(FROM_UNIXTIME( ? )) , ? );";
 	
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);
@@ -1452,7 +1452,11 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t 
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_str(query, esctitle ) < 0
+    || cmyth_mysql_query_param_str(query, escdescription ) < 0
     || cmyth_mysql_query_param_str(query, esccategory ) < 0
+    || cmyth_mysql_query_param_long(query, starttime ) < 0
+    || cmyth_mysql_query_param_long(query, starttime ) < 0
+    || cmyth_mysql_query_param_str(query, channame ) < 0
 		) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
 		ref_release(query);
@@ -1505,12 +1509,12 @@ cmyth_mysql_delete_timer(cmyth_database_t db, int recordid)
 }
 
 int 
-cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category) 
+cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category) 
 {
 	int ret = -1;
   int id=0;
 
-	const char *query_str = "UPDATE record SET `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ? WHERE `recordid` = ?;";
+	const char *query_str = "UPDATE record SET `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ? WHERE `recordid` = ? ;";
 	
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);

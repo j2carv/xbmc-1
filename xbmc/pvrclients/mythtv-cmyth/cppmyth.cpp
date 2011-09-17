@@ -376,10 +376,10 @@ std::vector<MythTimer> MythDatabase::GetTimers()
   return retval;
 }
 
-int MythDatabase::AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
+int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
 {
   m_database_t->Lock();
-  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer());
+  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer());
   m_database_t->Unlock();
   return retval;
 }
@@ -392,10 +392,10 @@ int MythDatabase::AddTimer(int chanid,CStdString description, time_t starttime, 
   return retval;
   }
 
-  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
+  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
   {
   m_database_t->Lock();
-  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer())==0;
+  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer())==0;
   m_database_t->Unlock();
   return retval;
   }
@@ -816,8 +816,6 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
   m_recorder_t->Unlock();
   ASSERT(*m_recorder_t);
   
-  MythProgramInfo info=CMYTH->RecorderGetCurProginfo(*m_recorder_t);
-
   if(pErr)
     std::cout<<__FUNCTION__<<pErr<<std::endl;
   return pErr==NULL;

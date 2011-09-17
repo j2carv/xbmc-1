@@ -1064,7 +1064,7 @@ if (TimerlistGetCount == NULL)      { fprintf(stderr, "Unable to assign function
 dlsym(m_libcmyth, "cmyth_mysql_get_timers");
 if (MysqlGetTimers == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category))
+    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category))
 dlsym(m_libcmyth, "cmyth_mysql_add_timer");
 if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1072,7 +1072,7 @@ if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\
 dlsym(m_libcmyth, "cmyth_mysql_delete_timer");
 if (MysqlDeleteTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category))
+    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category))
 dlsym(m_libcmyth, "cmyth_mysql_update_timer");
 if (MysqlUpdateTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1306,9 +1306,9 @@ char* (*TimerCategory)(cmyth_timer_t timer);
 cmyth_timer_t (*TimerlistGetItem)(cmyth_timerlist_t pl, int index);
 int (*TimerlistGetCount)(cmyth_timerlist_t pl);
 cmyth_timerlist_t (*MysqlGetTimers)(cmyth_database_t db);
-int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category);
+int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category);
 int (*MysqlDeleteTimer)(cmyth_database_t db, int recordid);
-int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category);
+int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category);
 int (*MysqlGetChannelgroups)(cmyth_database_t db,cmyth_channelgroups_t** changroups);
 int (*MysqlGetChannelidsInGroup)(cmyth_database_t db,unsigned int groupid,int** chanids);
 void (*RefRelease)(void* p);
