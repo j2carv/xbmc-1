@@ -1,6 +1,8 @@
 #include "cppmyth.h"
 #include "xbmc_pvr_types.h"
 #include <map>
+#include <boost/bimap.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 
 class PVRClientMythTV
 {
@@ -45,6 +47,16 @@ public:
   PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group);
 
 private:
+  struct mythcat{};
+  struct pvrcat{};
+  typedef boost::bimap<
+    boost::bimaps::unordered_set_of< boost::bimaps::tagged<CStdString,mythcat>,boost::hash<CStdString>>,
+    boost::bimaps::tagged<int,pvrcat>
+    > catbimap;
+  int Genre(CStdString g);
+  CStdString Genre(int g);
+
+  catbimap m_categoryMap;
   MythConnection m_con;
   MythEventHandler m_eventHandler;
   MythDatabase m_db;
@@ -55,8 +67,7 @@ private:
   time_t m_EPGstart;
   time_t m_EPGend;
   std::vector<MythProgram> m_EPG;
-  std::vector<MythChannel> m_channels;
+  std::map<int,MythChannel> m_channels;
   boost::unordered_map<CStdString,MythProgramInfo> m_recordings;
-  std::map<int,int> m_channelsMap;
-
+  boost::unordered_map<CStdString, std::vector<int>> m_channelGroups;
 };

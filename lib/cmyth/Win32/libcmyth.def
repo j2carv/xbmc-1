@@ -131,7 +131,6 @@ EXPORTS
 	cmyth_proginfo_rec_start
 	cmyth_proginfo_rec_end
 	cmyth_proginfo_rec_status
-	cmyth_proginfo_flags
 	cmyth_proginfo_get_detail
 	cmyth_proginfo_compare
 	cmyth_proginfo_host
@@ -232,3 +231,5 @@ EXPORTS
 	cmyth_timer_category
 	cmyth_timerlist_get_item
 	cmyth_timerlist_get_count
+	cmyth_mysql_get_channelgroups
+	cmyth_mysql_get_channelids_in_group

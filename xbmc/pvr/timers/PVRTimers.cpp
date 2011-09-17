@@ -515,13 +515,14 @@ CPVRTimerInfoTag *CPVRTimers::InstantTimer(CPVRChannel *channel, bool bStartTime
         newTimer->EndAsLocalTime().GetAsLocalizedTime(StringUtils::EmptyString, false));
   }
 
-  CDateTime startTime(0);
+  CDateTime startTime = CDateTime::GetCurrentDateTime().GetAsUTCDateTime();
   newTimer->SetStartFromUTC(startTime);
   newTimer->m_iMarginStart = 0; /* set the start margin to 0 for instant timers */
 
   int iDuration = g_guiSettings.GetInt("pvrrecord.instantrecordtime");
   CDateTime endTime = CDateTime::GetUTCDateTime() + CDateTimeSpan(0, 0, iDuration ? iDuration : 120, 0);
-  newTimer->SetEndFromUTC(endTime);
+  if(!epgTag)
+    newTimer->SetEndFromUTC(endTime);
 
   /* unused only for reference */
   newTimer->m_strFileNameAndPath = "pvr://timers/new";

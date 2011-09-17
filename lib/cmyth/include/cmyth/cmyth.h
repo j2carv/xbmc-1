@@ -1080,7 +1080,7 @@ extern int cmyth_mythtv_remove_previos_recorded(cmyth_database_t db,char *query)
 extern cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db);
 
 /*tsp*/ 
-extern int cmyth_mysql_is_radio(cmyth_database_t db, long channum);
+extern int cmyth_mysql_is_radio(cmyth_database_t db, int chanid);
 
 /* timers */
 struct cmyth_timer;
@@ -1104,8 +1104,16 @@ extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
 extern cmyth_timerlist_t cmyth_mysql_get_timers(cmyth_database_t db); 
 
 
-extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title); 
+extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category); 
 extern int cmyth_mysql_delete_timer(cmyth_database_t db, int recordid);
-extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title); 
+extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category); 
+
+typedef struct cmyth_channelgroups {
+	char channelgroup[65];
+  unsigned int ID; 
+} cmyth_channelgroups_t;
+
+extern int cmyth_mysql_get_channelgroups(cmyth_database_t db,cmyth_channelgroups_t** changroups);
+extern int cmyth_mysql_get_channelids_in_group(cmyth_database_t db,unsigned int groupid,int** chanids);
 
 #endif /* __CMYTH_H */

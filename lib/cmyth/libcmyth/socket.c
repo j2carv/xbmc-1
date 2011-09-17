@@ -148,6 +148,7 @@ cmyth_rcv_length(cmyth_conn_t conn)
 	char buf[16];
 	int rtot = 0;
 	int r;
+  int hangcount = 0;
 	int ret;
 	struct timeval tv;
 	fd_set fds;
@@ -171,6 +172,9 @@ cmyth_rcv_length(cmyth_conn_t conn)
 		FD_SET(conn->conn_fd, &fds);
 		if ((r=select((int)conn->conn_fd+1, &fds, NULL, NULL, &tv)) == 0) {
 			conn->conn_hang = 1;
+      hangcount++;
+      if(++hangcount>6&&r>0)
+        return -1;
 			continue;
 		} else if (r > 0) {
 			conn->conn_hang = 0;

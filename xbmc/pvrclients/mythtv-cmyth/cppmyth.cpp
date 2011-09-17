@@ -330,9 +330,9 @@ m_database_t(new MythPointerThreadSafe<cmyth_database_t>())
   free(cpassword);
 }
 
-std::vector<MythChannel> MythDatabase::ChannelList()
+std::map<int,MythChannel> MythDatabase::ChannelList()
 {
-  std::vector<MythChannel> retval;
+  std::map<int,MythChannel> retval;
   m_database_t->Lock();
   cmyth_chanlist_t cChannels=CMYTH->MysqlGetChanlist(*m_database_t);
   m_database_t->Unlock();
@@ -340,8 +340,8 @@ std::vector<MythChannel> MythDatabase::ChannelList()
   for(int i=0;i<nChannels;i++)
   {
     cmyth_channel_t chan=CMYTH->ChanlistGetItem(cChannels,i);
-    long channum=CMYTH->ChannelChannum(chan);
-    retval.push_back(MythChannel(chan,1==CMYTH->MysqlIsRadio(*m_database_t,channum)));
+    int chanid=CMYTH->ChannelChanid(chan);
+    retval.insert(std::pair<int,MythChannel>(chanid,MythChannel(chan,1==CMYTH->MysqlIsRadio(*m_database_t,chanid))));
   }
   CMYTH->RefRelease(cChannels);
   return retval;
@@ -376,10 +376,10 @@ std::vector<MythTimer> MythDatabase::GetTimers()
   return retval;
 }
 
-int MythDatabase::AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title)
+int MythDatabase::AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
 {
   m_database_t->Lock();
-  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,description.Buffer(),starttime, endtime,title.Buffer());
+  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer());
   m_database_t->Unlock();
   return retval;
 }
@@ -392,10 +392,39 @@ int MythDatabase::AddTimer(int chanid,CStdString description, time_t starttime, 
   return retval;
   }
 
-  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title)
+  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
   {
   m_database_t->Lock();
-  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,description.Buffer(),starttime, endtime,title.Buffer())==0;
+  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer())==0;
+  m_database_t->Unlock();
+  return retval;
+  }
+
+  boost::unordered_map<CStdString, std::vector<int>> MythDatabase::GetChannelGroups()
+  {
+  boost::unordered_map<CStdString, std::vector<int>> retval;
+    m_database_t->Lock();
+  cmyth_channelgroups_t *cg =0;
+  int len = CMYTH->MysqlGetChannelgroups(*m_database_t,&cg);
+  if(!cg)
+    return retval;
+  for(int i=0;i<len;i++)
+  {
+    MythChannelGroup changroup;
+    changroup.first=cg[i].channelgroup;
+    int* chanid=0;
+    int numchan=CMYTH->MysqlGetChannelidsInGroup(*m_database_t,cg[i].ID,&chanid);
+    if(numchan)
+    {
+      changroup.second=std::vector<int>(chanid,chanid+numchan);
+      CMYTH->RefRelease(chanid);
+    }
+    else 
+      changroup.second=std::vector<int>();
+    
+    retval.insert(changroup);
+  }
+  CMYTH->RefRelease(cg);
   m_database_t->Unlock();
   return retval;
   }

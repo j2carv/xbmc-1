@@ -652,7 +652,26 @@ void CPVRManager::LoadCurrentChannelSettings()
 
 void CPVRManager::SetPlayingGroup(CPVRChannelGroup *group)
 {
-  m_channelGroups->Get(group->IsRadio())->SetSelectedGroup(group);
+  CSingleLock lock(m_critSection);
+
+  if (group == NULL)
+    return;
+
+  //bool bChanged(false);
+  if (group->IsRadio())
+  {
+    //bChanged = m_currentRadioGroup == NULL || *m_currentRadioGroup != *group;
+    m_currentRadioGroup = group;
+  }
+  else
+  {
+    //bChanged = m_currentTVGroup == NULL || *m_currentTVGroup != *group;
+    m_currentTVGroup = group;
+  }
+
+  /* set this group as selected group and set channel numbers */
+  //if (bChanged)
+    group->SetSelectedGroup();
 }
 
 CPVRChannelGroup *CPVRManager::GetPlayingGroup(bool bRadio /* = false */)

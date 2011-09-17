@@ -284,7 +284,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
   pCapabilities->bSupportsRadio              = true;
   pCapabilities->bSupportsChannelSettings    = false;
   pCapabilities->bSupportsChannelGroups      = true;
-  pCapabilities->bHandlesInputStream         = true;//??
+  pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = false;
   pCapabilities->bSupportsChannelScan        = false;
 
@@ -315,11 +315,6 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 {
   return g_client->GetDriveSpace(iTotal,iUsed)?PVR_ERROR_NO_ERROR:PVR_ERROR_UNKNOWN;
 }
-
-/*PVR_ERROR GetBackendTime(time_t *localTime, int *gmtOffset)
-{
-  return PVR_ERROR_NOT_IMPLEMENTED;
-}*/
 
 PVR_ERROR DialogChannelScan()
 {

@@ -1258,9 +1258,8 @@ int cmyth_livetv_keep_recording(cmyth_recorder_t rec, cmyth_database_t db, int k
 	return 1;
 }
 
-/*Will only return the first occurence of channum. Add rec as parameter and use it in the query to fix it*/
 
-int cmyth_mysql_is_radio(cmyth_database_t db, long channum)
+int cmyth_mysql_is_radio(cmyth_database_t db,  int chanid)
 {
   cmyth_mysql_query_t * query;
   MYSQL_RES *res = NULL;
@@ -1273,9 +1272,10 @@ int cmyth_mysql_is_radio(cmyth_database_t db, long channum)
 		return -1;
 	}
 
-  query = cmyth_mysql_query_create(db,"SELECT is_audio_service FROM channelscan_channel WHERE service_id = ? ;");
+
+  query = cmyth_mysql_query_create(db,"SELECT is_audio_service FROM channelscan_channel INNER JOIN channel ON channelscan_channel.service_id=channel.serviceid WHERE channel.chanid = ? ORDER BY channelscan_channel.scanid DESC;");
 	
-  if(cmyth_mysql_query_param_long(query,channum) < 0) 
+  if(cmyth_mysql_query_param_long(query,chanid) < 0) 
 	{
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
 		ref_release(query);
@@ -1295,7 +1295,7 @@ int cmyth_mysql_is_radio(cmyth_database_t db, long channum)
   }
   else
   {
-    cmyth_dbg(CMYTH_DBG_ERROR, "%s, Channum %i not found\n", __FUNCTION__,channum);
+    cmyth_dbg(CMYTH_DBG_ERROR, "%s, Channum %i not found\n", __FUNCTION__,chanid);
     return -1;
   }
   mysql_free_result(res);
@@ -1433,15 +1433,16 @@ cmyth_mysql_get_timers(cmyth_database_t db)
 
 
 int 
-cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title) 
+cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category) 
 {
 	int ret = -1;
   int id=0;
   MYSQL* sql=cmyth_db_get_connection(db);
-	const char *query_str = "INSERT INTO record (record.type, chanid, starttime, startdate, endtime, enddate,title, description) VALUES (1 , ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ?);";
+	const char *query_str = "INSERT INTO record (record.type, chanid, starttime, startdate, endtime, enddate,title, description, category) VALUES (1 , ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ?, ?);";
 	
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);
+  char* esccategory=cmyth_mysql_escape_chars(db,category);
 
   cmyth_mysql_query_t * query;
 	query = cmyth_mysql_query_create(db,query_str);
@@ -1451,7 +1452,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t 
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_str(query, esctitle ) < 0
-    || cmyth_mysql_query_param_str(query, escdescription ) < 0
+    || cmyth_mysql_query_param_str(query, esccategory ) < 0
 		) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
 		ref_release(query);
@@ -1464,11 +1465,12 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* description, time_t 
   if(ret!=0)
     return -1;
 
-  id = mysql_insert_id(sql);	
+  id = (int)mysql_insert_id(sql);	
   
   ref_release(query);
   ref_release(esctitle);
   ref_release(escdescription);
+  ref_release(esccategory);
 	
   return id;
 }
@@ -1503,13 +1505,17 @@ cmyth_mysql_delete_timer(cmyth_database_t db, int recordid)
 }
 
 int 
-cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title) 
+cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* description, time_t starttime, time_t endtime,char* title,char* category) 
 {
 	int ret = -1;
   int id=0;
 
-	const char *query_str = "UPDATE record SET `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ? WHERE `recordid` = ?;";
+	const char *query_str = "UPDATE record SET `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ? WHERE `recordid` = ?;";
 	
+  char* esctitle=cmyth_mysql_escape_chars(db,title);
+  char* escdescription=cmyth_mysql_escape_chars(db,description);
+  char* esccategory=cmyth_mysql_escape_chars(db,category);
+
   cmyth_mysql_query_t * query;
 	query = cmyth_mysql_query_create(db,query_str);
 	if (cmyth_mysql_query_param_long(query, chanid) < 0
@@ -1517,8 +1523,9 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* des
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
-    || cmyth_mysql_query_param_str(query, title ) < 0
-    || cmyth_mysql_query_param_str(query, description ) < 0
+    || cmyth_mysql_query_param_str(query, esctitle ) < 0
+    || cmyth_mysql_query_param_str(query, escdescription ) < 0
+    || cmyth_mysql_query_param_str(query, esccategory ) < 0
     || cmyth_mysql_query_param_long(query, recordid) < 0
 		) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
@@ -1534,8 +1541,12 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* des
 		cmyth_dbg(CMYTH_DBG_ERROR, "%s, finalisation/execution of query failed!\n", __FUNCTION__);
 		return -1;
 	}
+  ref_release(esctitle);
+  ref_release(escdescription);
+  ref_release(esccategory);
 
   return 0;
+
 }
 
 
@@ -1634,4 +1645,96 @@ extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl)
 		return -EINVAL;
 	}
 	return pl->timerlist_count;
+}
+
+extern int cmyth_mysql_get_channelgroups(cmyth_database_t db,cmyth_channelgroups_t** changroups)
+{
+  MYSQL_RES *res= NULL;
+	MYSQL_ROW row;
+  const char *query_str = "SELECT grpid, name FROM channelgroupnames";
+	int rows=0;
+  cmyth_channelgroups_t* ret;
+
+
+	cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+
+	res = cmyth_mysql_query_result(query);
+	ref_release(query);
+	if(res == NULL)
+	{
+	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
+	    return 0;
+	}
+
+  
+  ret = ref_alloc( sizeof( cmyth_channelgroups_t ) * (int)mysql_num_rows(res));
+  
+
+	if (!ret) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: alloc() failed for list\n",
+			__FUNCTION__);
+               mysql_free_result(res);
+		return 0;
+	}
+	
+	while ((row = mysql_fetch_row(res))) {
+		ret[rows].ID=safe_atoi(row[0]);
+    safe_strncpy(ret[rows].channelgroup, row[1], 65); 
+		
+		rows++;
+	}
+
+	mysql_free_result(res);
+	cmyth_dbg(CMYTH_DBG_ERROR, "%s: rows= %d\n", __FUNCTION__, rows);
+
+  *changroups=ret;
+	return rows;
+}
+
+extern int cmyth_mysql_get_channelids_in_group(cmyth_database_t db,unsigned int groupid,int** chanids)
+{
+
+  MYSQL_RES *res= NULL;
+	MYSQL_ROW row;
+  const char *query_str = "SELECT chanid FROM channelgroup WHERE grpid = ?";
+	int rows=0;
+  int* ret;
+
+  cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+	if (cmyth_mysql_query_param_long(query, groupid) < 0
+		) {
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+
+  res = cmyth_mysql_query_result(query);
+	ref_release(query);
+	if(res == NULL)
+	{
+	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
+	    return 0;
+	}
+
+  ret = ref_alloc(sizeof(int)* (int)mysql_num_rows(res));
+  
+
+	if (!ret) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: alloc() failed for list\n",
+			__FUNCTION__);
+                mysql_free_result(res);
+		return 0;
+	}
+	
+	while ((row = mysql_fetch_row(res))) {
+		ret[rows]=safe_atoi(row[0]);
+		rows++;
+	}
+
+	mysql_free_result(res);
+	cmyth_dbg(CMYTH_DBG_ERROR, "%s: rows= %d\n", __FUNCTION__, rows);
+  *chanids=ret;
+	return rows;
 }

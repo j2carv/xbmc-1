@@ -99,18 +99,21 @@ private:
   boost::shared_ptr<MythPointer<cmyth_timer_t>> m_timer_t;  
 };
 
+typedef std::pair<CStdString, std::vector<int>> MythChannelGroup;
 
 class MythDatabase
 {
 public:
   MythDatabase();
   MythDatabase(CStdString server,CStdString database,CStdString user,CStdString password);
-  std::vector<MythChannel> ChannelList();
+  std::map<int,MythChannel> ChannelList();
   std::vector<MythProgram> GetGuide(time_t starttime, time_t endtime);
   std::vector<MythTimer> GetTimers();
-  int AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title);
+  int AddTimer(int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
   bool DeleteTimer(int recordid);
-  bool UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title);
+  bool UpdateTimer(int recordid,int chanid,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
+  boost::unordered_map<CStdString, std::vector<int>> GetChannelGroups();
+
 private:
   boost::shared_ptr<MythPointerThreadSafe<cmyth_database_t>> m_database_t;
 };
@@ -200,6 +203,9 @@ public:
   boost::unordered_map<CStdString, MythProgramInfo> GetRecordedPrograms();
   boost::unordered_map<CStdString, MythProgramInfo> GetPendingPrograms();
   boost::unordered_map<CStdString, MythProgramInfo> GetScheduledPrograms();
+
+
+
   bool DeleteRecording(MythProgramInfo &recording);
 
   bool IsConnected();
