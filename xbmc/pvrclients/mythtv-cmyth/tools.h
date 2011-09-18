@@ -76,7 +76,7 @@ void inline cSleep(const int ms)
   struct timespec timeOut,remains;
   timeOut.tv_sec = ms/1000;
   timeOut.tv_nsec = (ms-timeOut.tv_sec*1000)*1000000; 
-  while(EINTR==nanosleep(&timeOut, &remains)
+  while(EINTR==nanosleep(&timeOut, &remains))
   {
     timeOut=remains;
   }

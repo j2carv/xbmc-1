@@ -19,16 +19,16 @@ void tokenize(const std::string& str, ContainerT& tokens,
          pos = str.length();
 
          if(pos != lastPos || !trimEmpty)
-            tokens.push_back(ContainerT::value_type(str.data()+lastPos,
-                  static_cast<ContainerT::value_type::size_type>(pos)-lastPos ));
+            tokens.push_back(typename ContainerT::value_type(str.data()+lastPos,(pos)-lastPos ));
+                  //static_cast<ContainerT::value_type::size_type>*/(pos)-lastPos ));
 
          break;
       }
       else
       {
          if(pos != lastPos || !trimEmpty)
-            tokens.push_back(ContainerT::value_type(str.data()+lastPos,
-                  static_cast<ContainerT::value_type::size_type>(pos)-lastPos ));
+            tokens.push_back(typename ContainerT::value_type(str.data()+lastPos,(pos)-lastPos ));
+                  //static_cast<ContainerT::value_type::size_type>(pos)-lastPos ));
       }
 
       lastPos = pos + 1;
@@ -70,18 +70,20 @@ protected:
  *             MythPointerThreadSafe template
  */
 
-template <class T> class MythPointerThreadSafe : public cMutex, MythPointer<T>
+template <class T> class MythPointerThreadSafe : public MythPointer<T>, public cMutex
 {
 public:
   operator T()
   {
-    return m_mythpointer;
+    return this->m_mythpointer;
   }
+
   MythPointerThreadSafe & operator=(const T mythpointer)
   {
-        m_mythpointer=mythpointer;
+        this->m_mythpointer=mythpointer;
         return *this;
   }
+
 };
 
 /*
@@ -107,8 +109,8 @@ public:
   ImpMythEventHandler(CStdString server,unsigned short port);
   MythRecorder m_rec;
   MythSignal m_signal;
-  virtual void Action(void);	
   cmyth_conn_t m_conn_t;
+  virtual void Action(void);	
   virtual ~ImpMythEventHandler();
   void UpdateSignal(CStdString &signal);
   };
@@ -169,19 +171,19 @@ void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
     }
     else if(tok2[0]=="signal")
     {
-      m_signal.m_Signal=std::stoi(tok2[1]);
+      m_signal.m_Signal=atoi(tok2[1].c_str());
     }
     else if(tok2[0]=="snr")
     {
-      m_signal.m_SNR=std::stoi(tok2[1]);
+      m_signal.m_SNR=std::atoi(tok2[1].c_str());
     }
     else if(tok2[0]=="ber")
     {
-      m_signal.m_BER=std::stoi(tok2[1]);
+      m_signal.m_BER=std::atoi(tok2[1].c_str());
     }
     else if(tok2[0]=="ucb")
     {
-      m_signal.m_UNC=std::stoi(tok2[1]);
+      m_signal.m_UNC=std::atoi(tok2[1].c_str());
     }
     }
   }
@@ -319,7 +321,7 @@ MythDatabase::MythDatabase(CStdString server,CStdString database,CStdString user
 m_database_t(new MythPointerThreadSafe<cmyth_database_t>())
 {
   char *cserver=strdup(server.c_str());
-  char *cdatabase=_strdup(database.c_str());
+  char *cdatabase=strdup(database.c_str());
   char *cuser=strdup(user.c_str());
   char *cpassword=strdup(password.c_str());
 
@@ -817,7 +819,7 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
   ASSERT(*m_recorder_t);
   
   if(pErr)
-    std::cout<<__FUNCTION__<<pErr<<std::endl;
+    XBMC->Log(LOG_ERROR,"%s - %s",__FUNCTION__,pErr);
   return pErr==NULL;
 }
 

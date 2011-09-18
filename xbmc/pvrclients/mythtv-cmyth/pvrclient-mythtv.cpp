@@ -94,7 +94,7 @@ m_categoryMap.insert(catbimap::value_type("Live Broadcast", 0xB3));
   {
       int retval=0;
       try{
-        retval=m_categoryMap.by<mythcat>().at(g);
+        retval=m_categoryMap.by< mythcat >().at(g);
       }
       catch(std::out_of_range){}
       return retval;
@@ -103,7 +103,7 @@ m_categoryMap.insert(catbimap::value_type("Live Broadcast", 0xB3));
   {
     CStdString retval="";
       try{
-        retval=m_categoryMap.by<pvrcat>().at(g);
+        retval=m_categoryMap.by< pvrcat >().at(g);
       }
       catch(std::out_of_range){}
       return retval;
@@ -116,7 +116,7 @@ void Log(int l,char* msg)
   if(msg&&l!=CMYTH_DBG_NONE)
   {
     bool doLog=false;
-    addon_log_t loglevel;
+    addon_log_t loglevel=LOG_DEBUG;
     switch( l)
     {
       case CMYTH_DBG_ERROR:
@@ -184,7 +184,7 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
     m_EPGstart=iStart;
     m_EPGend=iEnd;
   }
-  for(std::vector<MythProgram>::iterator it=m_EPG.begin();it!=m_EPG.end();it++)
+  for(std::vector< MythProgram >::iterator it=m_EPG.begin();it!=m_EPG.end();it++)
   {
     if(it->chanid==channel.iUniqueId)
     {
@@ -233,7 +233,7 @@ int PVRClientMythTV::GetNumChannels()
 
 PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
 {
-  for (std::map<int,MythChannel>::iterator it = m_channels.begin(); it != m_channels.end(); it++)
+  for (std::map< int, MythChannel >::iterator it = m_channels.begin(); it != m_channels.end(); it++)
   {
     if (it->second.IsRadio()==bRadio)
     {
@@ -270,7 +270,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
 {
   if(m_recordings.size()==0)
     m_recordings=m_con.GetRecordedPrograms();
-for (boost::unordered_map<CStdString, MythProgramInfo>::iterator it = m_recordings.begin(); it != m_recordings.end(); it++)
+for (boost::unordered_map< CStdString, MythProgramInfo >::iterator it = m_recordings.begin(); it != m_recordings.end(); it++)
   {
     PVR_RECORDING tag;
     tag.iDuration=it->second.Duration();
@@ -324,14 +324,14 @@ for (boost::unordered_map<CStdString, MythProgramInfo>::iterator it = m_recordin
 
  int PVRClientMythTV::GetTimersAmount(void)
  {
-  std::vector<MythTimer> m_timers=m_db.GetTimers();
+  std::vector< MythTimer > m_timers=m_db.GetTimers();
   return m_timers.size();
  }
 
   PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
   {
-    std::vector<MythTimer> m_timers=m_db.GetTimers();
-    for (std::vector<MythTimer>::iterator it = m_timers.begin(); it != m_timers.end(); it++)
+    std::vector< MythTimer > m_timers=m_db.GetTimers();
+    for (std::vector< MythTimer >::iterator it = m_timers.begin(); it != m_timers.end(); it++)
   {
     PVR_TIMER tag;
     tag.endTime=it->EndTime();
@@ -516,11 +516,11 @@ long long PVRClientMythTV::LengthRecordedStream()
   PVR_ERROR PVRClientMythTV::GetChannelGroups(PVR_HANDLE handle, bool bRadio)
     {
       PVR_CHANNEL_GROUP tag;
-      for(boost::unordered_map<CStdString, std::vector<int>>::iterator it=m_channelGroups.begin();it!=m_channelGroups.end();it++)
+      for(boost::unordered_map< CStdString, std::vector< int > >::iterator it=m_channelGroups.begin();it!=m_channelGroups.end();it++)
       {
         tag.strGroupName=it->first;
         tag.bIsRadio=bRadio;
-        for(std::vector<int>::iterator it2=it->second.begin();it2!=it->second.end();it2++)
+        for(std::vector< int >::iterator it2=it->second.begin();it2!=it->second.end();it2++)
           if(m_channels[*it2].IsRadio()==bRadio)
           {
             PVR->TransferChannelGroup(handle,&tag);
@@ -536,7 +536,7 @@ long long PVRClientMythTV::LengthRecordedStream()
     {
     PVR_CHANNEL_GROUP_MEMBER tag;
     int i=0;
-    for(std::vector<int>::iterator it=m_channelGroups[group.strGroupName].begin();it!=m_channelGroups[group.strGroupName].end();it++)
+    for(std::vector< int >::iterator it=m_channelGroups[group.strGroupName].begin();it!=m_channelGroups[group.strGroupName].end();it++)
     {
       MythChannel chan=m_channels[*it]; 
       if(group.bIsRadio==chan.IsRadio())

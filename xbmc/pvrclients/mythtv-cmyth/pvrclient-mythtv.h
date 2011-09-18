@@ -53,10 +53,9 @@ private:
     boost::bimaps::unordered_set_of< boost::bimaps::tagged< CStdString , mythcat >,boost::hash< CStdString > >,
     boost::bimaps::tagged< int , pvrcat >
     > catbimap;
+
   int Genre(CStdString g);
   CStdString Genre(int g);
-
-  catbimap m_categoryMap;
   MythConnection m_con;
   MythEventHandler m_eventHandler;
   MythDatabase m_db;
@@ -70,4 +69,5 @@ private:
   std::map< int , MythChannel > m_channels;
   boost::unordered_map< CStdString, MythProgramInfo > m_recordings;
   boost::unordered_map< CStdString, std::vector< int > > m_channelGroups;
+  catbimap m_categoryMap;
 };
