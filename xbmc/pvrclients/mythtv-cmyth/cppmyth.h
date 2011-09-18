@@ -16,14 +16,14 @@
 #include "libcmyth.h"
 #include "thread.h"
 
-template <class T> class MythPointer;
-template <class T> class MythPointerThreadSafe;
+template < class T > class MythPointer;
+template < class T > class MythPointerThreadSafe;
 
 class MythChannel;
 class MythRecorder;
 class MythProgramInfo;
 class MythEventHandler;
-typedef std::vector<MythChannel> MythChannelList;
+typedef std::vector< MythChannel > MythChannelList;
 
 class MythRecorder 
 {
@@ -43,9 +43,9 @@ public:
   long long LiveTVDuration();
   bool Stop();
 private:
-  boost::shared_ptr<MythPointerThreadSafe<cmyth_recorder_t>> m_recorder_t;
+  boost::shared_ptr< MythPointerThreadSafe< cmyth_recorder_t > > m_recorder_t;
   static void prog_update_callback(cmyth_proginfo_t prog);
-  boost::shared_ptr<int> livechainupdated;
+  boost::shared_ptr< int > livechainupdated;
   
 };
 
@@ -76,7 +76,7 @@ public:
   MythSignal GetSignal();
 private:
   class ImpMythEventHandler;
-  boost::shared_ptr<ImpMythEventHandler> m_imp;
+  boost::shared_ptr< ImpMythEventHandler > m_imp;
 
 };
 
@@ -96,26 +96,26 @@ public:
   int Type();
   CStdString Category();
 private:
-  boost::shared_ptr<MythPointer<cmyth_timer_t>> m_timer_t;  
+  boost::shared_ptr< MythPointer< cmyth_timer_t > > m_timer_t;  
 };
 
-typedef std::pair<CStdString, std::vector<int>> MythChannelGroup;
+typedef std::pair< CStdString, std::vector< int > > MythChannelGroup;
 
 class MythDatabase
 {
 public:
   MythDatabase();
   MythDatabase(CStdString server,CStdString database,CStdString user,CStdString password);
-  std::map<int,MythChannel> ChannelList();
-  std::vector<MythProgram> GetGuide(time_t starttime, time_t endtime);
-  std::vector<MythTimer> GetTimers();
+  std::map< int , MythChannel > ChannelList();
+  std::vector< MythProgram > GetGuide(time_t starttime, time_t endtime);
+  std::vector< MythTimer > GetTimers();
   int AddTimer(int chanid,CStdString channame, CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
   bool DeleteTimer(int recordid);
   bool UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
-  boost::unordered_map<CStdString, std::vector<int>> GetChannelGroups();
+  boost::unordered_map< CStdString, std::vector< int > > GetChannelGroups();
 
 private:
-  boost::shared_ptr<MythPointerThreadSafe<cmyth_database_t>> m_database_t;
+  boost::shared_ptr< MythPointerThreadSafe< cmyth_database_t > > m_database_t;
 };
 
 class MythChannel
@@ -130,7 +130,7 @@ public:
   bool Visible();
   bool IsRadio();
 private:
-  boost::shared_ptr<MythPointer<cmyth_channel_t>> m_channel_t;
+  boost::shared_ptr< MythPointer< cmyth_channel_t > > m_channel_t;
   bool m_radio;
 };
 
@@ -152,7 +152,7 @@ public:
   CStdString RecordingGroup();
   long long uid();
 private:
-  boost::shared_ptr<MythPointer<cmyth_proginfo_t>> m_proginfo_t;
+  boost::shared_ptr< MythPointer< cmyth_proginfo_t > > m_proginfo_t;
 };
 
 
@@ -175,7 +175,7 @@ public:
   CStdString Displaystring(bool use12hClock);
 
 private:
-  boost::shared_ptr<MythPointer<cmyth_timestamp_t>> m_timestamp_t;
+  boost::shared_ptr< MythPointer< cmyth_timestamp_t > > m_timestamp_t;
 };
 
 class MythFile 
@@ -189,7 +189,7 @@ public:
   long long Duration();
 
 private:
-  boost::shared_ptr<MythPointer<cmyth_file_t>> m_file_t; 
+  boost::shared_ptr< MythPointer< cmyth_file_t > > m_file_t; 
 };
 
 class MythConnection 
@@ -200,9 +200,9 @@ public:
   MythRecorder GetFreeRecorder();
   MythEventHandler CreateEventHandler();
 
-  boost::unordered_map<CStdString, MythProgramInfo> GetRecordedPrograms();
-  boost::unordered_map<CStdString, MythProgramInfo> GetPendingPrograms();
-  boost::unordered_map<CStdString, MythProgramInfo> GetScheduledPrograms();
+  boost::unordered_map< CStdString, MythProgramInfo > GetRecordedPrograms();
+  boost::unordered_map< CStdString, MythProgramInfo > GetPendingPrograms();
+  boost::unordered_map< CStdString, MythProgramInfo > GetScheduledPrograms();
 
 
 
@@ -216,7 +216,7 @@ public:
 
   MythFile ConnectFile(MythProgramInfo &recording);
 private:
-  boost::shared_ptr<MythPointer<cmyth_conn_t>> m_conn_t;
+  boost::shared_ptr< MythPointer< cmyth_conn_t > > m_conn_t;
   CStdString m_server;
   unsigned short m_port;
 };
