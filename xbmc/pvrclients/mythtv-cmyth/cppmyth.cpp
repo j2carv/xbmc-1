@@ -20,7 +20,7 @@ void tokenize(const std::string& str, ContainerT& tokens,
 
          if(pos != lastPos || !trimEmpty)
             tokens.push_back(ContainerT::value_type(str.data()+lastPos,
-                  (ContainerT::value_type::size_type)pos-lastPos ));
+                  static_cast<ContainerT::value_type::size_type>(pos)-lastPos ));
 
          break;
       }
@@ -28,7 +28,7 @@ void tokenize(const std::string& str, ContainerT& tokens,
       {
          if(pos != lastPos || !trimEmpty)
             tokens.push_back(ContainerT::value_type(str.data()+lastPos,
-                  (ContainerT::value_type::size_type)pos-lastPos ));
+                  static_cast<ContainerT::value_type::size_type>(pos)-lastPos ));
       }
 
       lastPos = pos + 1;
@@ -116,7 +116,7 @@ public:
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
 :m_rec(0),m_conn_t(0),cThread("MythEventHandler"),m_signal()
   {
-    char *cserver=_strdup(server.c_str());
+    char *cserver=strdup(server.c_str());
     cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);
     free(cserver);
     m_conn_t=connection; 
@@ -154,13 +154,13 @@ MythSignal MythEventHandler::GetSignal()
 
 void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
 {
-  std::vector<std::string> tok;
-  tokenize<std::vector<std::string>>(signal,tok,";");
+  std::vector< std::string > tok;
+  tokenize<std::vector< std::string > >( signal, tok, ";");
   
   for(std::vector<std::string>::iterator it=tok.begin();it!=tok.end();it++)
   {
-    std::vector<std::string> tok2,tok3;
-    tokenize<std::vector<std::string>>(*it,tok2," ");
+    std::vector< std::string > tok2;
+    tokenize< std::vector< std::string > >(*it,tok2," ");
     if(tok2.size()>=2)
     {
     if(tok2[0]=="slock")
@@ -216,7 +216,7 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
   while(Running())
   {
     myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
-    std::cout<<"EVENT ID: "<<events[myth_event]<<" EVENT databuf:"<<databuf<<std::endl;
+    XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
     if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
     {
       if(!m_rec.IsNull())
@@ -318,10 +318,10 @@ MythDatabase::MythDatabase()
 MythDatabase::MythDatabase(CStdString server,CStdString database,CStdString user,CStdString password):
 m_database_t(new MythPointerThreadSafe<cmyth_database_t>())
 {
-  char *cserver=_strdup(server.c_str());
+  char *cserver=strdup(server.c_str());
   char *cdatabase=_strdup(database.c_str());
-  char *cuser=_strdup(user.c_str());
-  char *cpassword=_strdup(password.c_str());
+  char *cuser=strdup(user.c_str());
+  char *cpassword=strdup(password.c_str());
 
   *m_database_t=(CMYTH->DatabaseInit(cserver,cdatabase,cuser,cpassword));
   free(cserver);
@@ -400,9 +400,9 @@ int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description
   return retval;
   }
 
-  boost::unordered_map<CStdString, std::vector<int>> MythDatabase::GetChannelGroups()
+  boost::unordered_map< CStdString, std::vector< int > > MythDatabase::GetChannelGroups()
   {
-  boost::unordered_map<CStdString, std::vector<int>> retval;
+  boost::unordered_map< CStdString, std::vector< int > > retval;
     m_database_t->Lock();
   cmyth_channelgroups_t *cg =0;
   int len = CMYTH->MysqlGetChannelgroups(*m_database_t,&cg);
@@ -678,7 +678,7 @@ m_conn_t(),m_server(""),m_port(0)
 MythConnection::MythConnection(CStdString server,unsigned short port):
 m_conn_t(new MythPointer<cmyth_conn_t>),m_server(server),m_port(port)
 {
-  char *cserver=_strdup(server.c_str());
+  char *cserver=strdup(server.c_str());
   cmyth_conn_t connection=CMYTH->ConnConnectCtrl(cserver,port,64*1024, 16*1024);
   free(cserver);
   *m_conn_t=(connection);
@@ -810,7 +810,7 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
   while(*livechainupdated==0&&i--!=0)
   {
     m_recorder_t->Unlock();
-    Sleep(100);
+    cSleep(100);
     m_recorder_t->Lock();
   }
   m_recorder_t->Unlock();
@@ -823,7 +823,7 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
 
 bool MythRecorder::LiveTVChainUpdate(CStdString chainID)
 {
-  char* buffer=_strdup(chainID.c_str());
+  char* buffer=strdup(chainID.c_str());
   m_recorder_t->Lock();
   bool retval=CMYTH->LivetvChainUpdate(*m_recorder_t,buffer,16*1024)==0;
   if(!retval)
@@ -836,7 +836,7 @@ bool MythRecorder::LiveTVChainUpdate(CStdString chainID)
 
 void MythRecorder::prog_update_callback(cmyth_proginfo_t prog)
 {
-  std::cout<< "prog_update_callback";
+  XBMC->Log(LOG_DEBUG,"prog_update_callback");
 
 }
 
@@ -873,7 +873,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
   m_recorder_t->Lock();
   if(!IsRecording())
   {
-    XBMC->Log(LOG_ERROR,"%s: Recorder %i is not recording",__FUNCTION__,ID(),channel.Name());
+    XBMC->Log(LOG_ERROR,"%s: Recorder %i is not recording",__FUNCTION__,ID(),channel.Name().c_str());
     m_recorder_t->Unlock();
     return false;
   }
@@ -887,19 +887,19 @@ bool MythRecorder::SetChannel(MythChannel &channel)
   }
   if(!CheckChannel(channel))
   {
-    XBMC->Log(LOG_ERROR,"%s: Recorder %i doesn't provide channel %s",__FUNCTION__,ID(),channel.Name());
+    XBMC->Log(LOG_ERROR,"%s: Recorder %i doesn't provide channel %s",__FUNCTION__,ID(),channel.Name().c_str());
     m_recorder_t->Unlock();
     return false;
   }
   if(CMYTH->RecorderSetChannel(*m_recorder_t,channelNum.GetBuffer())!=0)
   {
-    XBMC->Log(LOG_ERROR,"%s: Failed to change recorder %i to channel %s",__FUNCTION__,ID(),channel.Name());
+    XBMC->Log(LOG_ERROR,"%s: Failed to change recorder %i to channel %s",__FUNCTION__,ID(),channel.Name().c_str());
     m_recorder_t->Unlock();
     return false;
   }
   if(CMYTH->LivetvChainSwitchLast(*m_recorder_t)!=1)
   {
-    XBMC->Log(LOG_ERROR,"%s: Failed to switch chain for recorder %i",__FUNCTION__,ID(),channel.Name());
+    XBMC->Log(LOG_ERROR,"%s: Failed to switch chain for recorder %i",__FUNCTION__,ID(),channel.Name().c_str());
     m_recorder_t->Unlock();
     return false;
   }
@@ -908,7 +908,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
   while(*livechainupdated==0&&i--!=0)
   {
     m_recorder_t->Unlock();
-    Sleep(100);
+    cSleep(100);
     m_recorder_t->Lock();
   }
 
@@ -916,7 +916,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
   for(int i=0;i<20;i++)
   {
     if(!IsRecording())
-      Sleep(1);
+      cSleep(1);
     else
       break;
   }

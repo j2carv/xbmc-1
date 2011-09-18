@@ -22,6 +22,12 @@
 #ifndef __TOOLS_H
 #define __TOOLS_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef __WINDOWS__
+#define __WINDOWS__
+#endif
+#endif
+
 #include "client.h"
 #include "utils/StdString.h"
 #include <errno.h>
@@ -30,6 +36,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef __WINDOWS__
+#include <time.h>
+#endif
 
 #define ERRNUL(e) {errno=e;return 0;}
 #define ERRSYS(e) {errno=e;return -1;}
@@ -59,5 +68,19 @@ public:
   uint64_t Elapsed(void);
 };
 
+void inline cSleep(const int ms)
+{
+#if defined(__WINDOWS__)
+  Sleep(ms);
+#else
+  struct timespec timeOut,remains;
+  timeOut.tv_sec = ms/1000;
+  timeOut.tv_nsec = (ms-timeOut.tv_sec*1000)*1000000; 
+  while(EINTR==nanosleep(&timeOut, &remains)
+  {
+    timeOut=remains;
+  }
+#endif
+}
 
 #endif //__TOOLS_H
