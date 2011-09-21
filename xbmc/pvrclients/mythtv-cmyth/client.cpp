@@ -36,7 +36,7 @@ int          g_iMythPort              = DEFAULT_PORT;         ///< The mythtv Po
 CStdString   g_szMythDBuser           = DEFAULT_DB_USER;      ///< The mythtv sql username (default is mythtv)
 CStdString   g_szMythDBpassword       = DEFAULT_DB_PASSWORD;  ///< The mythtv sql password (default is mythtv)
 CStdString   g_szMythDBname           = DEFAULT_DB_NAME;      ///< The mythtv sql database name (default is mythconverg)
-
+bool         g_bExtraDebug            = DEFAULT_EXTRA_DEBUG;  ///< Output extensive debug information to the log
 ///* Client member variables */
 
 bool         m_recordingFirstRead;
@@ -115,7 +115,15 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     XBMC->Log(LOG_ERROR, "Couldn't get 'port' setting, falling back to '%i' as default", DEFAULT_PORT);
     g_iMythPort = DEFAULT_PORT;
   }
-  
+
+    /* Read setting "extradebug" from settings.xml */
+  if (!XBMC->GetSetting("extradebug", &g_bExtraDebug))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'extradebug' setting, falling back to '%b' as default", DEFAULT_EXTRA_DEBUG);
+    g_bExtraDebug = DEFAULT_EXTRA_DEBUG;
+  }
+
     /* Read setting "db_username" from settings.xml */
   if (XBMC->GetSetting("db_user", buffer))
     g_szMythDBuser = buffer;
@@ -482,7 +490,6 @@ int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
   if (g_client == NULL)
 			return -1;
   int dataread=g_client->ReadLiveStream(pBuffer,iBufferSize);
-  XBMC->Log(LOG_NOTICE,"LiveTV: Data read: %i",dataread);
   return dataread;
 }
 

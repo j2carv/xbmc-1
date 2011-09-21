@@ -1104,9 +1104,9 @@ extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
 extern cmyth_timerlist_t cmyth_mysql_get_timers(cmyth_database_t db); 
 
 
-extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category); 
+extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type); 
 extern int cmyth_mysql_delete_timer(cmyth_database_t db, int recordid);
-extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category); 
+extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type); 
 
 typedef struct cmyth_channelgroups {
 	char channelgroup[65];
@@ -1115,5 +1115,15 @@ typedef struct cmyth_channelgroups {
 
 extern int cmyth_mysql_get_channelgroups(cmyth_database_t db,cmyth_channelgroups_t** changroups);
 extern int cmyth_mysql_get_channelids_in_group(cmyth_database_t db,unsigned int groupid,int** chanids);
+
+extern int cmyth_channel_sourceid(cmyth_channel_t channel);
+extern int cmyth_channel_multiplex(cmyth_channel_t channel);
+
+typedef struct  cmyth_rec {
+  int recid;
+  int sourceid;
+} cmyth_rec_t;
+
+extern int cmyth_mysql_get_recorder_list(cmyth_database_t db,cmyth_rec_t** reclist);
 
 #endif /* __CMYTH_H */

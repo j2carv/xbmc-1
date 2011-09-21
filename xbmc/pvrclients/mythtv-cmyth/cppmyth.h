@@ -19,6 +19,20 @@
 template < class T > class MythPointer;
 template < class T > class MythPointerThreadSafe;
 
+enum TimerType {
+  NotRecording	  = 0,
+  SingleRecord    = 1,
+  TimeslotRecord	= 2,
+  ChannelRecord   = 3,
+  AllRecord	      = 4,
+  WeekslotRecord	= 5,
+  FindOneRecord	  = 6,
+  OverrideRecord	= 7,
+  DontRecord	    = 8,
+  FindDailyRecord	= 9,
+  FindWeeklyRecord= 10
+};
+
 class MythChannel;
 class MythRecorder;
 class MythProgramInfo;
@@ -95,6 +109,7 @@ public:
   CStdString Description();
   int Type();
   CStdString Category();
+  bool IsNull();
 private:
   boost::shared_ptr< MythPointer< cmyth_timer_t > > m_timer_t;  
 };
@@ -109,11 +124,12 @@ public:
   std::map< int , MythChannel > ChannelList();
   std::vector< MythProgram > GetGuide(time_t starttime, time_t endtime);
   std::vector< MythTimer > GetTimers();
-  int AddTimer(int chanid,CStdString channame, CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
+  int AddTimer(int chanid,CStdString channame, CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category,TimerType type);
   bool DeleteTimer(int recordid);
-  bool UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category);
+  bool UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category, TimerType type);
   boost::unordered_map< CStdString, std::vector< int > > GetChannelGroups();
-
+  std::map< int, std::vector< int > > SourceList();
+  bool IsNull();
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_database_t > > m_database_t;
 };
@@ -125,10 +141,12 @@ public:
   MythChannel(cmyth_channel_t cmyth_channel,bool isRadio);
   int ID();
   int Number();
+  int SourceID();
   CStdString Name();
   CStdString Icon();
   bool Visible();
   bool IsRadio();
+  bool IsNull();
 private:
   boost::shared_ptr< MythPointer< cmyth_channel_t > > m_channel_t;
   bool m_radio;
@@ -151,6 +169,7 @@ public:
   CStdString Category();
   CStdString RecordingGroup();
   long long uid();
+  bool IsNull();
 private:
   boost::shared_ptr< MythPointer< cmyth_proginfo_t > > m_proginfo_t;
 };
@@ -173,7 +192,7 @@ public:
   CStdString String();
   CStdString Isostring();
   CStdString Displaystring(bool use12hClock);
-
+  bool IsNull();
 private:
   boost::shared_ptr< MythPointer< cmyth_timestamp_t > > m_timestamp_t;
 };
@@ -198,23 +217,19 @@ public:
   MythConnection();
   MythConnection(CStdString server,unsigned short port);
   MythRecorder GetFreeRecorder();
+  MythRecorder GetRecorder(int n);
   MythEventHandler CreateEventHandler();
-
   boost::unordered_map< CStdString, MythProgramInfo > GetRecordedPrograms();
   boost::unordered_map< CStdString, MythProgramInfo > GetPendingPrograms();
   boost::unordered_map< CStdString, MythProgramInfo > GetScheduledPrograms();
-
-
-
   bool DeleteRecording(MythProgramInfo &recording);
-
   bool IsConnected();
   CStdString GetServer();
   int GetProtocolVersion();
   bool GetDriveSpace(long long &total,long long &used);
   bool UpdateSchedules(int id);
-
   MythFile ConnectFile(MythProgramInfo &recording);
+  bool IsNull();
 private:
   boost::shared_ptr< MythPointer< cmyth_conn_t > > m_conn_t;
   CStdString m_server;

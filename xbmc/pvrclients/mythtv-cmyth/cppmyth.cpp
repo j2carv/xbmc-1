@@ -212,35 +212,39 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
   char databuf[2049];
   databuf[0]=0;
   timeval t;
-  t.tv_sec=5;
+  t.tv_sec=1;
   t.tv_usec=0;
 
   while(Running())
   {
-    myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
-    XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
-    if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
+
+    if(CMYTH->EventSelect(m_conn_t,&t)>0)
     {
-      if(!m_rec.IsNull())
+      myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
+      XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
+      if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
       {
-        bool retval=m_rec.LiveTVChainUpdate(CStdString(databuf));
-        XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE: %i",__FUNCTION__,retval);
+        if(!m_rec.IsNull())
+        {
+          bool retval=m_rec.LiveTVChainUpdate(CStdString(databuf));
+          XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE: %i",__FUNCTION__,retval);
+        }
+        else
+          XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
+
       }
-      else
-        XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
+      if(myth_event==CMYTH_EVENT_SIGNAL)
+      {
+        CStdString signal=databuf;
+        UpdateSignal(signal);
+      }
+      if(myth_event==CMYTH_EVENT_SCHEDULE_CHANGE)
+      {
+        XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
+      }
+      databuf[0]=0;
 
     }
-    if(myth_event==CMYTH_EVENT_SIGNAL)
-    {
-      CStdString signal=databuf;
-     UpdateSignal(signal);
-    }
-    if(myth_event==CMYTH_EVENT_SCHEDULE_CHANGE)
-    {
-      XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
-    }
-    databuf[0]=0;
-
   }
 }
 
@@ -307,6 +311,12 @@ MythTimer::MythTimer()
     return retval;
   }
 
+  bool MythTimer::IsNull()
+    {
+      if(m_timer_t==NULL)
+        return true;
+  return *m_timer_t==NULL;      
+  }
 /*
 *								MythDatabase
 */
@@ -378,10 +388,10 @@ std::vector<MythTimer> MythDatabase::GetTimers()
   return retval;
 }
 
-int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
+int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category,TimerType type)
 {
   m_database_t->Lock();
-  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer());
+  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer(),type);
   m_database_t->Unlock();
   return retval;
 }
@@ -394,10 +404,10 @@ int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description
   return retval;
   }
 
-  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category)
+  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category,TimerType type)
   {
   m_database_t->Lock();
-  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer())==0;
+  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer(),type)==0;
   m_database_t->Unlock();
   return retval;
   }
@@ -431,6 +441,32 @@ int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description
   return retval;
   }
 
+  std::map< int, std::vector< int > > MythDatabase::SourceList()
+  {
+  std::map< int, std::vector< int > > retval;
+  cmyth_rec_t *r=0;
+  m_database_t->Lock();
+  int len=CMYTH->MysqlGetRecorderList(*m_database_t,&r);
+  for(int i=0;i<len;i++)
+  {
+    std::map< int, std::vector< int > >::iterator it=retval.find(r[i].sourceid);
+    if(it!=retval.end())
+      it->second.push_back(r[i].recid);
+    else
+      retval[r[i].sourceid]=std::vector<int>(1,r[i].recid);
+    }
+  CMYTH->RefRelease(r);
+  r=0;
+  m_database_t->Unlock();
+  return retval;
+  }
+
+  bool MythDatabase::IsNull()
+  {
+    if(m_database_t==NULL)
+      return true;
+    return *m_database_t==NULL;
+  }
 /*
 *								MythChannel
 */
@@ -454,6 +490,11 @@ int  MythChannel::ID()
 int  MythChannel::Number()
 {
   return CMYTH->ChannelChannum(*m_channel_t);
+}
+
+int MythChannel::SourceID()
+{
+  return CMYTH->ChannelSourceid(*m_channel_t);
 }
 
 CStdString  MythChannel::Name()
@@ -481,6 +522,14 @@ bool MythChannel::IsRadio()
 {
   return m_radio;
 }
+
+bool MythChannel::IsNull()
+{
+  if(m_channel_t==NULL)
+    return true;
+  return *m_channel_t==NULL;
+}
+
 /*
  *            MythProgramInfo
  */
@@ -592,6 +641,12 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
          retval=-retval;
        return retval;
      }
+  bool MythProgramInfo::IsNull()
+  {
+    if(m_proginfo_t==NULL)
+      return true;
+    return *m_proginfo_t==NULL;
+  }
 /*
  *            MythTimestamp
  */
@@ -667,6 +722,12 @@ MythTimestamp::MythTimestamp(cmyth_timestamp_t cmyth_timestamp)
     return retval;
   }
 
+  bool MythTimestamp::IsNull()
+  {
+    if(m_timestamp_t==NULL)
+      return true;
+    return *m_timestamp_t==NULL;
+  }
 /*   
 *								MythConnection
 */
@@ -695,6 +756,11 @@ bool MythConnection::IsConnected()
 MythRecorder MythConnection::GetFreeRecorder()
 {
   return MythRecorder(CMYTH->ConnGetFreeRecorder(*m_conn_t));
+}
+
+MythRecorder MythConnection::GetRecorder(int n)
+{
+  return MythRecorder(CMYTH->ConnGetRecorderFromNum(*m_conn_t,n));
 }
 
   boost::unordered_map<CStdString, MythProgramInfo>  MythConnection::GetRecordedPrograms()
@@ -782,6 +848,13 @@ bool MythConnection::UpdateSchedules(int id)
 MythFile MythConnection::ConnectFile(MythProgramInfo &recording)
 {
   return CMYTH->ConnConnectFile(*recording.m_proginfo_t,*m_conn_t,64*1024, 16*1024);
+}
+
+bool MythConnection::IsNull()
+{
+  if(m_conn_t==NULL)
+    return true;
+  return *m_conn_t==NULL;
 }
 /*
 *								Myth Recorder
@@ -986,7 +1059,9 @@ int MythRecorder::ID()
 
   bool  MythFile::IsNull()
   {
-    return *m_file_t==0;
+    if(m_file_t==NULL)
+      return true;
+    return *m_file_t==NULL;
   }
 
   int MythFile::Read(void* buffer,long long length)

@@ -67,6 +67,7 @@ private:
   time_t m_EPGend;
   std::vector< MythProgram > m_EPG;
   std::map< int , MythChannel > m_channels;
+  std::map< int, std::vector< int > > m_sources;
   boost::unordered_map< CStdString, MythProgramInfo > m_recordings;
   boost::unordered_map< CStdString, std::vector< int > > m_channelGroups;
   catbimap m_categoryMap;

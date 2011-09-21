@@ -233,3 +233,6 @@ EXPORTS
 	cmyth_timerlist_get_count
 	cmyth_mysql_get_channelgroups
 	cmyth_mysql_get_channelids_in_group
+	cmyth_channel_sourceid
+	cmyth_channel_multiplex
+	cmyth_mysql_get_recorder_list

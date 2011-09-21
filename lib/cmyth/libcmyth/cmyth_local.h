@@ -135,6 +135,9 @@ struct cmyth_channel {
 	char *name;
 	char *icon;
 	int visible;
+  /* tsp - added sourceID and multiplex */
+  int sourceid;
+  int multiplex;
 };
 
 struct cmyth_chanlist {

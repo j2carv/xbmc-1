@@ -1099,6 +1099,24 @@ cmyth_channel_visible(cmyth_channel_t channel)
 	return channel->visible;
 }
 
+int
+cmyth_channel_sourceid(cmyth_channel_t channel)
+{
+	if (!channel) {
+		return -EINVAL;
+	}
+	return channel->sourceid;
+}
+
+int
+cmyth_channel_multiplex(cmyth_channel_t channel)
+{
+	if (!channel) {
+		return -EINVAL;
+	}
+	return channel->multiplex;
+}
+
 cmyth_channel_t
 cmyth_channel_create(void)
 {
@@ -1116,11 +1134,12 @@ cmyth_channel_create(void)
 }
 
 
+
 cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db)
 {
 	MYSQL_RES *res = NULL;
 	MYSQL_ROW row;
-	const char *query_str = "SELECT chanid, channum, name, icon, visible FROM channel;";
+	const char *query_str = "SELECT chanid, channum, name, icon, visible, sourceid, mplexid FROM channel;";
 	int rows = 0;
 	int i;
 	cmyth_mysql_query_t * query;
@@ -1155,6 +1174,8 @@ cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db)
 		channel->name = ref_strdup(row[2]);
 		channel->icon = ref_strdup(row[3]);
 		channel->visible = safe_atoi(row[4]);
+    channel->sourceid = safe_atoi(row[5]);
+    channel->multiplex = safe_atoi(row[6]);
 		chanlist->chanlist_list[rows] = channel;
 		i = 0;
 		rows++;
@@ -1433,12 +1454,12 @@ cmyth_mysql_get_timers(cmyth_database_t db)
 
 
 int 
-cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* description, time_t starttime, time_t endtime,char* title,char* category) 
+cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* description, time_t starttime, time_t endtime,char* title,char* category,int type) 
 {
 	int ret = -1;
   int id=0;
   MYSQL* sql=cmyth_db_get_connection(db);
-	const char *query_str = "INSERT INTO record (record.type,autocommflag, autoexpire, chanid, starttime, startdate, endtime, enddate,title, description, category, findid, findtime, station) VALUES (1 , 1, 1, ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ?, ?, TO_DAYS(DATE(FROM_UNIXTIME( ? ))), TIME(FROM_UNIXTIME( ? )) , ? );";
+	const char *query_str = "INSERT INTO record (record.type, autocommflag, autoexpire, chanid, starttime, startdate, endtime, enddate,title, description, category, findid, findtime, station) VALUES (? , 1, 1, ? , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? )) , TIME(FROM_UNIXTIME( ? )), DATE(FROM_UNIXTIME( ? ))  , ? , ?, ?, TO_DAYS(DATE(FROM_UNIXTIME( ? ))), TIME(FROM_UNIXTIME( ? )) , ? );";
 	
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);
@@ -1446,7 +1467,8 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
 
   cmyth_mysql_query_t * query;
 	query = cmyth_mysql_query_create(db,query_str);
-	if (cmyth_mysql_query_param_long(query, chanid) < 0
+	if ( cmyth_mysql_query_param_long(query, type) < 0
+    || cmyth_mysql_query_param_long(query, chanid) < 0
 		|| cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
@@ -1509,12 +1531,12 @@ cmyth_mysql_delete_timer(cmyth_database_t db, int recordid)
 }
 
 int 
-cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category) 
+cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type) 
 {
 	int ret = -1;
   int id=0;
 
-	const char *query_str = "UPDATE record SET `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ? WHERE `recordid` = ? ;";
+	const char *query_str = "UPDATE record SET record.type = ?, `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ? WHERE `recordid` = ? ;";
 	
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);
@@ -1522,7 +1544,8 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
 
   cmyth_mysql_query_t * query;
 	query = cmyth_mysql_query_create(db,query_str);
-	if (cmyth_mysql_query_param_long(query, chanid) < 0
+	if ( cmyth_mysql_query_param_long(query, type) < 0
+    || cmyth_mysql_query_param_long(query, chanid) < 0
 		|| cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
@@ -1740,5 +1763,51 @@ extern int cmyth_mysql_get_channelids_in_group(cmyth_database_t db,unsigned int 
 	mysql_free_result(res);
 	cmyth_dbg(CMYTH_DBG_ERROR, "%s: rows= %d\n", __FUNCTION__, rows);
   *chanids=ret;
+	return rows;
+}
+
+
+int cmyth_mysql_get_recorder_list(cmyth_database_t db,cmyth_rec_t** reclist)
+{
+  MYSQL_RES *res= NULL;
+	MYSQL_ROW row;
+  const char *query_str = "SELECT cardid, sourceid FROM cardinput";
+	int rows=0;
+  cmyth_rec_t* ret;
+
+
+	cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+
+	res = cmyth_mysql_query_result(query);
+	ref_release(query);
+	if(res == NULL)
+	{
+	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
+	    return 0;
+	}
+
+  
+  ret = ref_alloc( sizeof( cmyth_rec_t ) * (int)mysql_num_rows(res));
+  
+
+	if (!ret) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: alloc() failed for list\n",
+			__FUNCTION__);
+               mysql_free_result(res);
+		return 0;
+	}
+	
+	while ((row = mysql_fetch_row(res))) {
+		ret[rows].recid=safe_atoi(row[0]);
+    ret[rows].sourceid=safe_atoi(row[1]);
+    
+		rows++;
+	}
+
+	mysql_free_result(res);
+	cmyth_dbg(CMYTH_DBG_ERROR, "%s: rows= %d\n", __FUNCTION__, rows);
+
+  *reclist=ret;
 	return rows;
 }

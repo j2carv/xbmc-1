@@ -6,5 +6,6 @@
     <string id="30002">MythTV Database Brugernavn</string>
     <string id="30003">MythTV Database Adgangskode</string>
     <string id="30004">MythTV Database Navn</string>
+    <string id="30005">Inkluder mere fejlfindings-information i log-filen</string>
 </strings>
 
