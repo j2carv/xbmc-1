@@ -149,7 +149,7 @@ bool PVRClientMythTV::Connect()
   m_con=MythConnection(g_szHostname,g_iMythPort);
   if(!m_con.IsConnected())
   {
-    XBMC->Log(LOG_ERROR,"%s: Failed to connect to MythTV backend %s:%i",__FUNCTION__,g_szHostname,g_iMythPort);
+    XBMC->Log(LOG_ERROR,"%s: Failed to connect to MythTV backend %s:%i",__FUNCTION__,g_szHostname.c_str(),g_iMythPort);
     return false;
   }
   m_eventHandler=m_con.CreateEventHandler();
@@ -158,7 +158,7 @@ bool PVRClientMythTV::Connect()
   m_db=MythDatabase(g_szHostname,g_szMythDBname,g_szMythDBuser,g_szMythDBpassword);
   if(m_db.IsNull())
   {
-    XBMC->Log(LOG_ERROR,"%s: Failed to connect to MythTV MySQL database %s@%s %s/%s",__FUNCTION__,g_szMythDBname,g_szHostname,g_szMythDBuser,g_szMythDBpassword);
+    XBMC->Log(LOG_ERROR,"%s: Failed to connect to MythTV MySQL database %s@%s %s/%s",__FUNCTION__,g_szMythDBname.c_str(),g_szHostname.c_str(),g_szMythDBuser.c_str(),g_szMythDBpassword.c_str());
     return false;
   }
   m_channels=m_db.ChannelList();
@@ -473,7 +473,7 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
           return true;
       }
       m_rec=MythRecorder();
-      m_eventHandler.SetRecorder(MythRecorder());
+      m_eventHandler.SetRecorder(m_rec);
     }
     return false;
   }
