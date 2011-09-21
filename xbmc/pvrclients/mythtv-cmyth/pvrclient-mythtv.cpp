@@ -487,8 +487,8 @@ void PVRClientMythTV::CloseLiveStream()
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
   m_rec.Stop();
-  m_rec=NULL;
-  m_eventHandler.SetRecorder(MythRecorder());
+  m_rec=MythRecorder();
+  m_eventHandler.SetRecorder(m_rec);
   return;
 }
 
