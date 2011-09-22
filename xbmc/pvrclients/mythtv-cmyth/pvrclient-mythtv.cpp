@@ -421,7 +421,7 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
 
   CStdString category=Genre(timer.iGenreType);
-  TimerType ttype = (timer.state == PVR_TIMER_STATE_ABORTED || PVR_TIMER_STATE_CANCELLED)?NotRecording:SingleRecord;
+  TimerType ttype = (timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED)?NotRecording:SingleRecord;
   int id=m_db.AddTimer(timer.iClientChannelUid,m_channels.at(timer.iClientChannelUid).Name(),timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category,ttype);
   if(id<0)
     return PVR_ERROR_NOT_POSSIBLE;
@@ -447,7 +447,7 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
   CStdString category=Genre(timer.iGenreType);
-  TimerType ttype = (timer.state == PVR_TIMER_STATE_ABORTED || PVR_TIMER_STATE_CANCELLED)?NotRecording:SingleRecord;
+  TimerType ttype = (timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED)?NotRecording:SingleRecord;
   if(!m_db.UpdateTimer(timer.iClientIndex,timer.iClientChannelUid,m_channels.at(timer.iClientChannelUid).Name(),timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category,ttype))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(timer.iClientIndex);
