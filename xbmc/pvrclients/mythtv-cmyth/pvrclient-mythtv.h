@@ -8,6 +8,7 @@ class PVRClientMythTV
 {
 public:
   PVRClientMythTV();
+  ~PVRClientMythTV();
 
   /* Server handling */
   bool Connect();

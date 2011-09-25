@@ -65,7 +65,7 @@ extern "C" {
 
 ADDON_STATUS ADDON_Create(void* hdl, void* props)
 {
-  if (!props)
+  if (!props) 
     return ADDON_STATUS_UNKNOWN;
 
   PVR_PROPERTIES* pvrprops = (PVR_PROPERTIES*)props;

@@ -89,6 +89,10 @@ PVRClientMythTV::PVRClientMythTV()
   m_categoryMap.insert(catbimap::value_type("Live Broadcast", 0xB3));
 }
 
+PVRClientMythTV::~PVRClientMythTV()
+{
+  m_eventHandler.Stop();
+}
 
 int PVRClientMythTV::Genre(CStdString g)
 {
@@ -149,7 +153,7 @@ bool PVRClientMythTV::Connect()
   m_con=MythConnection(g_szHostname,g_iMythPort);
   if(!m_con.IsConnected())
   {
-    XBMC->Log(LOG_ERROR,"%s: Failed to connect to MythTV backend %s:%i",__FUNCTION__,g_szHostname.c_str(),g_iMythPort);
+    XBMC->QueueNotification(QUEUE_ERROR,"%s: Failed to connect to MythTV backend %s:%i",__FUNCTION__,g_szHostname.c_str(),g_iMythPort);
     return false;
   }
   m_eventHandler=m_con.CreateEventHandler();
@@ -158,7 +162,15 @@ bool PVRClientMythTV::Connect()
   m_db=MythDatabase(g_szHostname,g_szMythDBname,g_szMythDBuser,g_szMythDBpassword);
   if(m_db.IsNull())
   {
-    XBMC->Log(LOG_ERROR,"%s: Failed to connect to MythTV MySQL database %s@%s %s/%s",__FUNCTION__,g_szMythDBname.c_str(),g_szHostname.c_str(),g_szMythDBuser.c_str(),g_szMythDBpassword.c_str());
+    XBMC->QueueNotification(QUEUE_ERROR,"Failed to connect to MythTV MySQL database %s@%s %s/%s",g_szMythDBname.c_str(),g_szHostname.c_str(),g_szMythDBuser.c_str(),g_szMythDBpassword.c_str());
+    m_eventHandler.Stop();
+    return false;
+  }
+  CStdString db_test;
+  if(!m_db.TestConnection(db_test))
+  {
+    XBMC->QueueNotification(QUEUE_ERROR,"Failed to connect to MythTV MySQL database %s@%s %s/%s \n %s",g_szMythDBname.c_str(),g_szHostname.c_str(),g_szMythDBuser.c_str(),g_szMythDBpassword.c_str(),db_test.c_str());
+    m_eventHandler.Stop();
     return false;
   }
   m_channels=m_db.ChannelList();
@@ -167,9 +179,11 @@ bool PVRClientMythTV::Connect()
   m_sources=m_db.SourceList();
   if(m_sources.size()==0)
     XBMC->Log(LOG_INFO,"%s: Empty source list",__FUNCTION__);
+ 
   m_channelGroups=m_db.GetChannelGroups();
   if(m_channelGroups.size()==0)
     XBMC->Log(LOG_INFO,"%s: No channelgroups",__FUNCTION__);
+  
   return true;
 }
 
@@ -404,16 +418,6 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
   return PVR_ERROR_NO_ERROR;
 }
 
-
-  //typedef enum
-  //{
-  //  PVR_TIMER_STATE_INVALID   = 0,
-  //  PVR_TIMER_STATE_SCHEDULED = 1, /*!< @brief the timer is scheduled for recording */
-  //  PVR_TIMER_STATE_RECORDING = 2, /*!< @brief the timer is currently recordings */
-  //  PVR_TIMER_STATE_COMPLETED = 3, /*!< @brief the recording completed successfully */
-  //  PVR_TIMER_STATE_ABORTED   = 4, /*!< @brief recording started, but was aborted */
-  //  PVR_TIMER_STATE_CANCELLED = 5  /*!< @brief the timer was scheduled, but was cancelled */
-  //} PVR_TIMER_STATE;
 
 PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
 {

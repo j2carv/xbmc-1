@@ -88,6 +88,7 @@ public:
   MythEventHandler(CStdString,unsigned short port);
   void SetRecorder(MythRecorder &rec);
   MythSignal GetSignal();
+  void Stop();
 private:
   class ImpMythEventHandler;
   boost::shared_ptr< ImpMythEventHandler > m_imp;
@@ -121,6 +122,7 @@ class MythDatabase
 public:
   MythDatabase();
   MythDatabase(CStdString server,CStdString database,CStdString user,CStdString password);
+  bool TestConnection(CStdString &msg);
   std::map< int , MythChannel > ChannelList();
   std::vector< MythProgram > GetGuide(time_t starttime, time_t endtime);
   std::vector< MythTimer > GetTimers();

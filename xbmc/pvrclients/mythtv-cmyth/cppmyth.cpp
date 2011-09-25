@@ -143,6 +143,11 @@ MythEventHandler::MythEventHandler()
 {
 }
 
+void MythEventHandler::Stop()
+{
+  m_imp.reset();
+}
+
 void MythEventHandler::SetRecorder(MythRecorder &rec)
 {
   
@@ -336,11 +341,24 @@ m_database_t(new MythPointerThreadSafe<cmyth_database_t>())
   char *cpassword=strdup(password.c_str());
 
   *m_database_t=(CMYTH->DatabaseInit(cserver,cdatabase,cuser,cpassword));
+
   free(cserver);
   free(cdatabase);
   free(cuser);
   free(cpassword);
 }
+
+bool  MythDatabase::TestConnection(CStdString &msg)
+{
+  char* cmyth_msg;
+  m_database_t->Lock();
+  bool retval=CMYTH->MysqlTestdbConnection(*m_database_t,&cmyth_msg)==1;
+  msg=cmyth_msg;
+  free(cmyth_msg);
+  m_database_t->Unlock();
+  return retval;
+}
+
 
 std::map<int,MythChannel> MythDatabase::ChannelList()
 {

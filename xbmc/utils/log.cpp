@@ -56,14 +56,6 @@ void CLog::Close()
   m_repeatLine.clear();
 }
 
-int ThreadID()
-{
-#ifdef _LINUX
-  return (int)pthread_self();
-#else
-  return ::GetCurrentThreadId();
-#endif
-}
 
 void CLog::Log(int loglevel, const char *format, ... )
 {
@@ -87,8 +79,7 @@ void CLog::Log(int loglevel, const char *format, ... )
     va_start(va, format);
     strData.FormatV(format,va);
     va_end(va);
-    strData.Format("%i - %s",ThreadID(),strData);
-
+    
     if (m_repeatLogLevel == loglevel && m_repeatLine == strData)
     {
       m_repeatCount++;
@@ -121,14 +112,14 @@ void CLog::Log(int loglevel, const char *format, ... )
     if (!length)
       return;
     
-    OutputDebugString(strData);
+    strPrefix.Format(prefixFormat, time.wHour, time.wMinute, time.wSecond, (uint64_t)CThread::GetCurrentThreadId(), levelNames[loglevel]);
+    
+    OutputDebugString(strPrefix+strData);
 
     /* fixup newline alignment, number of spaces should equal prefix length */
     strData.Replace("\n", LINE_ENDING"                                            ");
     strData += LINE_ENDING;
-
-    strPrefix.Format(prefixFormat, time.wHour, time.wMinute, time.wSecond, (uint64_t)CThread::GetCurrentThreadId(), levelNames[loglevel]);
-
+    
     fputs(strPrefix.c_str(), m_file);
     fputs(strData.c_str(), m_file);
     fflush(m_file);
