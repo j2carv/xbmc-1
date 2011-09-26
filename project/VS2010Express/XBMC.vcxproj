@@ -187,7 +187,8 @@
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."</Command>
+      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."
+copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release (DirectX)|Win32'">
