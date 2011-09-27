@@ -143,6 +143,10 @@
       <AdditionalManifestFiles>VC90.CRT.x86.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."
+copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug (DirectX)|Win32'">
     <ClCompile>
@@ -239,7 +243,8 @@ copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetFileName)" "../.."</Command>
+      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."
+copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug (OpenGL)|Win32'">
@@ -285,6 +290,16 @@ copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
       <AdditionalManifestFiles>VC90.CRT.x86.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."
+copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."
+copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\lib\SlingboxLib\SlingboxLib.cpp" />
