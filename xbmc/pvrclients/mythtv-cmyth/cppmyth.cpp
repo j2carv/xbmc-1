@@ -216,14 +216,14 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
   cmyth_event_t myth_event;
   char databuf[2049];
   databuf[0]=0;
-  timeval t;
-  t.tv_sec=1;
-  t.tv_usec=0;
+  timeval timeout;
+  timeout.tv_sec=0;
+  timeout.tv_usec=100000;
 
   while(Running())
   {
 
-    if(CMYTH->EventSelect(m_conn_t,&t)>0)
+    if(CMYTH->EventSelect(m_conn_t,&timeout)>0)
     {
       myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
       XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
@@ -250,6 +250,9 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
       databuf[0]=0;
 
     }
+    //Restore timeout
+    timeout.tv_sec=0;
+    timeout.tv_usec=100000;
   }
 }
 
