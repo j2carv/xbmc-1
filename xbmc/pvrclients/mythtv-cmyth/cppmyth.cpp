@@ -105,6 +105,7 @@ public:
 
 class MythEventHandler::ImpMythEventHandler : public cThread
 {
+  friend class MythEventHandler;
 public:
   ImpMythEventHandler(CStdString server,unsigned short port);
   MythRecorder m_rec;
@@ -150,8 +151,9 @@ void MythEventHandler::Stop()
 
 void MythEventHandler::SetRecorder(MythRecorder &rec)
 {
-  
+  m_imp->Lock();
   m_imp->m_rec=rec;
+  m_imp->Unlock();
 }
 
 MythSignal MythEventHandler::GetSignal()
@@ -229,6 +231,7 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
       XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
       if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
       {
+        Lock();
         if(!m_rec.IsNull())
         {
           bool retval=m_rec.LiveTVChainUpdate(CStdString(databuf));
@@ -236,7 +239,7 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
         }
         else
           XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
-
+        Unlock();
       }
       if(myth_event==CMYTH_EVENT_SIGNAL)
       {
