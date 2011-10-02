@@ -60,8 +60,10 @@ CGUIWindowPVRChannels::CGUIWindowPVRChannels(CGUIWindowPVR *parent, bool bRadio)
 
 CGUIWindowPVRChannels::~CGUIWindowPVRChannels(void)
 {
-  if (m_bThreadCreated)
-    StopThread(true);
+  g_EpgContainer.UnregisterObserver(this);
+  if(g_PVRTimers)
+    g_PVRTimers->UnregisterObserver(this);
+  g_infoManager.UnregisterObserver(this);
 }
 
 void CGUIWindowPVRChannels::ResetObservers(void)
