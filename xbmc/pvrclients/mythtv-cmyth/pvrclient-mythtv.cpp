@@ -477,7 +477,7 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
           return true;
       }
       m_rec=MythRecorder();
-      m_eventHandler.SetRecorder(m_rec);
+      m_eventHandler.SetRecorder(m_rec);//Redundant
     }
     return false;
   }
@@ -490,9 +490,11 @@ void PVRClientMythTV::CloseLiveStream()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+  m_eventHandler.PreventLiveChainUpdate();
   m_rec.Stop();
   m_rec=MythRecorder();
   m_eventHandler.SetRecorder(m_rec);
+  m_eventHandler.AllowLiveChainUpdate();
   return;
 }
 

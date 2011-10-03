@@ -89,6 +89,8 @@ public:
   void SetRecorder(MythRecorder &rec);
   MythSignal GetSignal();
   void Stop();
+  void PreventLiveChainUpdate();
+  void AllowLiveChainUpdate();
 private:
   class ImpMythEventHandler;
   boost::shared_ptr< ImpMythEventHandler > m_imp;
