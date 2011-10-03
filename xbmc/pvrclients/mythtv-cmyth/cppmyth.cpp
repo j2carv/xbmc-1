@@ -149,6 +149,16 @@ void MythEventHandler::Stop()
   m_imp.reset();
 }
 
+void MythEventHandler::PreventLiveChainUpdate()
+{
+  m_imp->Lock();
+}
+
+void MythEventHandler::AllowLiveChainUpdate()
+{
+  m_imp->Unlock();
+}
+
 void MythEventHandler::SetRecorder(MythRecorder &rec)
 {
   m_imp->Lock();
