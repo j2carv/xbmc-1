@@ -64,6 +64,7 @@ CGUIWindowPVRCommon::CGUIWindowPVRCommon(CGUIWindowPVR *parent, PVRWindow window
     m_iSortOrder      = m_parent->GetViewState()->GetSortOrder();
     m_iSortMethod     = m_parent->GetViewState()->GetSortMethod();
   }
+  m_bIsFocusing     = false;
 }
 
 bool CGUIWindowPVRCommon::operator ==(const CGUIWindowPVRCommon &right) const
