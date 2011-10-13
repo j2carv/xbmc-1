@@ -230,6 +230,13 @@ EXPORTS
 	cmyth_timer_description
 	cmyth_timer_type 
 	cmyth_timer_category
+	cmyth_timer_subtitle
+	cmyth_timer_priority
+	cmyth_timer_startoffset
+	cmyth_timer_endoffset
+	cmyth_timer_searchtype
+	cmyth_timer_inactive
+	cmyth_timer_channame
 	cmyth_timerlist_get_item
 	cmyth_timerlist_get_count
 	cmyth_mysql_get_channelgroups
@@ -237,3 +244,4 @@ EXPORTS
 	cmyth_channel_sourceid
 	cmyth_channel_multiplex
 	cmyth_mysql_get_recorder_list
+	cmyth_mysql_get_prog_finder_time_title_chan

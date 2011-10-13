@@ -45,8 +45,6 @@
 typedef void* pthread_mutex_t;
 extern pthread_mutex_t mutex;
 #define mutex __cmyth_mutex
-#define ECANCELED -1
-#define ETIMEDOUT -1
 #define SHUT_RDWR SD_BOTH
 typedef SOCKET cmyth_socket_t;
 typedef int socklen_t;
@@ -155,10 +153,17 @@ struct cmyth_timer {
     int chanid; 
     time_t starttime;  
     time_t endtime;    
-	char* title;        
+	char* title;
 	char* description;  
-    int type;      
-	char* category;      
+  int type;      
+	char* category;
+  char* subtitle;
+  int priority;
+  int startoffset;
+  int endoffset;
+  int searchtype;
+  int inactive;
+  char* channame;
   };
 
 struct cmyth_timerlist {
