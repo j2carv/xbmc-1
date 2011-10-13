@@ -290,7 +290,9 @@ bool CPVRTimers::GetNextActiveTimer(CPVRTimerInfoTag *tag) const
   CSingleLock lock(m_critSection);
   for (map<CDateTime, vector<CPVRTimerInfoTag *>* >::const_iterator it = m_tags.begin(); it != m_tags.end(); it++)
   {
-    for (unsigned int iTimerPtr = 0; iTimerPtr < it->second->size(); iTimerPtr++)
+    CPVRTimerInfoTag *current = at(iTimerPtr);
+    if (current->IsActive() && !current->IsRecording() &&
+      (!bGotFirst || current->Compare(*tag) < 0) && current->EndAsLocalTime()>CDateTime::GetCurrentDateTime())
     {
       CPVRTimerInfoTag *current = it->second->at(iTimerPtr);
       if (current->IsActive() && !current->IsRecording())
