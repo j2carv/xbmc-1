@@ -269,7 +269,7 @@ bool CPVRTimers::GetNextActiveTimer(CPVRTimerInfoTag *tag)
   {
     CPVRTimerInfoTag *current = at(iTimerPtr);
     if (current->IsActive() && !current->IsRecording() &&
-        (!bGotFirst || current->Compare(*tag) < 0))
+      (!bGotFirst || current->Compare(*tag) < 0) && current->EndAsLocalTime()>CDateTime::GetCurrentDateTime())
     {
       *tag = *at(iTimerPtr);
       bGotFirst = true;
