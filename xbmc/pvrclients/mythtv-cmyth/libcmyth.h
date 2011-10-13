@@ -772,6 +772,10 @@ if (ProginfoOriginalairdate == NULL)      { fprintf(stderr, "Unable to assign fu
 dlsym(m_libcmyth, "cmyth_proginfo_rec_status");
 if (ProginfoRecStatus == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    ProginfoFlags      = (unsigned long (*)(  cmyth_proginfo_t prog))
+dlsym(m_libcmyth, "cmyth_proginfo_flags");
+if (ProginfoFlags == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     ProginfoLength      = (long long (*)(cmyth_proginfo_t prog))
 dlsym(m_libcmyth, "cmyth_proginfo_length");
 if (ProginfoLength == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1056,6 +1060,34 @@ if (TimerType == NULL)      { fprintf(stderr, "Unable to assign function %s\n", 
 dlsym(m_libcmyth, "cmyth_timer_category");
 if (TimerCategory == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    TimerSubtitle      = (char* (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_subtitle");
+if (TimerSubtitle == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerPriority      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_priority");
+if (TimerPriority == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerStartoffset      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_startoffset");
+if (TimerStartoffset == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerEndoffset      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_endoffset");
+if (TimerEndoffset == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerSearchtype      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_searchtype");
+if (TimerSearchtype == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerInactive      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_inactive");
+if (TimerInactive == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerChanname      = (char* (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_channame");
+if (TimerChanname == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     TimerlistGetItem      = (cmyth_timer_t (*)(cmyth_timerlist_t pl, int index))
 dlsym(m_libcmyth, "cmyth_timerlist_get_item");
 if (TimerlistGetItem == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1068,7 +1100,7 @@ if (TimerlistGetCount == NULL)      { fprintf(stderr, "Unable to assign function
 dlsym(m_libcmyth, "cmyth_mysql_get_timers");
 if (MysqlGetTimers == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type))
+    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive))
 dlsym(m_libcmyth, "cmyth_mysql_add_timer");
 if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1076,7 +1108,7 @@ if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\
 dlsym(m_libcmyth, "cmyth_mysql_delete_timer");
 if (MysqlDeleteTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type))
+    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive))
 dlsym(m_libcmyth, "cmyth_mysql_update_timer");
 if (MysqlUpdateTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1099,6 +1131,10 @@ if (ChannelMultiplex == NULL)      { fprintf(stderr, "Unable to assign function 
     MysqlGetRecorderList      = (int (*)(cmyth_database_t db,cmyth_rec_t** reclist))
 dlsym(m_libcmyth, "cmyth_mysql_get_recorder_list");
 if (MysqlGetRecorderList == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    MysqlGetProgFinderTimeTitleChan      = (int (*)(cmyth_database_t db,cmyth_program_t* prog, char* title,time_t starttime,int chanid))
+dlsym(m_libcmyth, "cmyth_mysql_get_prog_finder_time_title_chan");
+if (MysqlGetProgFinderTimeTitleChan == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
     RefRelease      = (void (*)(void* p))
 dlsym(m_libcmyth, "ref_release");
@@ -1123,7 +1159,8 @@ if (RefSetDestroy == NULL)      { fprintf(stderr, "Unable to assign function %s\
     RefAllocShow      = (void (*)(void))
 dlsym(m_libcmyth, "ref_alloc_show");
 if (RefAllocShow == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
-    return true;
+
+  return true;
   }
 
   //dll functions
@@ -1247,6 +1284,7 @@ cmyth_timestamp_t (*ProginfoRecStart)(cmyth_proginfo_t prog);
 cmyth_timestamp_t (*ProginfoRecEnd)(cmyth_proginfo_t prog);
 cmyth_timestamp_t (*ProginfoOriginalairdate)(cmyth_proginfo_t prog);
 cmyth_proginfo_rec_status_t (*ProginfoRecStatus)(cmyth_proginfo_t prog);
+unsigned long (*ProginfoFlags)(  cmyth_proginfo_t prog);
 long long (*ProginfoLength)(cmyth_proginfo_t prog);
 char* (*ProginfoHost)(cmyth_proginfo_t prog);
 int (*ProginfoCompare)(cmyth_proginfo_t a, cmyth_proginfo_t b);
@@ -1318,17 +1356,25 @@ char* (*TimerTitle)(cmyth_timer_t timer);
 char* (*TimerDescription)(cmyth_timer_t timer);
 int (*TimerType)(cmyth_timer_t timer);
 char* (*TimerCategory)(cmyth_timer_t timer);
+char* (*TimerSubtitle)(cmyth_timer_t timer);
+int (*TimerPriority)(cmyth_timer_t timer);
+int (*TimerStartoffset)(cmyth_timer_t timer);
+int (*TimerEndoffset)(cmyth_timer_t timer);
+int (*TimerSearchtype)(cmyth_timer_t timer);
+int (*TimerInactive)(cmyth_timer_t timer);
+char* (*TimerChanname)(cmyth_timer_t timer);
 cmyth_timer_t (*TimerlistGetItem)(cmyth_timerlist_t pl, int index);
 int (*TimerlistGetCount)(cmyth_timerlist_t pl);
 cmyth_timerlist_t (*MysqlGetTimers)(cmyth_database_t db);
-int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type);
+int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive);
 int (*MysqlDeleteTimer)(cmyth_database_t db, int recordid);
-int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type);
+int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive);
 int (*MysqlGetChannelgroups)(cmyth_database_t db,cmyth_channelgroups_t** changroups);
 int (*MysqlGetChannelidsInGroup)(cmyth_database_t db,unsigned int groupid,int** chanids);
 int (*ChannelSourceid)(cmyth_channel_t channel);
 int (*ChannelMultiplex)(cmyth_channel_t channel);
 int (*MysqlGetRecorderList)(cmyth_database_t db,cmyth_rec_t** reclist);
+int (*MysqlGetProgFinderTimeTitleChan)(cmyth_database_t db,cmyth_program_t* prog, char* title,time_t starttime,int chanid);
 void (*RefRelease)(void* p);
 void* (*RefHold)(void* p);
 char* (*RefStrdup)(char* str);

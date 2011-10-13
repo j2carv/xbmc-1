@@ -275,69 +275,195 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
 
 
 MythTimer::MythTimer()
-  :m_timer_t()
+  : m_recordid(-1),m_chanid(-1),m_channame(""),m_starttime(0),m_endtime(0),m_title(""),m_description(""),m_type(NotRecording),m_category(""),m_subtitle(""),m_priority(0),m_startoffset(0),m_endoffset(0),m_searchtype(NoSearch),m_inactive(true)
 {}
-  MythTimer::MythTimer(cmyth_timer_t cmyth_timer)
-    :m_timer_t(new MythPointer<cmyth_timer_t>())
-  {
-    *m_timer_t=cmyth_timer;
-  }
 
-  int MythTimer::RecordID()
-  {
-    return CMYTH->TimerRecordid(*m_timer_t);
-  }
 
-  int MythTimer::ChanID()
+  MythTimer::MythTimer(cmyth_timer_t cmyth_timer,bool release)
+    : m_recordid(CMYTH->TimerRecordid(cmyth_timer)),
+    m_chanid(CMYTH->TimerChanid(cmyth_timer)),
+    m_channame(""),
+    m_starttime(CMYTH->TimerStarttime(cmyth_timer)),
+    m_endtime(CMYTH->TimerEndtime(cmyth_timer)),
+    m_title(""),
+    m_description(""),
+    m_type(static_cast<TimerType>(CMYTH->TimerType(cmyth_timer))),
+    m_category(""),
+    m_subtitle(""),
+    m_priority(CMYTH->TimerPriority(cmyth_timer)),
+    m_startoffset(CMYTH->TimerStartoffset(cmyth_timer)),
+    m_endoffset(CMYTH->TimerEndoffset(cmyth_timer)),
+    m_searchtype(static_cast<TimerSearchType>(CMYTH->TimerSearchtype(cmyth_timer))),
+    m_inactive(CMYTH->TimerInactive(cmyth_timer)!=0)
   {
-    return CMYTH->TimerChanid(*m_timer_t);
-  }
-
-  time_t MythTimer::StartTime()
-  {
-    return CMYTH->TimerStarttime(*m_timer_t);
-  }
-
-  time_t MythTimer::EndTime()
-  {
-    return CMYTH->TimerEndtime(*m_timer_t);
-  }
-
-  CStdString MythTimer::Title()
-  {
-    char * title=CMYTH->TimerTitle(*m_timer_t);
-    CStdString retval(title);
+    char *title = CMYTH->TimerTitle(cmyth_timer);
+    char *description = CMYTH->TimerDescription(cmyth_timer);
+    char *category = CMYTH->TimerCategory(cmyth_timer);
+    char *subtitle = CMYTH->TimerSubtitle(cmyth_timer);
+    char *channame = CMYTH->TimerChanname(cmyth_timer);
+    m_title = title;
+    m_description = description;
+    m_category = category;
+    m_subtitle = subtitle;
+    m_channame = channame;
     CMYTH->RefRelease(title);
-    return retval;
-  }
-
-  CStdString MythTimer::Description()
-   {
-    char * description=CMYTH->TimerDescription(*m_timer_t);
-    CStdString retval(description);
     CMYTH->RefRelease(description);
-    return retval;
-  }
-
-  int MythTimer::Type()
-  {
-    return CMYTH->TimerType(*m_timer_t);
-  }
-
-  CStdString MythTimer::Category()
-  {
-    char * category=CMYTH->TimerCategory(*m_timer_t);
-    CStdString retval(category);
     CMYTH->RefRelease(category);
-    return retval;
+    CMYTH->RefRelease(subtitle);
+    CMYTH->RefRelease(channame);
+    if(release)
+      CMYTH->RefRelease(cmyth_timer);
   }
 
-  bool MythTimer::IsNull()
-    {
-      if(m_timer_t==NULL)
-        return true;
-  return *m_timer_t==NULL;      
+  int MythTimer::RecordID() const
+  {
+    return m_recordid;
   }
+
+  void MythTimer::RecordID(int recordid)
+  {
+    m_recordid=recordid;
+  }
+
+  int MythTimer::ChanID() const
+  {
+    return m_chanid;
+  }
+
+  void MythTimer::ChanID(int chanid)
+  {
+    m_chanid = chanid;
+  }
+
+  CStdString MythTimer::ChanName() const
+  {
+    return m_channame;
+  }
+
+  void MythTimer::ChanName(const CStdString& channame)
+  {
+    m_channame = channame;
+  }
+
+  time_t MythTimer::StartTime() const
+  {
+    return m_starttime;
+  }
+
+  void MythTimer::StartTime(time_t starttime)
+  {
+    m_starttime=starttime;
+  }
+
+  time_t MythTimer::EndTime() const
+  {
+    return m_endtime;
+  }
+
+  void MythTimer::EndTime(time_t endtime)
+  {
+    m_endtime=endtime;
+  }
+
+  CStdString MythTimer::Title() const
+  {
+    return m_title;
+  }
+
+  void MythTimer::Title(const CStdString& title)
+  {
+    m_title=title;
+  }
+
+  CStdString MythTimer::Subtitle() const
+  {
+    return m_subtitle;
+  }
+
+  void MythTimer::Subtitle(const CStdString& subtitle)
+  {
+    m_subtitle=subtitle;
+  }
+
+  CStdString MythTimer::Description() const
+   {
+    return m_description;
+  }
+
+   void MythTimer::Description(const CStdString& description)
+   {
+     m_description=description;
+   }
+
+  MythTimer::TimerType MythTimer::Type() const
+  {
+    return m_type;
+  }
+
+   void MythTimer::Type(MythTimer::TimerType type)
+   {
+     m_type=type;
+   }
+
+  CStdString MythTimer::Category() const
+  {
+    return m_category;
+  }
+
+  void MythTimer::Category(const CStdString& category)
+  {
+    m_category=category;
+  }
+
+  int MythTimer::StartOffset() const
+  {
+    return m_startoffset;
+  }
+  
+    void MythTimer::StartOffset(int startoffset)
+    {
+      m_startoffset=startoffset;
+    }
+
+  int MythTimer::EndOffset() const
+  {
+    return m_endoffset;
+  }
+
+    void MythTimer::EndOffset(int endoffset)
+    {
+      m_endoffset=endoffset;
+    }
+
+  int MythTimer::Priority() const
+  {
+    return m_priority;
+  }
+
+    void MythTimer::Priority(int priority)
+    {
+      m_priority=priority;
+    }
+
+  bool MythTimer::Inactive() const
+  {
+    return m_inactive;
+  }
+
+  void MythTimer::Inactive(bool inactive)
+  {
+    m_inactive=inactive;
+  }
+
+  MythTimer::TimerSearchType MythTimer::SearchType() const
+  {
+    return m_searchtype;
+  }
+
+    void MythTimer::SearchType(MythTimer::TimerSearchType searchtype)
+    {
+      m_searchtype=searchtype;
+    }
 /*
 *								MythDatabase
 */
@@ -422,10 +548,11 @@ std::vector<MythTimer> MythDatabase::GetTimers()
   return retval;
 }
 
-int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category,TimerType type)
+int MythDatabase::AddTimer(MythTimer &timer)
 {
   m_database_t->Lock();
-  int retval=CMYTH->MysqlAddTimer(*m_database_t,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer(),type);
+  int retval=CMYTH->MysqlAddTimer(*m_database_t,timer.ChanID(),timer.m_channame.Buffer(),timer.m_description.Buffer(),timer.StartTime(), timer.EndTime(),timer.m_title.Buffer(),timer.m_category.Buffer(),timer.Type(),timer.m_subtitle.Buffer(),timer.Priority(),timer.StartOffset(),timer.EndOffset(),timer.SearchType(),timer.Inactive()?1:0);
+  timer.m_recordid=retval;
   m_database_t->Unlock();
   return retval;
 }
@@ -438,13 +565,21 @@ int MythDatabase::AddTimer(int chanid,CStdString channame,CStdString description
   return retval;
   }
 
-  bool MythDatabase::UpdateTimer(int recordid,int chanid,CStdString channame,CStdString description, time_t starttime, time_t endtime,CStdString title,CStdString category,TimerType type)
+  bool MythDatabase::UpdateTimer(MythTimer &timer)
   {
   m_database_t->Lock();
-  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,recordid,chanid,channame.Buffer(),description.Buffer(),starttime, endtime,title.Buffer(),category.Buffer(),type)==0;
+  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,timer.RecordID(),timer.ChanID(),timer.m_channame.Buffer(),timer.m_description.Buffer(),timer.StartTime(), timer.EndTime(),timer.m_title.Buffer(),timer.m_category.Buffer(),timer.Type(),timer.m_subtitle.Buffer(),timer.Priority(),timer.StartOffset(),timer.EndOffset(),timer.SearchType(),timer.Inactive()?1:0)==0;
   m_database_t->Unlock();
   return retval;
   }
+
+  bool MythDatabase::FindProgram(time_t starttime,int channelid,CStdString &title,MythProgram* pprogram)
+  {
+    m_database_t->Lock();
+    bool retval=CMYTH->MysqlGetProgFinderTimeTitleChan(*m_database_t,pprogram,title.Buffer(),starttime,channelid)>0;
+    m_database_t->Unlock();
+    return retval;
+   }
 
   boost::unordered_map< CStdString, std::vector< int > > MythDatabase::GetChannelGroups()
   {

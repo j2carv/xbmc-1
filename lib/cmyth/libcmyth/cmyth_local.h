@@ -153,10 +153,17 @@ struct cmyth_timer {
     int chanid; 
     time_t starttime;  
     time_t endtime;    
-	char* title;        
+	char* title;
 	char* description;  
-    int type;      
-	char* category;      
+  int type;      
+	char* category;
+  char* subtitle;
+  int priority;
+  int startoffset;
+  int endoffset;
+  int searchtype;
+  int inactive;
+  char* channame;
   };
 
 struct cmyth_timerlist {

@@ -1,6 +1,6 @@
 #include "pvrclient-mythtv.h"
 #include "client.h"
-
+#include <time.h>
 
 
 PVRClientMythTV::PVRClientMythTV()
@@ -243,9 +243,9 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
       else
         tag.iUniqueBroadcastId=(tag.startTime<<16)+(tag.iChannelNumber&0xffff);
       int genre=Genre(it->category);
-
       tag.iGenreSubType=genre&0x0F;
       tag.iGenreType=genre&0xF0;
+      
       //unimplemented
       tag.strEpisodeName="";
       tag.strGenreDescription="";
@@ -317,7 +317,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  if(m_recordings.size()==0)
+  //if(m_recordings.size()==0)
     m_recordings=m_con.GetRecordedPrograms();
   for (boost::unordered_map< CStdString, MythProgramInfo >::iterator it = m_recordings.begin(); it != m_recordings.end(); it++)
   {
@@ -385,8 +385,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
   std::vector< MythTimer > m_timers=m_db.GetTimers();
   for (std::vector< MythTimer >::iterator it = m_timers.begin(); it != m_timers.end(); it++)
   {
-    if(!it->IsNull())
-    {
+    
       PVR_TIMER tag;
       tag.endTime=it->EndTime();
       tag.iClientChannelUid=it->ChanID();
@@ -400,33 +399,69 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
       int genre=Genre(it->Category());
       tag.iGenreSubType=genre&0x0F;
       tag.iGenreType=genre&0xF0;
+      tag.iMarginEnd=it->EndOffset();
+      tag.iMarginStart=it->StartOffset();
+      tag.iPriority=it->Priority()+50;
 
+      if(it->Type()==WeekslotRecord)
+      {
+        tag.bIsRepeating = true;
+        tm *lc = localtime(&tag.startTime);
+        int shift = lc->tm_wday? 6 : lc->tm_wday-1;//Monday is the first day
+        tag.iWeekdays = 1 << shift;
+        tag.firstDay = tag.startTime;
+      }
+      else if(it->Type()==TimeslotRecord)
+      {
+        tag.bIsRepeating = true;
+        tag.iWeekdays = 127; //daily
+        tag.firstDay = tag.startTime;
+      }
+      else if(it->Type()==FindWeeklyRecord||it->Type()==FindDailyRecord|| it->Type() == ChannelRecord || it->Type() == AllRecord)
+      {
+        tag.bIsRepeating = true;
+        tag.iWeekdays = 0; //Special
+        tag.firstDay = tag.startTime;
+      }
+      else
+      {
+        tag.bIsRepeating = false;
+        tag.firstDay=0;
+        tag.iWeekdays=0;
+      }
       //Unimplemented
-      tag.bIsRepeating=false;
-      tag.firstDay=0;
       tag.iEpgUid=0;
       tag.iLifetime=0;
-      tag.iMarginEnd=0;
-      tag.iMarginStart=0;
-      tag.iPriority=0;
-      tag.iWeekdays=0;
       tag.strDirectory="";
 
       PVR->TransferTimerEntry(handle,&tag);
-    }
+
   }
   return PVR_ERROR_NO_ERROR;
 }
 
+//kManualSearch = http://www.gossamer-threads.com/lists/mythtv/dev/155150?search_string=kManualSearch;#155150
 
 PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-
+  MythTimer mt;
   CStdString category=Genre(timer.iGenreType);
-  TimerType ttype = (timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED)?NotRecording:SingleRecord;
-  int id=m_db.AddTimer(timer.iClientChannelUid,m_channels.at(timer.iClientChannelUid).Name(),timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category,ttype);
+  mt.Category(category);
+  mt.ChanID(timer.iClientChannelUid);
+  mt.ChanName(m_channels.at(timer.iClientChannelUid).Name());
+  mt.Description(timer.strSummary);
+  mt.EndOffset(timer.iMarginEnd);
+  mt.EndTime(timer.endTime);
+  mt.Inactive(timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED);
+  mt.Priority(timer.iPriority-50);
+  mt.StartOffset(timer.iMarginStart);
+  mt.StartTime(timer.startTime);
+  mt.Title(timer.strTitle);
+  mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,mt.Title(),NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
+  mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
+  int id=m_db.AddTimer(mt);
   if(id<0)
     return PVR_ERROR_NOT_POSSIBLE;
   if(!m_con.UpdateSchedules(id))
@@ -450,9 +485,23 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+  MythTimer mt;
   CStdString category=Genre(timer.iGenreType);
-  TimerType ttype = (timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED)?NotRecording:SingleRecord;
-  if(!m_db.UpdateTimer(timer.iClientIndex,timer.iClientChannelUid,m_channels.at(timer.iClientChannelUid).Name(),timer.strSummary,timer.startTime,timer.endTime,timer.strTitle,category,ttype))
+  mt.Category(category);
+  mt.ChanID(timer.iClientChannelUid);
+  mt.ChanName(m_channels.at(timer.iClientChannelUid).Name());
+  mt.Description(timer.strSummary);
+  mt.EndOffset(timer.iMarginEnd);
+  mt.EndTime(timer.endTime);
+  mt.Inactive(timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED);
+  mt.Priority(timer.iPriority-50);
+  mt.SearchType(timer.iEpgUid?MythTimer::NoSearch:MythTimer::ManualSearch);
+  mt.StartOffset(timer.iMarginStart);
+  mt.StartTime(timer.startTime);
+  mt.Title(timer.strTitle);
+  mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
+  mt.RecordID(timer.iClientIndex);
+  if(!m_db.UpdateTimer(mt))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(timer.iClientIndex);
   return PVR_ERROR_NO_ERROR;

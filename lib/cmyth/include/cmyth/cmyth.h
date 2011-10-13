@@ -1097,6 +1097,13 @@ extern char* cmyth_timer_title(cmyth_timer_t timer);
 extern char* cmyth_timer_description(cmyth_timer_t timer);  
 extern int cmyth_timer_type(cmyth_timer_t timer);      
 extern char* cmyth_timer_category(cmyth_timer_t timer);
+extern char* cmyth_timer_subtitle(cmyth_timer_t timer); 
+extern int cmyth_timer_priority(cmyth_timer_t timer);
+extern int cmyth_timer_startoffset(cmyth_timer_t timer);
+extern int cmyth_timer_endoffset(cmyth_timer_t timer);
+extern int cmyth_timer_searchtype(cmyth_timer_t timer);
+extern int cmyth_timer_inactive(cmyth_timer_t timer);
+extern char* cmyth_timer_channame(cmyth_timer_t timer);
 
 extern cmyth_timer_t cmyth_timerlist_get_item(cmyth_timerlist_t pl, int index);
 extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
@@ -1104,9 +1111,9 @@ extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
 extern cmyth_timerlist_t cmyth_mysql_get_timers(cmyth_database_t db); 
 
 
-extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type); 
+extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive); 
 extern int cmyth_mysql_delete_timer(cmyth_database_t db, int recordid);
-extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type); 
+extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive); 
 
 typedef struct cmyth_channelgroups {
 	char channelgroup[65];
@@ -1126,4 +1133,9 @@ typedef struct  cmyth_rec {
 
 extern int cmyth_mysql_get_recorder_list(cmyth_database_t db,cmyth_rec_t** reclist);
 
+<<<<<<< HEAD
 #endif /* __CMYTH_H */
+=======
+extern int cmyth_mysql_get_prog_finder_time_title_chan(cmyth_database_t db,cmyth_program_t *prog, char* title,time_t starttime,int chanid);
+#endif /* __CMYTH_H */
+>>>>>>> added: Improved support for mythtv timers
