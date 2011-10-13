@@ -455,7 +455,7 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   mt.EndOffset(timer.iMarginEnd);
   mt.EndTime(timer.endTime);
   mt.Inactive(timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED);
-  mt.Priority(timer.iPriority-50);
+  mt.Priority(timer.iPriority);
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
   mt.Title(timer.strTitle);
@@ -494,11 +494,11 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   mt.EndOffset(timer.iMarginEnd);
   mt.EndTime(timer.endTime);
   mt.Inactive(timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED);
-  mt.Priority(timer.iPriority-50);
-  mt.SearchType(timer.iEpgUid?MythTimer::NoSearch:MythTimer::ManualSearch);
+  mt.Priority(timer.iPriority);
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
   mt.Title(timer.strTitle);
+  mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,mt.Title(),NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
   mt.RecordID(timer.iClientIndex);
   if(!m_db.UpdateTimer(mt))

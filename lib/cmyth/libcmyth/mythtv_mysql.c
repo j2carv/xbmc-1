@@ -1471,6 +1471,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
   char* esctitle = cmyth_mysql_escape_chars(db,title);
   char* escdescription = cmyth_mysql_escape_chars(db,description);
   char* esccategory = cmyth_mysql_escape_chars(db,category);
+  char* escchanname=cmyth_mysql_escape_chars(db,channame);
   char* escsubtitle = cmyth_mysql_escape_chars(db,subtitle);
 
   cmyth_mysql_query_t * query;
@@ -1486,7 +1487,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
     || cmyth_mysql_query_param_str(query, esccategory ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
-    || cmyth_mysql_query_param_str(query, channame ) < 0
+    || cmyth_mysql_query_param_str(query, escchanname ) < 0
     || cmyth_mysql_query_param_str(query, escsubtitle ) < 0
     || cmyth_mysql_query_param_long(query, priority ) < 0
     || cmyth_mysql_query_param_long(query, startoffset ) < 0
@@ -1511,6 +1512,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
   ref_release(esctitle);
   ref_release(escdescription);
   ref_release(esccategory);
+  ref_release(escchanname);
   ref_release(escsubtitle);
 	
   return id;
@@ -1551,11 +1553,12 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
 	int ret = -1;
   int id=0;
 
-	const char *query_str = "UPDATE record SET record.type = ?, `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ?, subtitle = ?, recpriority = ?, startoffset = ?, endoffset = ?, search = ?, inactive = ? WHERE `recordid` = ? ;";
+	const char *query_str = "UPDATE record SET record.type = ?, `chanid` = ?, `starttime`= TIME(FROM_UNIXTIME( ? )), `startdate`= DATE(FROM_UNIXTIME( ? )), `endtime`= TIME(FROM_UNIXTIME( ? )), `enddate` = DATE(FROM_UNIXTIME( ? )) ,`title`= ?, `description`= ?, category = ?, subtitle = ?, recpriority = ?, startoffset = ?, endoffset = ?, search = ?, inactive = ?, station = ? WHERE `recordid` = ? ;";
 	
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);
   char* esccategory=cmyth_mysql_escape_chars(db,category);
+  char* escchanname=cmyth_mysql_escape_chars(db,channame);
   char* escsubtitle=cmyth_mysql_escape_chars(db,subtitle);
 
   cmyth_mysql_query_t * query;
@@ -1575,6 +1578,7 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
     || cmyth_mysql_query_param_long(query, endoffset ) < 0
     || cmyth_mysql_query_param_long(query, searchtype ) < 0
     || cmyth_mysql_query_param_long(query, inactive ) < 0
+    || cmyth_mysql_query_param_str(query, escchanname ) < 0
     || cmyth_mysql_query_param_long(query, recordid) < 0
 		) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
@@ -1593,6 +1597,7 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
   ref_release(esctitle);
   ref_release(escdescription);
   ref_release(esccategory);
+  ref_release(escchanname);
   ref_release(escsubtitle);
 
   return 0;
