@@ -459,7 +459,8 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
   mt.Title(timer.strTitle);
-  mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,mt.Title(),NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
+  CStdString title=mt.Title();
+  mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
   int id=m_db.AddTimer(mt);
   if(id<0)
@@ -497,8 +498,8 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   mt.Priority(timer.iPriority);
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
-  mt.Title(timer.strTitle);
-  mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,mt.Title(),NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
+  CStdString title=mt.Title();
+  mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
   mt.RecordID(timer.iClientIndex);
   if(!m_db.UpdateTimer(mt))
