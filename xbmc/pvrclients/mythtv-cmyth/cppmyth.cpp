@@ -573,7 +573,7 @@ int MythDatabase::AddTimer(MythTimer &timer)
   return retval;
   }
 
-  bool MythDatabase::FindProgram(time_t starttime,int channelid,CStdString &title,MythProgram* pprogram)
+  bool MythDatabase::FindProgram(const time_t starttime,const int channelid,CStdString &title,MythProgram* pprogram)
   {
     m_database_t->Lock();
     bool retval=CMYTH->MysqlGetProgFinderTimeTitleChan(*m_database_t,pprogram,title.Buffer(),starttime,channelid)>0;
