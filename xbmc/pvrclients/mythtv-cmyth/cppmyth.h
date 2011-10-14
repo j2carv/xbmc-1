@@ -187,7 +187,7 @@ public:
   std::map< int , MythChannel > ChannelList();
   std::vector< MythProgram > GetGuide(time_t starttime, time_t endtime);
   std::vector< MythTimer > GetTimers();
-  bool FindProgram(time_t starttime,int channelid,CStdString &title,MythProgram *pprogram);
+  bool FindProgram(const time_t starttime,const int channelid,CStdString &title,MythProgram *pprogram);
   int AddTimer(MythTimer &timer);
   bool DeleteTimer(int recordid);
   bool UpdateTimer(MythTimer &timer);
