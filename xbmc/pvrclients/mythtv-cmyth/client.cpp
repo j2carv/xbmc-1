@@ -508,6 +508,7 @@ bool SwitchChannel(const PVR_CHANNEL &channelinfo)
     return true;
   else
     XBMC->QueueNotification(QUEUE_WARNING,"Failed to change channel. No free tuners?");
+  return false;
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
