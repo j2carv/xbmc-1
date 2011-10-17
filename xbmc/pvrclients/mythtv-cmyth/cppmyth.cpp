@@ -2,6 +2,7 @@
 #include <sstream>
 #include "client.h"
 #include <vector>
+using namespace ADDON;
 
 /*
  *            Tokenizer

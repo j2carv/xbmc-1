@@ -35,6 +35,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+using namespace ADDON;
 
 static bool GetAbsTime(struct timespec *Abstime, int MillisecondsFromNow)
 {

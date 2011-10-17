@@ -1,7 +1,7 @@
 #include "pvrclient-mythtv.h"
 #include "client.h"
 #include <time.h>
-
+using namespace ADDON;
 
 PVRClientMythTV::PVRClientMythTV()
   :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap()

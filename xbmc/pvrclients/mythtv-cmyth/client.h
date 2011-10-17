@@ -48,7 +48,7 @@ extern CStdString   g_szMythDBpassword;       ///< The mythtv sql password (defa
 extern CStdString   g_szMythDBname;       ///< The mythtv sql database name (default is mythconverg)
 extern bool         g_bExtraDebug; 
 
-extern CHelper_libXBMC_addon *XBMC;
+extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_pvr   *PVR;
 extern CHelper_libcmyth *CMYTH;
 
