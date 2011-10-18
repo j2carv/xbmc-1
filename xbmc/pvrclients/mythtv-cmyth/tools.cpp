@@ -25,7 +25,7 @@
 
 #include "tools.h"
 #include "libPlatform/os-dependent.h"
-
+using namespace ADDON;
 // --- cTimeMs ---------------------------------------------------------------
 
 cTimeMs::cTimeMs(int Ms)
