@@ -110,6 +110,9 @@ bool CGUIDialogPVRChannelsOSD::OnMessage(CGUIMessage& message)
 
 void CGUIDialogPVRChannelsOSD::Update()
 {
+  
+  // empty the list ready for population. Outside gfx lock to prevent deadlock when calling CAnnouncementManager::RemoveAnnouncer during CPVRChannel destruction. as CGUIWindowHome::Announce() holds the announce mutex and needs the gfx lock
+  Clear();
   // lock our display, as this window is rendered from the player thread
   g_graphicsContext.Lock();
 
@@ -119,7 +122,7 @@ void CGUIDialogPVRChannelsOSD::Update()
   m_viewControl.SetCurrentView(DEFAULT_VIEW_LIST);
 
   // empty the list ready for population
-  Clear();
+  //Clear();
 
   CPVRChannel channel;
   g_PVRManager.GetCurrentChannel(channel);
