@@ -1,0 +1,214 @@
+#include "MythEventHandler.h"
+#include "MythRecorder.h"
+#include "MythSignal.h"
+#include "client.h"
+
+using namespace ADDON;
+/*
+ *            Tokenizer
+ */
+
+template < class ContainerT >
+void tokenize(const std::string& str, ContainerT& tokens,
+              const std::string& delimiters = " ", const bool trimEmpty = false)
+{
+   std::string::size_type pos, lastPos = 0;
+   while(true)
+   {
+      pos = str.find_first_of(delimiters, lastPos);
+      if(pos == std::string::npos)
+      {
+         pos = str.length();
+
+         if(pos != lastPos || !trimEmpty)
+            tokens.push_back(typename ContainerT::value_type(str.data()+lastPos,(pos)-lastPos ));
+                  //static_cast<ContainerT::value_type::size_type>*/(pos)-lastPos ));
+
+         break;
+      }
+      else
+      {
+         if(pos != lastPos || !trimEmpty)
+            tokens.push_back(typename ContainerT::value_type(str.data()+lastPos,(pos)-lastPos ));
+                  //static_cast<ContainerT::value_type::size_type>(pos)-lastPos ));
+      }
+
+      lastPos = pos + 1;
+   }
+};
+
+/*
+*								MythEventHandler
+*/
+
+class MythEventHandler::ImpMythEventHandler : public cThread
+{
+  friend class MythEventHandler;
+public:
+  ImpMythEventHandler(CStdString server,unsigned short port);
+  MythRecorder m_rec;
+  MythSignal m_signal;
+  cmyth_conn_t m_conn_t;
+  virtual void Action(void);	
+  virtual ~ImpMythEventHandler();
+  void UpdateSignal(CStdString &signal);
+  };
+
+MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
+:m_rec(0),m_conn_t(0),cThread("MythEventHandler"),m_signal()
+  {
+    char *cserver=strdup(server.c_str());
+    cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);
+    free(cserver);
+    m_conn_t=connection; 
+  }
+
+
+  MythEventHandler::ImpMythEventHandler::~ImpMythEventHandler()
+  {
+    Cancel(30);
+    CMYTH->RefRelease(m_conn_t);
+    m_conn_t=0;
+  }
+
+MythEventHandler::MythEventHandler(CStdString server,unsigned short port)
+  :m_imp(new ImpMythEventHandler(server,port))
+{
+  m_imp->Start();
+}
+
+MythEventHandler::MythEventHandler()
+  :m_imp()
+{
+}
+
+void MythEventHandler::Stop()
+{
+  m_imp.reset();
+}
+
+void MythEventHandler::PreventLiveChainUpdate()
+{
+  m_imp->Lock();
+}
+
+void MythEventHandler::AllowLiveChainUpdate()
+{
+  m_imp->Unlock();
+}
+
+void MythEventHandler::SetRecorder(MythRecorder &rec)
+{
+  m_imp->Lock();
+  m_imp->m_rec=rec;
+  m_imp->Unlock();
+}
+
+MythSignal MythEventHandler::GetSignal()
+{
+  return m_imp->m_signal;
+}
+
+void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
+{
+  std::vector< std::string > tok;
+  tokenize<std::vector< std::string > >( signal, tok, ";");
+  
+  for(std::vector<std::string>::iterator it=tok.begin();it!=tok.end();it++)
+  {
+    std::vector< std::string > tok2;
+    tokenize< std::vector< std::string > >(*it,tok2," ");
+    if(tok2.size()>=2)
+    {
+    if(tok2[0]=="slock")
+    {
+      m_signal.m_AdapterStatus=tok2[1]=="1"?"Locked":"No lock";
+    }
+    else if(tok2[0]=="signal")
+    {
+      m_signal.m_Signal=atoi(tok2[1].c_str());
+    }
+    else if(tok2[0]=="snr")
+    {
+      m_signal.m_SNR=std::atoi(tok2[1].c_str());
+    }
+    else if(tok2[0]=="ber")
+    {
+      m_signal.m_BER=std::atoi(tok2[1].c_str());
+    }
+    else if(tok2[0]=="ucb")
+    {
+      m_signal.m_UNC=std::atoi(tok2[1].c_str());
+    }
+    }
+  }
+}
+
+void MythEventHandler::ImpMythEventHandler::Action(void)
+{
+  const char* events[]={	"CMYTH_EVENT_UNKNOWN",\
+    "CMYTH_EVENT_CLOSE",\
+    "CMYTH_EVENT_RECORDING_LIST_CHANGE",\
+    "CMYTH_EVENT_RECORDING_LIST_CHANGE_ADD",\
+    "CMYTH_EVENT_RECORDING_LIST_CHANGE_UPDATE",\
+    "CMYTH_EVENT_RECORDING_LIST_CHANGE_DELETE",\
+    "CMYTH_EVENT_SCHEDULE_CHANGE",\
+    "CMYTH_EVENT_DONE_RECORDING",\
+    "CMYTH_EVENT_QUIT_LIVETV",\
+    "CMYTH_EVENT_WATCH_LIVETV",\
+    "CMYTH_EVENT_LIVETV_CHAIN_UPDATE",\
+    "CMYTH_EVENT_SIGNAL",\
+    "CMYTH_EVENT_ASK_RECORDING",\
+    "CMYTH_EVENT_SYSTEM_EVENT",\
+    "CMYTH_EVENT_UPDATE_FILE_SIZE",\
+    "CMYTH_EVENT_GENERATED_PIXMAP",\
+    "CMYTH_EVENT_CLEAR_SETTINGS_CACHE"};
+  cmyth_event_t myth_event;
+  char databuf[2049];
+  databuf[0]=0;
+  timeval timeout;
+  timeout.tv_sec=0;
+  timeout.tv_usec=100000;
+
+  while(Running())
+  {
+
+    if(CMYTH->EventSelect(m_conn_t,&timeout)>0)
+    {
+      myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
+      XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
+      if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
+      {
+        Lock();
+        if(!m_rec.IsNull())
+        {
+          bool retval=m_rec.LiveTVChainUpdate(CStdString(databuf));
+          XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE: %i",__FUNCTION__,retval);
+        }
+        else
+          XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
+        Unlock();
+      }
+      if(myth_event==CMYTH_EVENT_SIGNAL)
+      {
+        CStdString signal=databuf;
+        UpdateSignal(signal);
+      }
+      if(myth_event==CMYTH_EVENT_SCHEDULE_CHANGE)
+      {
+        XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
+        PVR->TriggerTimerUpdate();
+      }
+      if(myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_ADD||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_DELETE||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_UPDATE)
+      {
+        XBMC->Log(LOG_NOTICE,"Recording list change",__FUNCTION__);
+        PVR->TriggerRecordingUpdate();
+      }
+      databuf[0]=0;
+
+    }
+    //Restore timeout
+    timeout.tv_sec=0;
+    timeout.tv_usec=100000;
+  }
+}
