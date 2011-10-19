@@ -1,5 +1,7 @@
+
 #include "MythFile.h"
 #include "client.h"
+
 
 using namespace ADDON;
 
@@ -9,13 +11,13 @@ using namespace ADDON;
 
 
  MythFile::MythFile()
-   :m_file_t()
+   :m_file_t(new MythPointer<cmyth_file_t>()),m_conn(MythConnection())
  {
 
  }
 
-  MythFile::MythFile(cmyth_file_t myth_file)
-    : m_file_t(new MythPointer<cmyth_file_t>())
+  MythFile::MythFile(cmyth_file_t myth_file,MythConnection conn)
+    : m_file_t(new MythPointer<cmyth_file_t>()),m_conn(conn)
  {
    *m_file_t=myth_file;
  }
@@ -29,16 +31,24 @@ using namespace ADDON;
 
   int MythFile::Read(void* buffer,long long length)
   {
+   m_conn.Lock();
    int bytesRead=CMYTH->FileRead(*m_file_t,static_cast<char*>(buffer),length);
+   m_conn.Unlock();
    return bytesRead;
   }
 
   long long MythFile::Seek(long long offset, int whence)
   {
-    return CMYTH->FileSeek(*m_file_t,offset,whence);
+    m_conn.Lock();
+    long long retval = CMYTH->FileSeek(*m_file_t,offset,whence);
+    m_conn.Unlock();
+    return retval;
   }
   
   long long MythFile::Duration()
   {
-    return CMYTH->FileLength(*m_file_t);
+    m_conn.Lock();
+    long long retval = CMYTH->FileLength(*m_file_t);
+    m_conn.Unlock();
+    return retval;
   }

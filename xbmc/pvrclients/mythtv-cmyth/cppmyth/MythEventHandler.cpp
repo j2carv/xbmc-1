@@ -55,7 +55,7 @@ public:
   };
 
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
-:m_rec(0),m_conn_t(0),cThread("MythEventHandler"),m_signal()
+:m_rec(MythRecorder()),m_conn_t(0),cThread("MythEventHandler"),m_signal()
   {
     char *cserver=strdup(server.c_str());
     cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);

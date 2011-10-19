@@ -165,4 +165,34 @@ public:
 
 #define LOCK_THREAD cThreadLock ThreadLock(this)
 
+template <class T> class cLock {
+private:
+  T *mutex;
+  bool locked;
+public:
+  cLock(T *Mutex)
+  {
+    mutex = NULL;
+    locked = false;
+    Lock(Mutex);
+  }
+  ~cLock()
+  {
+    if (mutex && locked)
+      mutex->Unlock();
+  }
+  bool Lock(T *Mutex)
+  {
+    if (Mutex && !mutex)
+    {
+      mutex = Mutex;
+      Mutex->Lock();
+      locked = true;
+      return true;
+    }
+    return false;
+  }
+};
+
+
 #endif //__THREAD_H
