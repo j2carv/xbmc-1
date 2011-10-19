@@ -219,7 +219,7 @@ bool PVRClientMythTV::GetDriveSpace(long long *iTotal, long long *iUsed)
 PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - start: %i, end: %i, ChanID: %i",__FUNCTION__,iStart,iEnd,channel.iUniqueId);
   if(iStart!=m_EPGstart&&iEnd!=m_EPGend)
   {
     m_EPG=m_db.GetGuide(iStart,iEnd);
@@ -263,6 +263,8 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
       PVR->TransferEpgEntry(handle,&tag);
     }
   }
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -277,7 +279,7 @@ int PVRClientMythTV::GetNumChannels()
 PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - radio: %i",__FUNCTION__,bRadio);
   for (std::map< int, MythChannel >::iterator it = m_channels.begin(); it != m_channels.end(); it++)
   {
     if (it->second.IsRadio()==bRadio&&!it->second.IsNull())
@@ -301,6 +303,8 @@ PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
       PVR->TransferChannelEntry(handle,&tag);
     }
   }
+    if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -351,6 +355,8 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       PVR->TransferRecordingEntry(handle,&tag);
     }
   }
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -362,12 +368,17 @@ PVR_ERROR PVRClientMythTV::DeleteRecording(const PVR_RECORDING &recording)
   bool ret = m_con.DeleteRecording(m_recordings.at(id));
   if(ret && m_recordings.erase(recording.strRecordingId))
   {
-    PVR->TriggerRecordingUpdate();
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s - Deleted",__FUNCTION__);
     return PVR_ERROR_NO_ERROR;
 
   }
   else
+  {
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s - Not Deleted",__FUNCTION__);
     return PVR_ERROR_NOT_DELETED;
+  }
 }
 
 int PVRClientMythTV::GetTimersAmount(void)
@@ -437,6 +448,8 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
       PVR->TransferTimerEntry(handle,&tag);
 
   }
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -445,7 +458,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
 PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid);
   MythTimer mt;
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
@@ -467,25 +480,27 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
     return PVR_ERROR_NOT_POSSIBLE;
   if(!m_con.UpdateSchedules(id))
     return PVR_ERROR_NOT_POSSIBLE;
-  PVR->TriggerTimerUpdate();
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,id);
   return PVR_ERROR_NO_ERROR;
 }
 
 PVR_ERROR PVRClientMythTV::DeleteTimer(const PVR_TIMER &timer, bool bForceDelete)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
   if(!m_db.DeleteTimer(timer.iClientIndex))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(-1);
-  PVR->TriggerTimerUpdate();
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
 PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
   MythTimer mt;
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
@@ -505,6 +520,8 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   if(!m_db.UpdateTimer(mt))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(timer.iClientIndex);
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -512,7 +529,7 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
 bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - chanID: %i, channumber: %i",__FUNCTION__,channel.iUniqueId,channel.iChannelNumber);
   if(m_rec.IsNull())
   {
     MythChannel chan=m_channels.at(channel.iUniqueId);
@@ -529,10 +546,16 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
       m_rec=MythRecorder();
       m_eventHandler.SetRecorder(m_rec);//Redundant
     }
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
     return false;
   }
   else
+  {
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
     return true;
+  }
 }
 
 
@@ -545,13 +568,15 @@ void PVRClientMythTV::CloseLiveStream()
   m_rec=MythRecorder();
   m_eventHandler.SetRecorder(m_rec);
   m_eventHandler.AllowLiveChainUpdate();
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return;
 }
 
 int PVRClientMythTV::ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - size: %i",__FUNCTION__,iBufferSize);
   if(m_rec.IsNull())
     return -1;
   int dataread=m_rec.ReadLiveTV(pBuffer,iBufferSize);
@@ -575,7 +600,7 @@ int PVRClientMythTV::GetCurrentClientChannel()
 bool PVRClientMythTV::SwitchChannel(const PVR_CHANNEL &channelinfo)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - chanID: %i",__FUNCTION__,channelinfo.iUniqueId);
   MythChannel chan=m_channels.at(channelinfo.iUniqueId);
   bool retval=m_rec.SetChannel(chan);
   if(!retval)
@@ -586,22 +611,30 @@ bool PVRClientMythTV::SwitchChannel(const PVR_CHANNEL &channelinfo)
     if(!retval)
       XBMC->Log(LOG_ERROR,"%s - Failed to reopening Livestream!",__FUNCTION__);
   }
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return retval;
 }
 
 
 long long PVRClientMythTV::SeekLiveStream(long long iPosition, int iWhence) { 
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - pos: %i, whence: %i",__FUNCTION__,iPosition,iWhence);
   int whence=iWhence==SEEK_SET?WHENCE_SET:iWhence==SEEK_CUR?WHENCE_CUR:WHENCE_END;
-  return m_rec.LiveTVSeek(iPosition,whence);
+  long long retval= m_rec.LiveTVSeek(iPosition,whence);
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done - pos: %i",__FUNCTION__,retval);
+  return retval;
 }
 
 long long PVRClientMythTV::LengthLiveStream()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  return m_rec.LiveTVDuration();
+  long long retval=m_rec.LiveTVDuration();
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done - duration: %i",__FUNCTION__,retval);
+  return retval;
 }
 
 PVR_ERROR PVRClientMythTV::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
@@ -621,16 +654,19 @@ PVR_ERROR PVRClientMythTV::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
   ID.Format("Myth Recorder %i",m_rec.ID());
   strcpy(signalStatus.strAdapterName,ID.Buffer());
   strcpy(signalStatus.strAdapterStatus,adaptorStatus.Buffer());
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
 bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - title: %s, ID: %s, duration: %i",__FUNCTION__,recinfo.strTitle,recinfo.strRecordingId,recinfo.iDuration);
   CStdString id=recinfo.strRecordingId;
   m_file=m_con.ConnectFile(m_recordings.at(id));
-
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,!m_file.IsNull());
   return !m_file.IsNull();
 }
 
@@ -639,12 +675,14 @@ void PVRClientMythTV::CloseRecordedStream()
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
   m_file=NULL;
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
 }
 
 int PVRClientMythTV::ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - size: %i",__FUNCTION__,iBufferSize);
   int dataread=m_file.Read(pBuffer,iBufferSize);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s: Read %i Bytes",__FUNCTION__,dataread);
@@ -656,9 +694,12 @@ int PVRClientMythTV::ReadRecordedStream(unsigned char *pBuffer, unsigned int iBu
 long long PVRClientMythTV::SeekRecordedStream(long long iPosition, int iWhence)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - pos: %i, whence: %i",__FUNCTION__,iPosition,iWhence);
   int whence=iWhence==SEEK_SET?WHENCE_SET:iWhence==SEEK_CUR?WHENCE_CUR:WHENCE_END;
-  return m_file.Seek(iPosition,whence);
+  long long retval= m_file.Seek(iPosition,whence);
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done - pos: %i",__FUNCTION__,retval);
+  return retval;
 }
 
 
@@ -666,7 +707,10 @@ long long PVRClientMythTV::LengthRecordedStream()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  return m_file.Duration();
+  long long retval = m_file.Duration();
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done - duration: %i",__FUNCTION__,retval);
+  return retval;
 }
 
 
@@ -680,7 +724,7 @@ int PVRClientMythTV::GetChannelGroupsAmount()
 PVR_ERROR PVRClientMythTV::GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - radio: %i",__FUNCTION__,bRadio);
   PVR_CHANNEL_GROUP tag;
   for(boost::unordered_map< CStdString, std::vector< int > >::iterator it=m_channelGroups.begin();it!=m_channelGroups.end();it++)
   {
@@ -693,7 +737,8 @@ PVR_ERROR PVRClientMythTV::GetChannelGroups(PVR_HANDLE handle, bool bRadio)
         break;
       }
   }
-
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 
 }
@@ -701,7 +746,7 @@ PVR_ERROR PVRClientMythTV::GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 PVR_ERROR PVRClientMythTV::GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
   if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s - group: %s",__FUNCTION__,group.strGroupName);
   PVR_CHANNEL_GROUP_MEMBER tag;
   int i=0;
   for(std::vector< int >::iterator it=m_channelGroups.at(group.strGroupName).begin();it!=m_channelGroups.at(group.strGroupName).end();it++)
