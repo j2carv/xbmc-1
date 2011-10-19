@@ -13,7 +13,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\addons\library.xbmc.addon\dlfcn-win32.cpp" />
     <ClCompile Include="..\..\client.cpp" />
-    <ClCompile Include="..\..\cppmyth.cpp" />
     <ClCompile Include="..\..\cppmyth\MythChannel.cpp" />
     <ClCompile Include="..\..\cppmyth\MythConnection.cpp" />
     <ClCompile Include="..\..\cppmyth\MythDatabase.cpp" />
@@ -114,7 +113,8 @@
       <IgnoreSpecificDefaultLibraries>libcmtd</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\* "E:\atom\mythtv cmyth\"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

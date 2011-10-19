@@ -4,6 +4,8 @@
 #include "utils/StdString.h"
 #include <boost/shared_ptr.hpp>
 #include "MythPointer.h"
+#include "MythConnection.h"
+#include "thread.h"
 
 class MythProgramInfo;
 class MythChannel;
@@ -12,7 +14,7 @@ class MythRecorder
 {
 public:
   MythRecorder();
-  MythRecorder(cmyth_recorder_t cmyth_recorder);
+  MythRecorder(cmyth_recorder_t cmyth_recorder,MythConnection conn);
   bool SpawnLiveTV(MythChannel &channel);
   bool LiveTVChainUpdate(CStdString chainID);
   bool IsNull();
@@ -28,5 +30,6 @@ public:
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_recorder_t > > m_recorder_t;
   static void prog_update_callback(cmyth_proginfo_t prog);
-  boost::shared_ptr< int > livechainupdated;  
+  boost::shared_ptr< int > livechainupdated;
+  MythConnection m_conn;
 };

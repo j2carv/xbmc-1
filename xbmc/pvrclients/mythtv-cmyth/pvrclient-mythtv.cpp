@@ -321,8 +321,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  //if(m_recordings.size()==0)
-    m_recordings=m_con.GetRecordedPrograms();
+  m_recordings=m_con.GetRecordedPrograms();
   for (boost::unordered_map< CStdString, MythProgramInfo >::iterator it = m_recordings.begin(); it != m_recordings.end(); it++)
   {
     if(!it->second.IsNull())
@@ -675,7 +674,7 @@ void PVRClientMythTV::CloseRecordedStream()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  m_file=NULL;
+  m_file=MythFile();
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
 }

@@ -31,8 +31,10 @@ public:
   bool UpdateSchedules(int id);
   MythFile ConnectFile(MythProgramInfo &recording);
   bool IsNull();
+  void Lock();
+  void Unlock();
 private:
-  boost::shared_ptr< MythPointer< cmyth_conn_t > > m_conn_t;
+  boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
   CStdString m_server;
   unsigned short m_port;
 };

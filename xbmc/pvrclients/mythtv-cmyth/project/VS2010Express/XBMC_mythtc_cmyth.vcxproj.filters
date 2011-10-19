@@ -19,12 +19,12 @@
     <Filter Include="Header Files\cppmyth">
       <UniqueIdentifier>{a401a7c8-645a-41c6-8a38-aafda02d84de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\cppmyth\Header Files">
+      <UniqueIdentifier>{683c3a06-7ba1-4dc4-ad28-1c2bf518e9e8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\client.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\cppmyth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thread.cpp">
