@@ -406,7 +406,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
       tag.strTitle=title;
       CStdString summary=it->Description(); 
       tag.strSummary=summary;
-      tag.state=it->Type()==NotRecording?PVR_TIMER_STATE_CANCELLED:PVR_TIMER_STATE_SCHEDULED;
+      tag.state=it->Type()==MythTimer::NotRecording?PVR_TIMER_STATE_CANCELLED:PVR_TIMER_STATE_SCHEDULED;
       int genre=Genre(it->Category());
       tag.iGenreSubType=genre&0x0F;
       tag.iGenreType=genre&0xF0;
@@ -414,7 +414,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
       tag.iMarginStart=it->StartOffset();
       tag.iPriority=it->Priority()+50;
 
-      if(it->Type()==WeekslotRecord)
+      if(it->Type()==MythTimer::WeekslotRecord)
       {
         tag.bIsRepeating = true;
         tm *lc = localtime(&tag.startTime);
@@ -422,13 +422,14 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
         tag.iWeekdays = 1 << shift;
         tag.firstDay = tag.startTime;
       }
-      else if(it->Type()==TimeslotRecord)
+      else if(it->Type()==MythTimer::TimeslotRecord)
       {
         tag.bIsRepeating = true;
         tag.iWeekdays = 127; //daily
         tag.firstDay = tag.startTime;
       }
-      else if(it->Type()==FindWeeklyRecord||it->Type()==FindDailyRecord|| it->Type() == ChannelRecord || it->Type() == AllRecord)
+      else if(it->Type() == MythTimer::FindWeeklyRecord||it->Type() == MythTimer::FindDailyRecord|| 
+        it->Type() == MythTimer::ChannelRecord || it->Type() == MythTimer::AllRecord)
       {
         tag.bIsRepeating = true;
         tag.iWeekdays = 0; //Special

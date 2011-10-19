@@ -10,7 +10,16 @@ LIBDIR = @abs_top_srcdir@/addons/pvr.mythtv.cmyth
 LIB    = @abs_top_srcdir@/addons/pvr.mythtv.cmyth/XBMC_MythTV_cmyth.pvr
 
 SRCS=client.cpp \
-     cppmyth.cpp \
+     cppmyth/MythChannel.cpp \
+     cppmyth/MythConnection.cpp \
+     cppmyth/MythDatabase.cpp \
+     cppmyth/MythEventHandler.cpp \
+     cppmyth/MythFile.cpp \
+     cppmyth/MythProgramInfo.cpp \
+     cppmyth/MythRecorder.cpp \
+     cppmyth/MythSignal.cpp \
+     cppmyth/MythTimer.cpp \
+     cppmyth/MythTimestamp.cpp \
      pvrclient-mythtv.cpp \
      thread.cpp \
      tools.cpp
