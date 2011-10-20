@@ -166,8 +166,9 @@ bool MythConnection::IsNull()
 void MythConnection::Lock()
 {
   if(g_bExtraDebug)
-    m_conn_t->Lock();
-  XBMC->Log(LOG_DEBUG,"Lock %i",m_conn_t.get());
+    XBMC->Log(LOG_DEBUG,"Lock %i",m_conn_t.get());
+  m_conn_t->Lock();
+  
 }
 
 void MythConnection::Unlock()
