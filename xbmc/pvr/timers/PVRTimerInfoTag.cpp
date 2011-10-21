@@ -62,7 +62,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(void)
   m_iGenreType         = 0;
   m_iGenreSubType      = 0;
   m_iGenreType         = 0;
-  m_iGenreSubtype      = 0;
+  m_iGenreSubType      = 0;
   m_StartTime          = CDateTime::GetUTCDateTime();
   m_StopTime           = m_StartTime;
   m_state              = PVR_TIMER_STATE_SCHEDULED;
@@ -89,7 +89,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(const PVR_TIMER &timer, CPVRChannel *channel,
   m_iMarginEnd         = timer.iMarginEnd;
   m_strGenre           = CEpg::ConvertGenreIdToString(timer.iGenreType, timer.iGenreSubType);
   m_iGenreType         = timer.iGenreType;
-  m_iGenreSubtype      = timer.iGenreSubType;
+  m_iGenreSubType      = timer.iGenreSubType;
   m_epgInfo            = NULL;
   m_channel            = channel;
   m_bIsRadio           = channel && channel->IsRadio();
@@ -103,7 +103,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(const PVR_TIMER &timer, CPVRChannel *channel,
     {
       m_strGenre = m_epgInfo->Genre();
       m_iGenreType = m_epgInfo->GenreType();
-      m_iGenreSubtype = m_epgInfo->GenreSubType();
+      m_iGenreSubType = m_epgInfo->GenreSubType();
     }
   }
 
@@ -350,14 +350,14 @@ bool CPVRTimerInfoTag::UpdateEntry(const CPVRTimerInfoTag &tag)
   m_epgStart          = tag.m_epgStart;
   m_strGenre          = tag.m_strGenre;
   m_iGenreType        = tag.m_iGenreType;
-  m_iGenreSubtype     = tag.m_iGenreSubtype;
+  m_iGenreSubType     = tag.m_iGenreSubType;
   /* try to find an epg event */
   UpdateEpgEvent();
   if (m_epgInfo != NULL)
   {
     m_strGenre = m_epgInfo->Genre();
     m_iGenreType = m_epgInfo->GenreType();
-    m_iGenreSubtype = m_epgInfo->GenreSubType();
+    m_iGenreSubType = m_epgInfo->GenreSubType();
     m_epgInfo->SetTimer(this);
   }
 
@@ -540,7 +540,7 @@ CPVRTimerInfoTag *CPVRTimerInfoTag::CreateFromEpg(const CEpgInfoTag &tag)
   newTag->m_iClientId         = channel->ClientID();
   newTag->m_bIsRadio          = channel->IsRadio();
   newTag->m_iGenreType        = tag.GenreType();
-  newTag->m_iGenreSubtype     = tag.GenreSubType();
+  newTag->m_iGenreSubType     = tag.GenreSubType();
   newTag->SetStartFromUTC(newStart);
   newTag->SetEndFromUTC(newEnd);
   
