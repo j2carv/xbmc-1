@@ -31,6 +31,8 @@ typedef bool (*AddOnGetSetting)(void *addonData, const char *settingName, void *
 typedef char* (*AddOnUnknownToUTF8)(const char *sourceDest);
 typedef const char* (*AddOnGetLocalizedString)(const void* addonData, long dwCode);
 typedef const char* (*AddOnGetDVDMenuLanguage)(const void* addonData);
+typedef const char* (*AddOnGetLocalizedDate)(const void* addonData,time_t time, bool bLongDate, bool bWithShortNames);
+typedef const char* (*AddOnGetLocalizedTime)(const void* addonData,time_t time, bool bWithSeconds);
 
 typedef struct CB_AddOn
 {
@@ -40,6 +42,8 @@ typedef struct CB_AddOn
   AddOnUnknownToUTF8      UnknownToUTF8;
   AddOnGetLocalizedString GetLocalizedString;
   AddOnGetDVDMenuLanguage GetDVDMenuLanguage;
+  AddOnGetLocalizedDate   GetLocalizedDate;
+  AddOnGetLocalizedTime   GetLocalizedTime;
 } CB_AddOnLib;
 
 typedef void (*GUILock)();
@@ -49,7 +53,7 @@ typedef int (*GUIGetScreenWidth)();
 typedef int (*GUIGetVideoResolution)();
 typedef GUIHANDLE   (*GUIWindow_New)(void *addonData, const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog);
 typedef void        (*GUIWindow_Delete)(void *addonData, GUIHANDLE handle);
-typedef void        (*GUIWindow_SetCallbacks)(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*)(GUIHANDLE handle), bool (*)(GUIHANDLE handle, int), bool (*)(GUIHANDLE handle, int), bool (*)(GUIHANDLE handle, int));
+typedef void        (*GUIWindow_SetCallbacks)(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*)(GUIHANDLE handle), bool (*)(GUIHANDLE handle, int), bool (*)(GUIHANDLE handle, int), bool (*)(GUIHANDLE handle, int),bool (*)(GUIHANDLE ,int ,int , unsigned int));
 typedef bool        (*GUIWindow_Show)(void *addonData, GUIHANDLE handle);
 typedef bool        (*GUIWindow_Close)(void *addonData, GUIHANDLE handle);
 typedef bool        (*GUIWindow_DoModal)(void *addonData, GUIHANDLE handle);
@@ -71,9 +75,12 @@ typedef GUIHANDLE   (*GUIWindow_AddItem)(void *addonData, GUIHANDLE handle, GUIH
 typedef GUIHANDLE   (*GUIWindow_AddStringItem)(void *addonData, GUIHANDLE handle, const char *itemName, int itemPosition);
 typedef void        (*GUIWindow_RemoveItem)(void *addonData, GUIHANDLE handle, int itemPosition);
 typedef GUIHANDLE   (*GUIWindow_GetListItem)(void *addonData, GUIHANDLE handle, int listPos);
+typedef void        (*GUIWindow_AddContextMenuButton)(void *addonData, GUIHANDLE handle,int controlId,unsigned int contextButtonId,const char* label); 
 typedef void        (*GUIWindow_SetCurrentListPosition)(void *addonData, GUIHANDLE handle, int listPos);
 typedef int         (*GUIWindow_GetCurrentListPosition)(void *addonData, GUIHANDLE handle);
 typedef GUIHANDLE   (*GUIWindow_GetControl_Spin)(void *addonData, GUIHANDLE handle, int controlId);
+typedef GUIHANDLE   (*GUIWindow_GetControl_ListContainer)(void *addonData, GUIHANDLE handle, int controlId,GUIHANDLE *listItems);
+typedef void        (*GUIWindow_ReleaseControl_ListContainer)(GUIHANDLE listItems);
 typedef GUIHANDLE   (*GUIWindow_GetControl_Button)(void *addonData, GUIHANDLE handle, int controlId);
 typedef GUIHANDLE   (*GUIWindow_GetControl_RadioButton)(void *addonData, GUIHANDLE handle, int controlId);
 typedef GUIHANDLE   (*GUIWindow_GetControl_Edit)(void *addonData, GUIHANDLE handle, int controlId);
@@ -85,6 +92,11 @@ typedef void        (*GUIControl_Spin_Clear)(void *addonData, GUIHANDLE spinhand
 typedef void        (*GUIControl_Spin_AddLabel)(void *addonData, GUIHANDLE spinhandle, const char *label, int iValue);
 typedef int         (*GUIControl_Spin_GetValue)(void *addonData, GUIHANDLE spinhandle);
 typedef void        (*GUIControl_Spin_SetValue)(void *addonData, GUIHANDLE spinhandle, int iValue);
+typedef void        (*GUIControl_ListContainer_SetVisible)(void *addonData, GUIHANDLE handle, bool yesNo);
+typedef void        (*GUIControl_ListContainer_AddItems)(void *addonData, GUIHANDLE handle,GUIHANDLE listItems,GUIHANDLE items[],int size);
+typedef GUIHANDLE   (*GUIControl_ListContainer_GetItem)(void *addonData, GUIHANDLE handle,GUIHANDLE listItems,int index);
+typedef int         (*GUIControl_ListContainer_GetSelected)(void *addonData, GUIHANDLE handle);
+typedef void        (*GUIControl_ListContainer_Reset)(void *addonData, GUIHANDLE handle,GUIHANDLE listItems);
 typedef void        (*GUIControl_RadioButton_SetVisible)(void *addonData, GUIHANDLE handle, bool yesNo);
 typedef void        (*GUIControl_RadioButton_SetText)(void *addonData, GUIHANDLE handle, const char *label);
 typedef void        (*GUIControl_RadioButton_SetSelected)(void *addonData, GUIHANDLE handle, bool yesNo);
@@ -95,6 +107,7 @@ typedef void        (*GUIControl_Progress_SetInfo)(void *addonData, GUIHANDLE ha
 typedef int         (*GUIControl_Progress_GetInfo)(void *addonData, GUIHANDLE handle);
 typedef const char* (*GUIControl_Progress_GetDescription)(void *addonData, GUIHANDLE handle);
 typedef GUIHANDLE   (*GUIListItem_Create)(void *addonData, const char *label, const char *label2, const char *iconImage, const char *thumbnailImage, const char *path);
+typedef void        (*GUIListItem_Destroy)(void *addonData, GUIHANDLE handle);
 typedef const char* (*GUIListItem_GetLabel)(void *addonData, GUIHANDLE handle);
 typedef void        (*GUIListItem_SetLabel)(void *addonData, GUIHANDLE handle, const char *label);
 typedef const char* (*GUIListItem_GetLabel2)(void *addonData, GUIHANDLE handle);
@@ -137,9 +150,12 @@ typedef struct CB_GUILib
   GUIWindow_AddStringItem             Window_AddStringItem;
   GUIWindow_RemoveItem                Window_RemoveItem;
   GUIWindow_GetListItem               Window_GetListItem;
+  GUIWindow_AddContextMenuButton      Window_AddContextMenuButton;
   GUIWindow_SetCurrentListPosition    Window_SetCurrentListPosition;
   GUIWindow_GetCurrentListPosition    Window_GetCurrentListPosition;
   GUIWindow_GetControl_Spin           Window_GetControl_Spin;
+  GUIWindow_GetControl_ListContainer  Window_GetControl_ListContainer;
+  GUIWindow_ReleaseControl_ListContainer Window_ReleaseControl_ListContainer;
   GUIWindow_GetControl_Button         Window_GetControl_Button;
   GUIWindow_GetControl_RadioButton    Window_GetControl_RadioButton;
   GUIWindow_GetControl_Edit           Window_GetControl_Edit;
@@ -151,6 +167,11 @@ typedef struct CB_GUILib
   GUIControl_Spin_AddLabel            Control_Spin_AddLabel;
   GUIControl_Spin_GetValue            Control_Spin_GetValue;
   GUIControl_Spin_SetValue            Control_Spin_SetValue;
+  GUIControl_ListContainer_SetVisible Control_ListContainer_SetVisible;
+  GUIControl_ListContainer_AddItems   Control_ListContainer_AddItems;
+  GUIControl_ListContainer_GetItem    Control_ListContainer_GetItem;
+  GUIControl_ListContainer_GetSelected Control_ListContainer_GetSelected; 
+  GUIControl_ListContainer_Reset      Control_ListContainer_Reset;
   GUIControl_RadioButton_SetVisible   Control_RadioButton_SetVisible;
   GUIControl_RadioButton_SetText      Control_RadioButton_SetText;
   GUIControl_RadioButton_SetSelected  Control_RadioButton_SetSelected;
@@ -161,6 +182,7 @@ typedef struct CB_GUILib
   GUIControl_Progress_GetInfo         Control_Progress_GetInfo;
   GUIControl_Progress_GetDescription  Control_Progress_GetDescription;
   GUIListItem_Create                  ListItem_Create;
+  GUIListItem_Destroy                 ListItem_Destroy;
   GUIListItem_GetLabel                ListItem_GetLabel;
   GUIListItem_SetLabel                ListItem_SetLabel;
   GUIListItem_GetLabel2               ListItem_GetLabel2;
