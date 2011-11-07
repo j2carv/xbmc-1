@@ -157,14 +157,6 @@ namespace ADDON
         dlsym(m_libXBMC_addon, "XBMC_get_dvd_menu_language");
       if (GetDVDMenuLanguage == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-      GetLocalizedDate = (const char* (*)(time_t time, bool bLongDate, bool bWithShortNames))
-        dlsym(m_libXBMC_addon, "XBMC_get_localized_date");
-      if (GetLocalizedDate == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
-
-      GetLocalizedTime = (const char* (*)(time_t time, bool bWithSeconds))
-        dlsym(m_libXBMC_addon, "XBMC_get_localized_time");
-      if (GetLocalizedTime == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
-
       return XBMC_register_me(m_Handle) > 0;
     }
 
@@ -174,8 +166,6 @@ namespace ADDON
     void (*UnknownToUTF8)(std::string &str);
     const char* (*GetLocalizedString)(int dwCode);
     const char* (*GetDVDMenuLanguage)();
-    const char* (*GetLocalizedDate)(time_t time, bool bLongDate, bool bWithShortNames);
-    const char* (*GetLocalizedTime)(time_t time, bool bWithSeconds);
 
   protected:
     int (*XBMC_register_me)(void *HANDLE);
