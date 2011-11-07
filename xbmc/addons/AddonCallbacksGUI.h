@@ -51,7 +51,7 @@ public:
 
   static GUIHANDLE    Window_New(void *addonData, const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog);
   static void         Window_Delete(void *addonData, GUIHANDLE handle);
-  static void         Window_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*initCB)(GUIHANDLE), bool (*clickCB)(GUIHANDLE, int), bool (*focusCB)(GUIHANDLE, int), bool (*onActionCB)(GUIHANDLE handle, int));
+  static void         Window_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*initCB)(GUIHANDLE), bool (*clickCB)(GUIHANDLE, int), bool (*focusCB)(GUIHANDLE, int), bool (*onActionCB)(GUIHANDLE handle, int),bool (*onContextMenuCB)(GUIHANDLE ,int ,int , unsigned int));
   static bool         Window_Show(void *addonData, GUIHANDLE handle);
   static bool         Window_Close(void *addonData, GUIHANDLE handle);
   static bool         Window_DoModal(void *addonData, GUIHANDLE handle);
@@ -75,7 +75,10 @@ public:
   static GUIHANDLE    Window_GetListItem(void *addonData, GUIHANDLE handle, int listPos);
   static void         Window_SetCurrentListPosition(void *addonData, GUIHANDLE handle, int listPos);
   static int          Window_GetCurrentListPosition(void *addonData, GUIHANDLE handle);
+  static void         Window_AddContextMenuButton(void *addonData, GUIHANDLE handle,int controlId,unsigned int contextButtonId,const char* label);
   static GUIHANDLE    Window_GetControl_Spin(void *addonData, GUIHANDLE handle, int controlId);
+  static GUIHANDLE    Window_GetControl_ListContainer(void *addonData, GUIHANDLE handle, int controlId,GUIHANDLE *listItems);
+  static void         Window_ReleaseControl_ListContainer(GUIHANDLE listItems);
   static GUIHANDLE    Window_GetControl_Button(void *addonData, GUIHANDLE handle, int controlId);
   static GUIHANDLE    Window_GetControl_RadioButton(void *addonData, GUIHANDLE handle, int controlId);
   static GUIHANDLE    Window_GetControl_Edit(void *addonData, GUIHANDLE handle, int controlId);
@@ -87,6 +90,11 @@ public:
   static void         Control_Spin_AddLabel(void *addonData, GUIHANDLE spinhandle, const char *label, int iValue);
   static int          Control_Spin_GetValue(void *addonData, GUIHANDLE spinhandle);
   static void         Control_Spin_SetValue(void *addonData, GUIHANDLE spinhandle, int iValue);
+  static void         Control_ListContainer_SetVisible(void *addonData, GUIHANDLE handle, bool yesNo);
+  static void         Control_ListContainer_AddItems(void *addonData, GUIHANDLE handle,GUIHANDLE listItems,GUIHANDLE items[],int size);
+  static GUIHANDLE    Control_ListContainer_GetItem(void *addonData, GUIHANDLE handle,GUIHANDLE listItems,int index);
+  static int          Control_ListContainer_GetSelected(void *addonData, GUIHANDLE handle);
+  static void         Control_ListContainer_Reset(void *addonData, GUIHANDLE handle,GUIHANDLE listItems);
   static void         Control_RadioButton_SetVisible(void *addonData, GUIHANDLE handle, bool yesNo);
   static void         Control_RadioButton_SetText(void *addonData, GUIHANDLE handle, const char *label);
   static void         Control_RadioButton_SetSelected(void *addonData, GUIHANDLE handle, bool yesNo);
@@ -97,6 +105,7 @@ public:
   static int          Control_Progress_GetInfo(void *addonData, GUIHANDLE handle);
   static const char * Control_Progress_GetDescription(void *addonData, GUIHANDLE handle);
   static GUIHANDLE    ListItem_Create(void *addonData, const char *label, const char *label2, const char *iconImage, const char *thumbnailImage, const char *path);
+  static void         ListItem_Destroy(void *addonData, GUIHANDLE handle);
   static const char * ListItem_GetLabel(void *addonData, GUIHANDLE handle);
   static void         ListItem_SetLabel(void *addonData, GUIHANDLE handle, const char *label);
   static const char * ListItem_GetLabel2(void *addonData, GUIHANDLE handle);
@@ -136,10 +145,12 @@ public:
   int               GetCurrentListPosition();
   void              SetCurrentListPosition(int item);
   virtual bool      OnClick(int iItem);
+  void              AddContextMenuButton(int controlId,unsigned int contextButtonId,const char* label);
 
 protected:
   virtual void     Update();
   virtual void     GetContextButtons(int itemNumber, CContextButtons &buttons);
+  virtual bool     OnContextButton(int itemNumber, CONTEXT_BUTTON button);
   void             ClearAddonStrings();
   void             SetupShares();
 
@@ -147,6 +158,7 @@ protected:
   bool (*CBOnFocus)(GUIHANDLE cbhdl, int controlId);
   bool (*CBOnClick)(GUIHANDLE cbhdl, int controlId);
   bool (*CBOnAction)(GUIHANDLE cbhdl, int);
+  bool (*CBOnContextMenu)(GUIHANDLE chdl,int controlId,int itemNumber, unsigned int contextButtonId); 
 
   GUIHANDLE        m_clientHandle;
   const int m_iWindowId;
@@ -154,10 +166,14 @@ protected:
   bool m_bModal;
   bool m_bIsDialog;
 
+  std::map<int,CContextButtons> m_mContextButtons;
+  int iCurrentContextMenuControl;
+
 private:
   CEvent           m_actionEvent;
   CAddon          *m_addon;
   CStdString       m_mediaDir;
+  void SelectContainerItem(CGUIControl* control, int itemNumber,bool select);
 };
 
 class CGUIAddonWindowDialog : public CGUIAddonWindow

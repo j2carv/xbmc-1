@@ -122,19 +122,25 @@ DLLEXPORT bool GUI_Window_OnAction(GUIHANDLE handle, int actionId)
   return window->OnAction(actionId);
 }
 
+DLLEXPORT bool GUI_Window_OnContextMenu(GUIHANDLE handle,int controlId,int itemNumber, unsigned int contextButtonId) 
+{
+  CAddonGUIWindow *window = (CAddonGUIWindow*) handle;
+  return window->OnContextMenu(controlId,itemNumber, contextButtonId);
+}
 
 CAddonGUIWindow::CAddonGUIWindow(const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog)
 {
   CBOnInit = NULL;
   CBOnClick = NULL;
   CBOnFocus = NULL;
+  CBOnContextMenu = NULL;
   if (m_Handle && m_cb)
   {
     m_WindowHandle = m_cb->Window_New(m_Handle->addonData, xmlFilename, defaultSkin, forceFallback, asDialog);
     if (!m_WindowHandle)
       fprintf(stderr, "libXBMC_gui-ERROR: cGUIWindow can't create window class from XBMC !!!\n");
 
-    m_cb->Window_SetCallbacks(m_Handle->addonData, m_WindowHandle, this, GUI_Window_OnInit, GUI_Window_OnClick, GUI_Window_OnFocus, GUI_Window_OnAction);
+    m_cb->Window_SetCallbacks(m_Handle->addonData, m_WindowHandle, this, GUI_Window_OnInit, GUI_Window_OnClick, GUI_Window_OnFocus, GUI_Window_OnAction,GUI_Window_OnContextMenu);
   }
 }
 
@@ -192,6 +198,14 @@ bool CAddonGUIWindow::OnAction(int actionId)
     return false;
 
   return CBOnAction(m_cbhdl, actionId);
+}
+
+bool CAddonGUIWindow::OnContextMenu(int controlId,int itemNumber, unsigned int contextButtonId)
+{
+  if (!CBOnContextMenu)
+    return false;
+
+  return CBOnContextMenu(m_cbhdl, controlId,itemNumber, contextButtonId);
 }
 
 bool CAddonGUIWindow::SetFocusId(int iControlId)
@@ -304,6 +318,11 @@ void CAddonGUIWindow::SetControlLabel(int controlId, const char *label)
   m_cb->Window_SetControlLabel(m_Handle->addonData, m_WindowHandle, controlId, label);
 }
 
+void CAddonGUIWindow::AddContextMenuButton(int controlId,unsigned int contextButtonId,const char* label)
+{
+  m_cb->Window_AddContextMenuButton(m_Handle->addonData,m_WindowHandle,controlId,contextButtonId,label);
+}
+
 ///-------------------------------------
 /// cGUISpinControl
 
@@ -361,6 +380,89 @@ void CAddonGUISpinControl::SetValue(int iValue)
   if (m_SpinHandle)
     m_cb->Control_Spin_SetValue(m_Handle->addonData, m_SpinHandle, iValue);
 }
+///-------------------------------------
+/// cGUIListContainer
+
+DLLEXPORT CAddonGUIListContainer* GUI_control_get_listcontainer(CAddonGUIWindow *window, int controlId)
+{
+  return new CAddonGUIListContainer(window, controlId);
+}
+
+DLLEXPORT void GUI_control_release_listcontainer(CAddonGUIListContainer* p)
+{
+  delete p;
+}
+
+CAddonGUIListContainer::CAddonGUIListContainer(CAddonGUIWindow *window, int controlId)
+ : m_Window(window)
+ , m_ControlId(controlId)
+ ,m_Items(NULL)
+ ,m_ListHandle(NULL)
+{
+  m_ListHandle = m_cb->Window_GetControl_ListContainer(m_Handle->addonData, m_Window->m_WindowHandle, controlId,&m_Items);
+}
+
+void CAddonGUIListContainer::SetVisible(bool yesNo)
+{
+  if (m_ListHandle)
+    m_cb->Control_ListContainer_SetVisible(m_Handle->addonData, m_ListHandle, yesNo);
+}
+
+void CAddonGUIListContainer::AddItem(CAddonListItem *item)
+{
+  if (!m_ListHandle || !item)
+    return;
+  m_cb->Control_ListContainer_AddItems(m_Handle->addonData,m_ListHandle,m_Items,&(item->m_ListItemHandle),1);
+}
+
+void  CAddonGUIListContainer::AddItems(CAddonListItem* items[],int size)
+{
+  if (!m_ListHandle || !items)
+    return;
+  vector<GUIHANDLE> vecItems; 
+  for(int i = 0; i < size; i++)
+    vecItems.push_back(items[i]->m_ListItemHandle);
+  m_cb->Control_ListContainer_AddItems(m_Handle->addonData,m_ListHandle,m_Items,&vecItems[0],vecItems.size());
+}
+
+
+CAddonListItem CAddonGUIListContainer::GetItem(int index)
+{
+  if (!m_ListHandle)
+    return NULL;
+  GUIHANDLE item=(GUIHANDLE)m_cb->Control_ListContainer_GetItem(m_Handle->addonData,m_ListHandle,m_Items,index);
+  return CAddonListItem(item);
+}
+
+int CAddonGUIListContainer::GetSelected()
+{
+  if (!m_ListHandle)
+    return -1;
+  return m_cb->Control_ListContainer_GetSelected(m_Handle->addonData,m_ListHandle);
+}
+
+void CAddonGUIListContainer::ResetList()
+{
+  if (!m_ListHandle)
+    return;
+  m_cb->Control_ListContainer_Reset(m_Handle->addonData,m_ListHandle,m_Items);
+}
+/*
+class CAddonGUIListContainer
+{
+public:
+  CAddonGUIListContainer(CAddonGUIWindow *window, int controlId);
+  ~CAddonGUIListContainer() {}
+
+  virtual void SetVisible(bool yesNo);
+  virtual void AddItems(CAddonListItem *items);
+  virtual void GetItem(bool yesNo);
+
+private:
+  CAddonGUIWindow *m_Window;
+  int         m_ControlId;
+  GUIHANDLE   m_ButtonHandle;
+};*/
 
 ///-------------------------------------
 /// cGUIRadioButton
@@ -479,10 +581,19 @@ DLLEXPORT void GUI_ListItem_destroy(CAddonListItem* p)
   delete p;
 }
 
-
 CAddonListItem::CAddonListItem(const char *label, const char *label2, const char *iconImage, const char *thumbnailImage, const char *path)
 {
   m_ListItemHandle = m_cb->ListItem_Create(m_Handle->addonData, label, label2, iconImage, thumbnailImage, path);
+}
+
+CAddonListItem::CAddonListItem(GUIHANDLE ListItemHandle)
+  : m_ListItemHandle(ListItemHandle)
+{
+}
+
+CAddonListItem::~CAddonListItem(void)
+{
+  //m_ListItemHandle will leak if it has not been assigned to a list (i.e. a smartpointer)
 }
 
 const char *CAddonListItem::GetLabel()
