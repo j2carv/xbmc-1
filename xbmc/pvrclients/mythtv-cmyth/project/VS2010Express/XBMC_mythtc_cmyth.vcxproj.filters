@@ -69,6 +69,9 @@
     <ClCompile Include="..\..\cppmyth\MythTimestamp.cpp">
       <Filter>Source Files\cppmyth</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\recordingrules.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client.h">
@@ -124,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="..\..\cppmyth\MythTimestamp.h">
       <Filter>Header Files\cppmyth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\recordingrules.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
