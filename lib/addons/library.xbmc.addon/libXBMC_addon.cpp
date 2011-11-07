@@ -125,4 +125,22 @@ DLLEXPORT const char* XBMC_get_dvd_menu_language()
   return buffer.c_str();
 }
 
+DLLEXPORT const char* XBMC_get_localized_date(time_t time, bool bLongDate, bool bWithShortNames)
+{
+  if (m_cb == NULL)
+    return "";
+
+  string buffer = m_cb->GetLocalizedDate(m_Handle->addonData, time, bLongDate, bWithShortNames);
+  return buffer.c_str();
+}
+
+DLLEXPORT const char* XBMC_get_localized_time(time_t time, bool bWithSeconds)
+{
+  if (m_cb == NULL)
+    return "";
+
+  string buffer = m_cb->GetLocalizedTime(m_Handle->addonData, time, bWithSeconds);
+  return buffer.c_str();
+}
+
 };
