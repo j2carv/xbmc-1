@@ -83,24 +83,6 @@ public:
    */
   static const char *GetDVDMenuLanguage(const void* addonData);
 
-  /*!
-   * @brief Get a localised date
-   * @param addonData A pointer to the add-on. 
-   * @param time The time_t to convert
-   * @param bLongDate Use long date format
-   * @param bWithShortNames Abbreviation month and weekday
-   * @return The localised date
-   */
-  static const char *GetLocalizedDate(const void* addonData,time_t time, bool bLongDate, bool bWithShortNames);
-
-    /*!
-   * @brief Get the localised time
-   * @param addonData A pointer to the add-on. 
-   * @param time The time_t to convert
-   * @param bWithSeconds Include seconds
-   * @return The localised time
-   */
-  static const char *GetLocalizedTime(const void* addonData,time_t time, bool bWithSeconds);
 private:
   CB_AddOnLib  *m_callbacks; /*!< callback addresses */
   CAddon       *m_addon;     /*!< the add-on */

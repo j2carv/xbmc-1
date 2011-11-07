@@ -25,7 +25,6 @@
 #include "utils/log.h"
 #include "LangInfo.h"
 #include "dialogs/GUIDialogKaiToast.h"
-#include "XBDateTime.h"
 
 namespace ADDON
 {
@@ -42,8 +41,6 @@ CAddonCallbacksAddon::CAddonCallbacksAddon(CAddon* addon)
   m_callbacks->UnknownToUTF8      = UnknownToUTF8;
   m_callbacks->GetLocalizedString = GetLocalizedString;
   m_callbacks->GetDVDMenuLanguage = GetDVDMenuLanguage;
-  m_callbacks->GetLocalizedDate   = GetLocalizedDate;
-  m_callbacks->GetLocalizedTime   = GetLocalizedTime;
 }
 
 CAddonCallbacksAddon::~CAddonCallbacksAddon()
@@ -249,36 +246,5 @@ const char* CAddonCallbacksAddon::GetDVDMenuLanguage(const void* addonData)
   strcpy(buffer, string.c_str());
   return buffer;
 }
-
-const char* CAddonCallbacksAddon::GetLocalizedDate(const void* addonData,time_t time, bool bLongDate, bool bWithShortNames)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper)
-    return NULL;
-
-  CDateTime date(time);
-
-  CStdString string = date.GetAsLocalizedDate(bLongDate,bWithShortNames);
-
-  char *buffer = (char*) malloc (string.length()+1);
-  strcpy(buffer, string.c_str());
-  return buffer;
-}
-
-const char* CAddonCallbacksAddon::GetLocalizedTime(const void* addonData,time_t time, bool bWithSeconds)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper)
-    return NULL;
-
-  CDateTime date(time);
-
-  CStdString string = date.GetAsLocalizedTime("",bWithSeconds);
-
-  char *buffer = (char*) malloc (string.length()+1);
-  strcpy(buffer, string.c_str());
-  return buffer;
-}
-
 
 }; /* namespace ADDON */

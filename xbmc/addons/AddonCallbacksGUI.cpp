@@ -36,11 +36,6 @@
 #include "guilib/GUISettingsSliderControl.h"
 #include "guilib/GUIEditControl.h"
 #include "guilib/GUIProgressControl.h"
-#include "guilib/GUIListContainer.h"
-#include "guilib/GUIWrappingListContainer.h"
-#include "guilib/GUIPanelContainer.h"
-#include "guilib/GUIFixedListContainer.h"
-#include "epg/GUIEPGGridContainer.h"
 
 #define CONTROL_BTNVIEWASICONS  2
 #define CONTROL_BTNSORTBY       3
@@ -93,11 +88,7 @@ CAddonCallbacksGUI::CAddonCallbacksGUI(CAddon* addon)
   m_callbacks->Window_SetCurrentListPosition  = CAddonCallbacksGUI::Window_SetCurrentListPosition;
   m_callbacks->Window_GetCurrentListPosition  = CAddonCallbacksGUI::Window_GetCurrentListPosition;
 
-  m_callbacks->Window_AddContextMenuButton    = CAddonCallbacksGUI::Window_AddContextMenuButton;
-
   m_callbacks->Window_GetControl_Spin         = CAddonCallbacksGUI::Window_GetControl_Spin;
-  m_callbacks->Window_GetControl_ListContainer= CAddonCallbacksGUI::Window_GetControl_ListContainer;
-  m_callbacks->Window_ReleaseControl_ListContainer= CAddonCallbacksGUI::Window_ReleaseControl_ListContainer;
   m_callbacks->Window_GetControl_Button       = CAddonCallbacksGUI::Window_GetControl_Button;
   m_callbacks->Window_GetControl_RadioButton  = CAddonCallbacksGUI::Window_GetControl_RadioButton;
   m_callbacks->Window_GetControl_Edit         = CAddonCallbacksGUI::Window_GetControl_Edit;
@@ -112,12 +103,6 @@ CAddonCallbacksGUI::CAddonCallbacksGUI(CAddon* addon)
   m_callbacks->Control_Spin_GetValue          = CAddonCallbacksGUI::Control_Spin_GetValue;
   m_callbacks->Control_Spin_SetValue          = CAddonCallbacksGUI::Control_Spin_SetValue;
 
-  m_callbacks->Control_ListContainer_AddItems = CAddonCallbacksGUI::Control_ListContainer_AddItems;
-  m_callbacks->Control_ListContainer_GetItem  = CAddonCallbacksGUI::Control_ListContainer_GetItem;
-  m_callbacks->Control_ListContainer_GetSelected = CAddonCallbacksGUI::Control_ListContainer_GetSelected;
-  m_callbacks->Control_ListContainer_Reset    = CAddonCallbacksGUI::Control_ListContainer_Reset;
-  m_callbacks->Control_ListContainer_SetVisible=CAddonCallbacksGUI::Control_ListContainer_SetVisible;
-
   m_callbacks->Control_RadioButton_SetVisible = CAddonCallbacksGUI::Control_RadioButton_SetVisible;
   m_callbacks->Control_RadioButton_SetText    = CAddonCallbacksGUI::Control_RadioButton_SetText;
   m_callbacks->Control_RadioButton_SetSelected= CAddonCallbacksGUI::Control_RadioButton_SetSelected;
@@ -130,7 +115,6 @@ CAddonCallbacksGUI::CAddonCallbacksGUI(CAddon* addon)
   m_callbacks->Control_Progress_GetDescription= CAddonCallbacksGUI::Control_Progress_GetDescription;
 
   m_callbacks->ListItem_Create                = CAddonCallbacksGUI::ListItem_Create;
-  m_callbacks->ListItem_Destroy               = CAddonCallbacksGUI::ListItem_Destroy;
   m_callbacks->ListItem_GetLabel              = CAddonCallbacksGUI::ListItem_GetLabel;
   m_callbacks->ListItem_SetLabel              = CAddonCallbacksGUI::ListItem_SetLabel;
   m_callbacks->ListItem_GetLabel2             = CAddonCallbacksGUI::ListItem_GetLabel2;
@@ -298,7 +282,7 @@ void CAddonCallbacksGUI::Window_Delete(void *addonData, GUIHANDLE handle)
   Unlock();
 }
 
-void CAddonCallbacksGUI::Window_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*initCB)(GUIHANDLE), bool (*clickCB)(GUIHANDLE, int), bool (*focusCB)(GUIHANDLE, int), bool (*onActionCB)(GUIHANDLE handle, int),bool (*onContextMenuCB)(GUIHANDLE ,int ,int , unsigned int))
+void CAddonCallbacksGUI::Window_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*initCB)(GUIHANDLE), bool (*clickCB)(GUIHANDLE, int), bool (*focusCB)(GUIHANDLE, int), bool (*onActionCB)(GUIHANDLE handle, int))
 {
   CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
   if (!helper || !handle)
@@ -312,7 +296,6 @@ void CAddonCallbacksGUI::Window_SetCallbacks(void *addonData, GUIHANDLE handle, 
   pAddonWindow->CBOnClick       = clickCB;
   pAddonWindow->CBOnFocus       = focusCB;
   pAddonWindow->CBOnAction      = onActionCB;
-  pAddonWindow->CBOnContextMenu = onContextMenuCB;
   Unlock();
 }
 
@@ -873,19 +856,6 @@ int CAddonCallbacksGUI::Window_GetCurrentListPosition(void *addonData, GUIHANDLE
   return listPos;
 }
 
-void CAddonCallbacksGUI::Window_AddContextMenuButton(void *addonData, GUIHANDLE handle,int controlId,unsigned int contextButtonId,const char* label)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return;
-
-  CGUIAddonWindow *pAddonWindow = (CGUIAddonWindow*)handle;
-
-  Lock();
-  pAddonWindow->AddContextMenuButton(controlId,contextButtonId,label);
-  Unlock();
-}
-
 GUIHANDLE CAddonCallbacksGUI::Window_GetControl_Spin(void *addonData, GUIHANDLE handle, int controlId)
 {
   CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
@@ -898,28 +868,6 @@ GUIHANDLE CAddonCallbacksGUI::Window_GetControl_Spin(void *addonData, GUIHANDLE 
     return NULL;
 
   return pGUIControl;
-}
-
-GUIHANDLE CAddonCallbacksGUI::Window_GetControl_ListContainer(void *addonData, GUIHANDLE handle, int controlId,GUIHANDLE *listItems)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return NULL;
-
-  CGUIAddonWindow *pAddonWindow = (CGUIAddonWindow*)handle;
-  CGUIControl* pGUIControl = (CGUIControl*)pAddonWindow->GetControl(controlId);
-  if (pGUIControl && pGUIControl->GetControlType() != CGUIControl::GUICONTAINER_LIST)
-    return NULL;
-
-  *listItems = (GUIHANDLE) new CFileItemList();
-  return pGUIControl;
-}
-
-void CAddonCallbacksGUI::Window_ReleaseControl_ListContainer(GUIHANDLE listItems)
-{
-  CFileItemList* pListItems = (CFileItemList*) listItems;
-  if(pListItems)
-    delete pListItems;
 }
 
 GUIHANDLE CAddonCallbacksGUI::Window_GetControl_Button(void *addonData, GUIHANDLE handle, int controlId)
@@ -1051,71 +999,6 @@ void CAddonCallbacksGUI::Control_Spin_SetValue(void *addonData, GUIHANDLE spinha
   pSpin->SetValue(iValue);
 }
 
-
-void CAddonCallbacksGUI::Control_ListContainer_SetVisible(void *addonData, GUIHANDLE handle, bool yesNo)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return;
-
-  CGUIListContainer *pListContainer = (CGUIListContainer*) handle;
-  pListContainer->SetVisible(yesNo);
-}
-
-
-void CAddonCallbacksGUI::Control_ListContainer_AddItems(void *addonData, GUIHANDLE handle,GUIHANDLE listItems,GUIHANDLE items[],int size)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle || !items)
-    return;
-
-  CFileItem **pItems = (CFileItem**) items;
-  CGUIListContainer *pListContainer = (CGUIListContainer*) handle;
-  CFileItemList *itemlist = (CFileItemList*) listItems;
-  for(int i = 0;i < size; i++)
-    itemlist->Add(CFileItemPtr(pItems[i]));
-  CGUIMessage msg(GUI_MSG_LABEL_BIND, pListContainer->GetParentID(), pListContainer->GetID(), 0, 0, itemlist);
-  msg.SetPointer(itemlist);
-  g_windowManager.SendThreadMessage(msg, pListContainer->GetParentID());
-}
-
-GUIHANDLE CAddonCallbacksGUI::Control_ListContainer_GetItem(void *addonData, GUIHANDLE handle,GUIHANDLE listItems,int index)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return NULL;
-  CFileItem* pFileItem = NULL;
-
-  CGUIListContainer *pListContainer = (CGUIListContainer*)handle;
-  
-  if(pListContainer->GetListItem(index,0)->IsFileItem())
-    pFileItem = (CFileItem*)pListContainer->GetListItem(index,0).get();
-  return pFileItem;
-}
-
-int CAddonCallbacksGUI::Control_ListContainer_GetSelected(void *addonData, GUIHANDLE handle)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return -1;
-  
-  CGUIListContainer *pListContainer = (CGUIListContainer*)handle;
-
-  return pListContainer->GetSelectedItem();
-}
-
-void CAddonCallbacksGUI::Control_ListContainer_Reset(void *addonData, GUIHANDLE handle,GUIHANDLE listItems)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return;
-  CFileItemList *itemlist = (CFileItemList*) listItems;
-  CGUIListContainer *pListContainer = (CGUIListContainer*)handle;
-  CGUIMessage msg(GUI_MSG_LABEL_RESET, pListContainer->GetParentID(), pListContainer->GetID());
-  g_windowManager.SendThreadMessage(msg, pListContainer->GetParentID());
-  itemlist->Clear();
-}
-
 void CAddonCallbacksGUI::Control_RadioButton_SetVisible(void *addonData, GUIHANDLE handle, bool yesNo)
 {
   CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
@@ -1233,15 +1116,6 @@ GUIHANDLE CAddonCallbacksGUI::ListItem_Create(void *addonData, const char *label
     pItem->SetPath(path);
 
   return pItem;
-}
-
-void CAddonCallbacksGUI::ListItem_Destroy(void *addonData, GUIHANDLE handle)
-{
-  CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
-  if (!helper || !handle)
-    return;
-  CFileItem *pItem = (CFileItem*) handle;
-  delete pItem;
 }
 
 const char* CAddonCallbacksGUI::ListItem_GetLabel(void *addonData, GUIHANDLE handle)
@@ -1363,7 +1237,6 @@ CGUIAddonWindow::CGUIAddonWindow(int id, CStdString strXML, CAddon* addon)
   CBOnFocus       = NULL;
   CBOnClick       = NULL;
   CBOnAction      = NULL;
-  CBOnContextMenu = NULL;
 }
 
 CGUIAddonWindow::~CGUIAddonWindow(void)
@@ -1454,13 +1327,8 @@ bool CGUIAddonWindow::OnMessage(CGUIMessage& message)
           {
             CBOnClick(m_clientHandle, iControl);
           }
-          else if (controlClicked->IsContainer() && message.GetParam1() == ACTION_MOUSE_RIGHT_CLICK && m_mContextButtons.count(iControl))
+          else if (controlClicked->IsContainer() && message.GetParam1() == ACTION_MOUSE_RIGHT_CLICK)
           {
-            iCurrentContextMenuControl = iControl;
-            SelectContainerItem( controlClicked, message.GetParam2(),true);
-            bool retval = CGUIMediaWindow::OnPopupMenu(message.GetParam2());
-            SelectContainerItem( controlClicked, message.GetParam2(),false);
-            return retval;
 //            PyXBMCAction* inf = new PyXBMCAction;
 //            inf->pObject = Action_FromAction(CAction(ACTION_CONTEXT_MENU));
 //            inf->pCallbackWindow = pCallbackWindow;
@@ -1477,28 +1345,6 @@ bool CGUIAddonWindow::OnMessage(CGUIMessage& message)
   }
 
   return CGUIMediaWindow::OnMessage(message);
-}
-
-void CGUIAddonWindow::SelectContainerItem(CGUIControl* control, int itemNumber,bool select)
-{
-  switch ( control->GetControlType() )
-  {
-  case CGUIControl::GUICONTAINER_LIST:
-    ((CGUIListContainer*)control)->GetListItem(itemNumber)->Select(select);
-    break;
-  case CGUIControl::GUICONTAINER_EPGGRID: 
-    ((EPG::CGUIEPGGridContainer*)control)->GetListItem(itemNumber)->Select(select);
-    break;
-  case CGUIControl::GUICONTAINER_FIXEDLIST:  
-    ((CGUIFixedListContainer*)control)->GetListItem(itemNumber)->Select(select);
-    break;
-  case CGUIControl::GUICONTAINER_PANEL:  
-    ((CGUIPanelContainer*)control)->GetListItem(itemNumber)->Select(select);
-    break;
-  case CGUIControl::GUICONTAINER_WRAPLIST:  
-    ((CGUIWrappingListContainer*)control)->GetListItem(itemNumber)->Select(select);
-    break;
-  }
 }
 
 void CGUIAddonWindow::AllocResources(bool forceLoad /*= FALSE */)
@@ -1589,25 +1435,10 @@ void CGUIAddonWindow::ClearList()
   UpdateButtons();
 }
 
-void CGUIAddonWindow::AddContextMenuButton(int controlId,unsigned int contextButtonId,const char* label)
-{
-  if( !m_mContextButtons.count(controlId))
-    m_mContextButtons[controlId] = CContextButtons();
-   m_mContextButtons.at(controlId).Add(contextButtonId,label);
-}
-
 void CGUIAddonWindow::GetContextButtons(int itemNumber, CContextButtons &buttons)
 {
-  buttons = m_mContextButtons.at(iCurrentContextMenuControl);
   // maybe on day we can make an easy way to do this context menu
   // with out this method overriding the MediaWindow version, it will display 'Add to Favorites'
-}
-
-bool CGUIAddonWindow::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
-{
-  if(CBOnContextMenu)
-    return CBOnContextMenu(m_clientHandle,iCurrentContextMenuControl,itemNumber,button);
-  return false;
 }
 
 void CGUIAddonWindow::WaitForActionEvent(unsigned int timeout)
@@ -1693,7 +1524,6 @@ void CGUIAddonWindowDialog::Show_Internal(bool show /* = true */)
     while (m_bRunning && !g_application.m_bStop)
     {
       g_windowManager.Process(CTimeUtils::GetFrameTime());
-      g_windowManager.ProcessRenderLoop();
     }
   }
   else // hide

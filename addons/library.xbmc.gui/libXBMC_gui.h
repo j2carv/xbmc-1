@@ -59,7 +59,6 @@ typedef void* GUIHANDLE;
 
 class CAddonGUIWindow;
 class CAddonGUISpinControl;
-class CAddonGUIListContainer;
 class CAddonGUIRadioButton;
 class CAddonGUIProgressControl;
 class CAddonListItem;
@@ -141,14 +140,6 @@ public:
       dlsym(m_libXBMC_gui, "GUI_control_release_spin");
     if (Control_releaseSpin == NULL)  { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    Control_getListContainer= (CAddonGUIListContainer* (*)(CAddonGUIWindow *window, int controlId))
-      dlsym(m_libXBMC_gui, "GUI_control_get_listcontainer");
-    if (Control_getListContainer == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
-
-    Control_releaseListContainer     = (void (*)(CAddonGUIListContainer* p))
-      dlsym(m_libXBMC_gui, "GUI_control_release_listcontainer");
-    if (Control_releaseListContainer == NULL)  { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
-
     Control_getRadioButton  = (CAddonGUIRadioButton* (*)(CAddonGUIWindow *window, int controlId))
       dlsym(m_libXBMC_gui, "GUI_control_get_radiobutton");
     if (Control_getRadioButton == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -186,8 +177,6 @@ public:
   void (*Window_destroy)(CAddonGUIWindow* p);
   CAddonGUISpinControl* (*Control_getSpin)(CAddonGUIWindow *window, int controlId);
   void (*Control_releaseSpin)(CAddonGUISpinControl* p);
-  CAddonGUIListContainer* (*Control_getListContainer)(CAddonGUIWindow *window, int controlId);
-  void (*Control_releaseListContainer)(CAddonGUIListContainer* p);
   CAddonGUIRadioButton* (*Control_getRadioButton)(CAddonGUIWindow *window, int controlId);
   void (*Control_releaseRadioButton)(CAddonGUIRadioButton* p);
   CAddonGUIProgressControl* (*Control_getProgress)(CAddonGUIWindow *window, int controlId);
@@ -227,26 +216,6 @@ private:
   GUIHANDLE   m_SpinHandle;
 };
 
-class CAddonGUIListContainer
-{
-public:
-  CAddonGUIListContainer(CAddonGUIWindow *window, int controlId);
-  ~CAddonGUIListContainer() {}
-
-  virtual void SetVisible(bool yesNo);
-  virtual void AddItem(CAddonListItem *item);
-  virtual void AddItems(CAddonListItem* items[],int size);
-  virtual CAddonListItem GetItem(int index);
-  virtual int GetSelected();
-  virtual void ResetList();
-
-private:
-  CAddonGUIWindow *m_Window;
-  int         m_ControlId;
-  GUIHANDLE   m_ListHandle;
-  GUIHANDLE m_Items;
-};
-
 class CAddonGUIRadioButton
 {
 public:
@@ -282,15 +251,13 @@ private:
   GUIHANDLE   m_ProgressHandle;
 };
 
-/*Please note that CAddonListItem will leak memory if it is not assigned to a list.*/
 class CAddonListItem
 {
 friend class CAddonGUIWindow;
-friend class CAddonGUIListContainer;
 
 public:
   CAddonListItem(const char *label, const char *label2, const char *iconImage, const char *thumbnailImage, const char *path);
-  virtual ~CAddonListItem(void);
+  virtual ~CAddonListItem(void) {}
 
   virtual const char  *GetLabel();
   virtual void         SetLabel(const char *label);
@@ -306,14 +273,12 @@ public:
 //    {(char*)"select();
 //    {(char*)"isSelected();
 protected:
-  CAddonListItem(GUIHANDLE ListItemHandle);
   GUIHANDLE   m_ListItemHandle;
 };
 
 class CAddonGUIWindow
 {
 friend class CAddonGUISpinControl;
-friend class CAddonGUIListContainer;
 friend class CAddonGUIRadioButton;
 friend class CAddonGUIProgressControl;
 
@@ -346,20 +311,17 @@ public:
   virtual void         SetCurrentListPosition(int listPos);
   virtual int          GetCurrentListPosition();
   virtual void         SetControlLabel(int controlId, const char *label);
-  virtual void         AddContextMenuButton(int controlId,unsigned int contextButtonId,const char* label);
 
   virtual bool         OnClick(int controlId);
   virtual bool         OnFocus(int controlId);
   virtual bool         OnInit();
   virtual bool         OnAction(int actionId);
-  virtual bool         OnContextMenu(int controlId,int itemNumber, unsigned int contextButtonId); 
 
   GUIHANDLE m_cbhdl;
   bool (*CBOnInit)(GUIHANDLE cbhdl);
   bool (*CBOnFocus)(GUIHANDLE cbhdl, int controlId);
   bool (*CBOnClick)(GUIHANDLE cbhdl, int controlId);
   bool (*CBOnAction)(GUIHANDLE cbhdl, int actionId);
-  bool (*CBOnContextMenu)(GUIHANDLE cbhdl,int controlId,int itemNumber, unsigned int contextButtonId); 
 
 protected:
   GUIHANDLE m_WindowHandle;
