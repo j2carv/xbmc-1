@@ -413,24 +413,45 @@ const CPVRChannel *CPVRChannelGroup::GetByChannelNumber(unsigned int iChannelNum
   return channel;
 }
 
+const CPVRChannel *CPVRChannelGroup::GetByChannelUpDown(const CPVRChannel &channel, bool bChannelUp) const
+{
+  const CPVRChannel *retVal(NULL);
+  bool bGotChannel(false);
+  CSingleLock lock(m_critSection);
+  int iChannelIndex = GetIndex(channel);
+
+  while (!bGotChannel && !(retVal && *retVal == channel))
+  {
+    if (bChannelUp)
+      iChannelIndex++;
+    else
+      iChannelIndex--;
+
+    if (iChannelIndex >= (int)size())
+      iChannelIndex = 0;
+    else if (iChannelIndex < 0)
+      iChannelIndex = size() - 1;
+
+    retVal = GetByIndex(iChannelIndex);
+    if (!retVal->IsHidden())
+      bGotChannel = true;
+  }
+
+  return retVal;
+}
+
 const CPVRChannel *CPVRChannelGroup::GetByChannelUp(const CPVRChannel &channel) const
 {
-  CSingleLock lock(m_critSection);
-  unsigned int iChannelIndex = GetIndex(channel) + 1;
-  if (iChannelIndex >= size())
-    iChannelIndex = 0;
-
-  return GetByIndex(iChannelIndex);
+  const CPVRChannel *retVal(NULL);
+  retVal = GetByChannelUpDown(channel, true);
+  return retVal;
 }
 
 const CPVRChannel *CPVRChannelGroup::GetByChannelDown(const CPVRChannel &channel) const
 {
-  CSingleLock lock(m_critSection);
-  int iChannelIndex = GetIndex(channel) - 1;
-  if (iChannelIndex < 0)
-    iChannelIndex = size() - 1;
-
-  return GetByIndex(iChannelIndex);
+  const CPVRChannel *retVal(NULL);
+  retVal = GetByChannelUpDown(channel, false);
+  return retVal;
 }
 
 const CPVRChannel *CPVRChannelGroup::GetByIndex(unsigned int iIndex) const
@@ -478,6 +499,11 @@ int CPVRChannelGroup::GetMembers(CFileItemList &results, bool bGroupMembers /* =
   }
 
   return results.Size() - iOrigSize;
+}
+
+CPVRChannelGroup *CPVRChannelGroup::GetNextGroup(void) const
+{
+  return g_PVRChannelGroups->Get(m_bRadio)->GetNextGroup(*this);
 }
 
 /********** private methods **********/
@@ -827,20 +853,21 @@ bool CPVRChannelGroup::Renumber(void)
 
   for (unsigned int iChannelPtr = 0; iChannelPtr < size();  iChannelPtr++)
   {
+    unsigned int iCurrentChannelNumber;
     if (at(iChannelPtr).channel->IsHidden())
-      iChannelNumber = 0;
+      iCurrentChannelNumber = 0;
     else if (bUseBackendChannelNumbers)
-      iChannelNumber = at(iChannelPtr).channel->ClientChannelNumber();
+      iCurrentChannelNumber = at(iChannelPtr).channel->ClientChannelNumber();
     else
-      ++iChannelNumber;
+      iCurrentChannelNumber = ++iChannelNumber;
 
-    if (at(iChannelPtr).iChannelNumber != iChannelNumber)
+    if (at(iChannelPtr).iChannelNumber != iCurrentChannelNumber)
     {
       bReturn = true;
       m_bChanged = true;
     }
 
-    at(iChannelPtr).iChannelNumber = iChannelNumber;
+    at(iChannelPtr).iChannelNumber = iCurrentChannelNumber;
   }
 
   SortByChannelNumber();

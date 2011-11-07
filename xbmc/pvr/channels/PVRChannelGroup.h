@@ -304,6 +304,11 @@ namespace PVR
     virtual int GetMembers(CFileItemList &results, bool bGroupMembers = true) const;
 
     /*!
+     * @return The next channel group.
+     */
+    virtual CPVRChannelGroup *GetNextGroup(void) const;
+
+    /*!
      * @brief The amount of hidden channels in this container.
      * @return The amount of hidden channels in this container.
      */
@@ -423,6 +428,14 @@ namespace PVR
      * @return True if something changed, false otherwise.
      */
     virtual bool Renumber(void);
+
+    /*!
+     * @brief Get the previous or next channel in this group.
+     * @param channel The current channel.
+     * @param bChannelUp True to get the next channel, false to get the previous one.
+     * @return The requested channel or NULL if there is none.
+     */
+    virtual const CPVRChannel *GetByChannelUpDown(const CPVRChannel &channel, bool bChannelUp) const;
 
     bool             m_bRadio;                      /*!< true if this container holds radio channels, false if it holds TV channels */
     int              m_iGroupId;                    /*!< The ID of this group in the database */
