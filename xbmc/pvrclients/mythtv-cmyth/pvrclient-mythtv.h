@@ -4,6 +4,8 @@
 #include <boost/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 
+const int RECORDING_RULES = 30006;
+
 class PVRClientMythTV
 {
 public:
@@ -46,6 +48,8 @@ public:
   int GetChannelGroupsAmount();
   PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio);
   PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group);
+
+  PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook);
 
 private:
   struct mythcat{};

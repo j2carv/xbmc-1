@@ -56,7 +56,9 @@ PVRClientMythTV       *g_client       = NULL;
 
 CHelper_libXBMC_addon *XBMC           = NULL;
 CHelper_libXBMC_pvr   *PVR            = NULL;
+CHelper_libXBMC_gui   *GUI            = NULL;
 CHelper_libcmyth      *CMYTH          = NULL;
+
 
 extern "C" {
 
@@ -77,6 +79,10 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   PVR = new CHelper_libXBMC_pvr;
   if (!PVR->RegisterMe(hdl))
+    return ADDON_STATUS_UNKNOWN;
+
+  GUI = new CHelper_libXBMC_gui;
+  if (!GUI->RegisterMe(hdl))
     return ADDON_STATUS_UNKNOWN;
 
   XBMC->Log(LOG_DEBUG, "Loading cmyth library");
@@ -166,8 +172,12 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     return m_CurStatus;
   }
 
+  PVR_MENUHOOK recRuleHook;
+  recRuleHook.iHookId=RECORDING_RULES;
+  recRuleHook.iLocalizedStringId=RECORDING_RULES;
+  PVR->AddMenuHook(&recRuleHook);
+  
   m_CurStatus = ADDON_STATUS_OK;
-
   g_bCreated = true;
   return m_CurStatus;
 }
@@ -186,11 +196,19 @@ void ADDON_Destroy()
     delete(PVR);
     PVR = NULL;
   }
+
   if (XBMC)
   {
     delete(XBMC);
     XBMC = NULL;
   }
+
+  if (GUI)
+  {
+    delete(GUI);
+    GUI = NULL;
+  }
+
   if (CMYTH)
   {
     delete(CMYTH);
@@ -332,7 +350,10 @@ PVR_ERROR DialogChannelScan()
 
 PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook)
 {
-  return PVR_ERROR_NOT_IMPLEMENTED;
+if (g_client == NULL)
+  return PVR_ERROR_SERVER_ERROR;
+
+return g_client->CallMenuHook(menuhook);
 }
 
 /*******************************************/

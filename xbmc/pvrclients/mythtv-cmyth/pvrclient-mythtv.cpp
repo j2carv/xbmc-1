@@ -1,6 +1,7 @@
 #include "pvrclient-mythtv.h"
 #include "client.h"
 #include <time.h>
+#include "recordingRules.h"
 using namespace ADDON;
 
 PVRClientMythTV::PVRClientMythTV()
@@ -98,7 +99,9 @@ int PVRClientMythTV::Genre(CStdString g)
 {
   int retval=0;
   try{
-    retval=m_categoryMap.by< mythcat >().at(g);
+    if(m_categoryMap.by< mythcat >().count(g))
+      retval=m_categoryMap.by< mythcat >().at(g);
+    
   }
   catch(std::out_of_range){}
   return retval;
@@ -107,7 +110,8 @@ CStdString PVRClientMythTV::Genre(int g)
 {
   CStdString retval="";
   try{
-    retval=m_categoryMap.by< pvrcat >().at(g);
+    if(m_categoryMap.by< pvrcat >().count(g))
+      retval=m_categoryMap.by< pvrcat >().at(g);
   }
   catch(std::out_of_range){}
   return retval;
@@ -762,6 +766,17 @@ PVR_ERROR PVRClientMythTV::GetChannelGroupMembers(PVR_HANDLE handle, const PVR_C
         PVR->TransferChannelGroupMember(handle,&tag);
       }
     }
+  }
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook)
+{
+  if(menuhook.iHookId == RECORDING_RULES)
+  {
+    std::vector< MythTimer > timers=m_db.GetTimers();
+    RecordingRulesWindow wnd(timers);
+    wnd.Open();
   }
   return PVR_ERROR_NO_ERROR;
 }

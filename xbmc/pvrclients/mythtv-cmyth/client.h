@@ -26,6 +26,7 @@
 #include "utils/StdString.h"
 #include "../../../addons/library.xbmc.addon/libXBMC_addon.h"
 #include "../../../addons/library.xbmc.pvr/libXBMC_pvr.h"
+#include "../../../addons/library.xbmc.gui/libXBMC_gui.h"
 #include "libcmyth.h"
 
 #define DEFAULT_HOST          "127.0.0.1"
@@ -51,5 +52,6 @@ extern bool         g_bExtraDebug;
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_pvr   *PVR;
 extern CHelper_libcmyth *CMYTH;
+extern CHelper_libXBMC_gui   *GUI;
 
 #endif /* CLIENT_H */

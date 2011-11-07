@@ -21,6 +21,7 @@ SRCS=client.cpp \
      cppmyth/MythTimer.cpp \
      cppmyth/MythTimestamp.cpp \
      pvrclient-mythtv.cpp \
+     recordingRules.cpp \
      thread.cpp \
      tools.cpp
 

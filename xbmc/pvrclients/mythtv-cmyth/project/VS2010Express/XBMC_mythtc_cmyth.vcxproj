@@ -24,6 +24,7 @@
     <ClCompile Include="..\..\cppmyth\MythTimer.cpp" />
     <ClCompile Include="..\..\cppmyth\MythTimestamp.cpp" />
     <ClCompile Include="..\..\pvrclient-mythtv.cpp" />
+    <ClCompile Include="..\..\recordingrules.cpp" />
     <ClCompile Include="..\..\thread.cpp" />
     <ClCompile Include="..\..\tools.cpp" />
   </ItemGroup>
@@ -44,6 +45,7 @@
     <ClInclude Include="..\..\cppmyth\MythTimestamp.h" />
     <ClInclude Include="..\..\libcmyth.h" />
     <ClInclude Include="..\..\pvrclient-mythtv.h" />
+    <ClInclude Include="..\..\recordingrules.h" />
     <ClInclude Include="..\..\thread.h" />
     <ClInclude Include="..\..\tools.h" />
   </ItemGroup>

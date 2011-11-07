@@ -1,5 +1,7 @@
 @ECHO ON
 
+IF EXIST %CD%\boost GOTO END
+
 SET LOC_PATH=%CD%
 SET FILES=%CD%\boost_d.txt
 
@@ -40,5 +42,5 @@ cd %LOC_PATH%
 rmdir %TMP_PATH% /S /Q
 
 
-
+:END
 
