@@ -389,7 +389,7 @@ int PVRClientMythTV::GetTimersAmount(void)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  std::vector< MythTimer > m_timers=m_db.GetTimers();
+  std::map< int, MythTimer > m_timers=m_db.GetTimers();
   return m_timers.size();
 }
 
@@ -397,6 +397,80 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+  std::map< int, MythTimer > timers=m_db.GetTimers();
+  boost::unordered_map< CStdString, MythProgramInfo > upcomingRecordings = m_con.GetPendingPrograms();
+  for (boost::unordered_map< CStdString, MythProgramInfo >::iterator it = upcomingRecordings.begin(); it != upcomingRecordings.end(); it++)
+  {
+    PVR_TIMER tag;
+    MythProgramInfo& proginfo = it->second;
+    tag.endTime=proginfo.EndTime();
+    //EndTime();
+    tag.iClientChannelUid=proginfo.ChannelID();
+    tag.iClientIndex=proginfo.RecordID();
+    tag.startTime=proginfo.StartTime();
+    CStdString title=proginfo.Title();
+    tag.strTitle=title;
+    CStdString summary=proginfo.Description(); 
+    tag.strSummary=summary;
+    switch(proginfo.Status())
+    {
+    case RS_RECORDING:
+    case RS_TUNING:
+      tag.state=PVR_TIMER_STATE_RECORDING;
+      break;
+    case RS_ABORTED:
+      tag.state=PVR_TIMER_STATE_ABORTED;
+      break;
+    case RS_RECORDED:
+      tag.state=PVR_TIMER_STATE_COMPLETED;
+      break;
+    case RS_WILL_RECORD:
+      tag.state=PVR_TIMER_STATE_SCHEDULED;
+      break;
+    case RS_UNKNOWN:
+      tag.state=PVR_TIMER_STATE_INVALID;
+      break;
+    case RS__DONT_RECORD:
+    case RS_PREVIOUS_RECORDING:
+    case RS_CURRENT_RECORDING:
+    case RS_EARLIER_SHOWING:
+    case RS_TOO_MANY_RECORDINGS:
+    case RS_NOT_LISTED:
+    case RS_CONFLICT:
+    case RS_LATER_SHOWING:
+    case RS_REPEAT:
+    case RS_INACTIVE:
+    case RS_NEVER_RECORD:
+    case RS_OFFLINE:
+    case RS_OTHER_SHOWING:
+    case RS_FAILED:
+    case RS_TUNER_BUSY:
+    case RS_LOW_DISKSPACE:
+    case RS_CANCELLED:
+    case RS_MISSED:
+    default:
+      tag.state=PVR_TIMER_STATE_CANCELLED;
+      break;
+    }
+    int genre=Genre(proginfo.Category());
+    tag.iGenreSubType=genre&0x0F;
+    tag.iGenreType=genre&0xF0;
+    tag.iMarginEnd=timers.at(proginfo.RecordID()).EndOffset();
+    tag.iMarginStart=timers.at(proginfo.RecordID()).StartOffset();
+    tag.iPriority=proginfo.Priority();
+
+    tag.bIsRepeating = false;
+    tag.firstDay=0;
+    tag.iWeekdays=0;
+
+    //Unimplemented
+    tag.iEpgUid=0;
+    tag.iLifetime=0;
+    tag.strDirectory="";
+
+    PVR->TransferTimerEntry(handle,&tag);
+  }
+  /*
   std::vector< MythTimer > m_timers=m_db.GetTimers();
   for (std::vector< MythTimer >::iterator it = m_timers.begin(); it != m_timers.end(); it++)
   {
@@ -452,7 +526,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
 
       PVR->TransferTimerEntry(handle,&tag);
 
-  }
+  }*/
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
@@ -494,9 +568,13 @@ PVR_ERROR PVRClientMythTV::DeleteTimer(const PVR_TIMER &timer, bool bForceDelete
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
+  std::map< int, MythTimer > timers=m_db.GetTimers();
+  if(timers.at(timer.iClientIndex).Type()==MythTimer::FindOneRecord || timers.at(timer.iClientIndex).Type()==MythTimer::SingleRecord)
+  {
   if(!m_db.DeleteTimer(timer.iClientIndex))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(-1);
+  }
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
@@ -506,6 +584,9 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
+  std::map< int, MythTimer > timers=m_db.GetTimers();
+  if(timers.at(timer.iClientIndex).Type()==MythTimer::SingleRecord)
+  {
   MythTimer mt;
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
@@ -525,6 +606,11 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   if(!m_db.UpdateTimer(mt))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(timer.iClientIndex);
+  }
+  else
+  {
+    //create new override timer
+  }
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
@@ -775,7 +861,7 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook)
 {
   if(menuhook.iHookId == RECORDING_RULES)
   {
-    std::vector< MythTimer > timers=m_db.GetTimers();
+    std::map< int, MythTimer > timers=m_db.GetTimers();
     RecordingRulesWindow wnd(timers);
     wnd.Open();
   }

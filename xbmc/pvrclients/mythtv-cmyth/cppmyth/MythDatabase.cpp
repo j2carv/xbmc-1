@@ -73,9 +73,9 @@ std::vector<MythProgram> MythDatabase::GetGuide(time_t starttime, time_t endtime
   return retval;
 }
 
-std::vector<MythTimer> MythDatabase::GetTimers()
+std::map<int, MythTimer> MythDatabase::GetTimers()
 {
-  std::vector<MythTimer> retval;
+  std::map<int, MythTimer> retval;
   m_database_t->Lock();
   cmyth_timerlist_t timers=CMYTH->MysqlGetTimers(*m_database_t);
   m_database_t->Unlock();
@@ -83,7 +83,8 @@ std::vector<MythTimer> MythDatabase::GetTimers()
   for(int i=0;i<nTimers;i++)
   {
     cmyth_timer_t timer=CMYTH->TimerlistGetItem(timers,i);
-    retval.push_back(MythTimer(timer));
+    MythTimer t(timer);
+    retval.insert(std::pair<int,MythTimer>(t.RecordID(),t));
   }
   CMYTH->RefRelease(timers);
   return retval;

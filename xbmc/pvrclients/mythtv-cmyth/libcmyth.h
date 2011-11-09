@@ -217,7 +217,7 @@ typedef struct cmyth_recgrougs {
 	char recgroups[33];
 }cmyth_recgroups_t;
 
-typedef enum {
+/*typedef enum {
 	RS_DELETED = -5,
 	RS_STOPPED = -4,
 	RS_RECORDED = -3,
@@ -234,8 +234,62 @@ typedef enum {
 	RS_REPEAT = 9,
 	RS_LOW_DISKSPACE = 11,
 	RS_TUNER_BUSY = 12
+} cmyth_proginfo_rec_status_t;*/
+typedef enum {
+    RS_TUNING = -10,
+    RS_FAILED = -9,
+    RS_TUNER_BUSY = -8,
+    RS_LOW_DISKSPACE = -7,
+    RS_CANCELLED = -6,
+    RS_MISSED = -5,
+    RS_ABORTED = -4,
+    RS_RECORDED = -3,
+    RS_RECORDING = -2,
+    RS_WILL_RECORD = -1,
+    RS_UNKNOWN = 0,
+    RS__DONT_RECORD = 1,
+    RS_PREVIOUS_RECORDING = 2,
+    RS_CURRENT_RECORDING = 3,
+    RS_EARLIER_SHOWING = 4,
+    RS_TOO_MANY_RECORDINGS = 5,
+    RS_NOT_LISTED = 6,
+    RS_CONFLICT = 7,
+    RS_LATER_SHOWING = 8,
+    RS_REPEAT = 9,
+    RS_INACTIVE = 10,
+    RS_NEVER_RECORD = 11,
+    RS_OFFLINE = 12,
+    RS_OTHER_SHOWING = 13
 } cmyth_proginfo_rec_status_t;
 
+/*From libmyth 0.24 Note difference from above:
+typedef enum RecStatusTypes {
+    rsTuning = -10,
+    rsFailed = -9,
+    rsTunerBusy = -8,
+    rsLowDiskSpace = -7,
+    rsCancelled = -6,
+    rsMissed = -5,
+    rsAborted = -4,
+    rsRecorded = -3,
+    rsRecording = -2,
+    rsWillRecord = -1,
+    rsUnknown = 0,
+    rsDontRecord = 1,
+    rsPreviousRecording = 2,
+    rsCurrentRecording = 3,
+    rsEarlierShowing = 4,
+    rsTooManyRecordings = 5,
+    rsNotListed = 6,
+    rsConflict = 7,
+    rsLaterShowing = 8,
+    rsRepeat = 9,
+    rsInactive = 10,
+    rsNeverRecord = 11,
+    rsOffLine = 12,
+    rsOtherShowing = 13
+} RecStatusType;
+*/
 struct cmyth_timer;
 typedef struct cmyth_timer* cmyth_timer_t;
 
@@ -752,6 +806,14 @@ if (ProginfoSeriesid == NULL)      { fprintf(stderr, "Unable to assign function 
 dlsym(m_libcmyth, "cmyth_proginfo_programid");
 if (ProginfoProgramid == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    ProginfoRecordid      = (unsigned long (*)(cmyth_proginfo_t prog))
+dlsym(m_libcmyth, "cmyth_proginfo_recordid");
+if (ProginfoRecordid == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    ProginfoPriority      = (long (*)(cmyth_proginfo_t prog))
+dlsym(m_libcmyth, "cmyth_proginfo_priority");
+if (ProginfoPriority == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     ProginfoStars      = (char* (*)(cmyth_proginfo_t prog))
 dlsym(m_libcmyth, "cmyth_proginfo_stars");
 if (ProginfoStars == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1163,7 +1225,7 @@ if (RefAllocShow == NULL)      { fprintf(stderr, "Unable to assign function %s\n
   return true;
   }
 
-  //dll functions
+//dll functions
 
 void (*DbgLevel)(int l);
 void (*DbgAll)(void);
@@ -1279,6 +1341,8 @@ long (*ProginfoChanId)(cmyth_proginfo_t prog);
 char* (*ProginfoPathname)(cmyth_proginfo_t prog);
 char* (*ProginfoSeriesid)(cmyth_proginfo_t prog);
 char* (*ProginfoProgramid)(cmyth_proginfo_t prog);
+unsigned long (*ProginfoRecordid)(cmyth_proginfo_t prog);
+long (*ProginfoPriority)(cmyth_proginfo_t prog);
 char* (*ProginfoStars)(cmyth_proginfo_t prog);
 cmyth_timestamp_t (*ProginfoRecStart)(cmyth_proginfo_t prog);
 cmyth_timestamp_t (*ProginfoRecEnd)(cmyth_proginfo_t prog);
@@ -1381,7 +1445,6 @@ char* (*RefStrdup)(char* str);
 void* (*RefRealloc)(void* p, size_t len);
 void (*RefSetDestroy)(void* block, ref_destroy_t func);
 void (*RefAllocShow)(void);
-
 
 
 protected:

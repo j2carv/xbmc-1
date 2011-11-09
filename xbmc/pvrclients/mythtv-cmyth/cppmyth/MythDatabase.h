@@ -23,7 +23,7 @@ public:
   bool TestConnection(CStdString &msg);
   std::map< int , MythChannel > ChannelList();
   std::vector< MythProgram > GetGuide(time_t starttime, time_t endtime);
-  std::vector< MythTimer > GetTimers();
+  std::map<int, MythTimer > GetTimers();
   bool FindProgram(const time_t starttime,const int channelid,CStdString &title,MythProgram *pprogram);
   int AddTimer(MythTimer &timer);
   bool DeleteTimer(int recordid);
