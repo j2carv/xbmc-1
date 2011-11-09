@@ -8,7 +8,7 @@ using namespace ADDON;
 #define BUTTON_CANCEL                   7
 #define HEADER_LABEL                    8
 
-RecordingRulesWindow::RecordingRulesWindow(std::vector< MythTimer > &recordingRules)
+RecordingRulesWindow::RecordingRulesWindow(std::map< int, MythTimer > &recordingRules)
   :m_window(NULL),m_list(NULL),m_recRules(recordingRules)
 {
 
@@ -102,8 +102,8 @@ bool RecordingRulesWindow::OnInit()
   AddonListItemPtr listItem(GUI->ListItem_create("Add rule...","","","",""));
   listItem->SetProperty("time","Add rule...");
   m_list->AddItem(listItem.get());
-  for(unsigned int i=0;i<m_recRules.size();i++)
-    m_list->AddItem(AddRecordingRule(m_recRules[i]).get());  
+  for(std::map< int, MythTimer >::iterator it=m_recRules.begin();it!=m_recRules.end();it++)
+    m_list->AddItem(AddRecordingRule(it->second).get());  
   m_window->AddContextMenuButton(14,1,"Test label 1");
   m_window->AddContextMenuButton(14,2,"Test label 2");
   return true;
@@ -169,7 +169,7 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
   case MythTimer::SingleRecord:
     time.Format("%s %s %s %s %s",
       DayToString(shift),
-      XBMC->GetLocalizedString(19156),
+      " ",
       XBMC->GetLocalizedDate(rule.StartTime(),false,true),
       XBMC->GetLocalizedString(19159),
       XBMC->GetLocalizedTime(rule.StartTime(), false)
@@ -189,7 +189,7 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
     time.Format("%s %s %s %s %s %s",
       "Every ",
       DayToString(shift),
-      XBMC->GetLocalizedString(19156),
+      " ",
       XBMC->GetLocalizedDate(rule.StartTime(),false,true),
       XBMC->GetLocalizedString(19159),
       XBMC->GetLocalizedTime(rule.StartTime(), false)

@@ -2,6 +2,7 @@
 #include "cppmyth/MythTimer.h"
 #include <boost/shared_ptr.hpp>
 #include <string>
+#include <map>
 
 typedef  boost::shared_ptr< CAddonListItem > AddonListItemPtr;
 
@@ -9,7 +10,7 @@ class RecordingRulesWindow
 {
 public:
 
-  RecordingRulesWindow(std::vector< MythTimer > &recordingRules);
+  RecordingRulesWindow(std::map< int, MythTimer > &recordingRules);
   ~RecordingRulesWindow();
 
   bool Open();
@@ -29,6 +30,6 @@ public:
 private:
   CAddonGUIWindow      *m_window;
   CAddonGUIListContainer *m_list;
-  std::vector< MythTimer > m_recRules;
+  std::map< int, MythTimer > m_recRules;
   AddonListItemPtr AddRecordingRule(MythTimer &rule);
 };

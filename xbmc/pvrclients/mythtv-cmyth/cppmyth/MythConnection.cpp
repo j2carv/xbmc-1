@@ -58,7 +58,7 @@ MythRecorder MythConnection::GetRecorder(int n)
     for(int i=0;i<len;i++)
     {
       cmyth_proginfo_t cmprog=CMYTH->ProglistGetItem(proglist,i);
-      MythProgramInfo prog=CMYTH->ProginfoGetDetail(*m_conn_t,cmprog);//Release cmprog????
+      MythProgramInfo prog=CMYTH->ProginfoGetDetail(*m_conn_t,cmprog);
       CStdString path=prog.Path();
       retval.insert(std::pair<CStdString,MythProgramInfo>(path.c_str(),prog));
     }
@@ -75,10 +75,10 @@ MythRecorder MythConnection::GetRecorder(int n)
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
-      cmyth_proginfo_t cmprog=CMYTH->ProglistGetItem(proglist,i);
-      MythProgramInfo prog=CMYTH->ProginfoGetDetail(*m_conn_t,cmprog);//Release cmprog????
-      CStdString path=prog.Path();
-      retval.insert(std::pair<CStdString,MythProgramInfo>(path.c_str(),prog));
+      MythProgramInfo prog=CMYTH->ProglistGetItem(proglist,i);
+      CStdString filename;
+      filename.Format("%i_%i",prog.ChannelID(),prog.StartTime());
+      retval.insert(std::pair<CStdString,MythProgramInfo>(filename.c_str(),prog));
     }
     CMYTH->RefRelease(proglist);
     Unlock();

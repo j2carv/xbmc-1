@@ -72,12 +72,43 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
     return CMYTH->ProginfoChanId(*m_proginfo_t);
   }
 
+  unsigned long MythProgramInfo::RecordID()
+  {
+    return CMYTH->ProginfoRecordid(*m_proginfo_t);
+  }
+
   time_t MythProgramInfo::RecStart()
   {
     time_t retval;
     MythTimestamp time=CMYTH->ProginfoRecStart(*m_proginfo_t);
     retval=time.UnixTime();
     return retval;
+  }
+
+  time_t MythProgramInfo::StartTime()
+  {
+    time_t retval;
+    MythTimestamp time=CMYTH->ProginfoStart(*m_proginfo_t);
+    retval=time.UnixTime();
+    return retval;
+  }
+
+  time_t MythProgramInfo::EndTime()
+  {
+    time_t retval;
+    MythTimestamp time=CMYTH->ProginfoEnd(*m_proginfo_t);
+    retval=time.UnixTime();
+    return retval;
+  }
+
+  int MythProgramInfo::Priority()
+  {
+    return CMYTH->ProginfoPriority(*m_proginfo_t);//Might want to use recpriority2 instead.
+  }
+
+  MythProgramInfo::record_status MythProgramInfo::Status()
+  {
+    return CMYTH->ProginfoRecStatus(*m_proginfo_t);
   }
 
   int MythProgramInfo::Duration()
