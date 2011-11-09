@@ -1526,7 +1526,7 @@ cmyth_proginfo_t
 cmyth_proginfo_get_detail(cmyth_conn_t control, cmyth_proginfo_t p)
 {
 	cmyth_proginfo_t ret = cmyth_proginfo_dup(p);
-
+  ref_release(p);
 	if (ret == NULL) {
 		cmyth_dbg(CMYTH_DBG_ERROR,
 			  "%s: cmyth_proginfo_dup() failed\n",
@@ -1540,7 +1540,7 @@ cmyth_proginfo_get_detail(cmyth_conn_t control, cmyth_proginfo_t p)
 			  __FUNCTION__);
 		return NULL;
 	}
-	return ret;
+  return ret;
 }
 
 /*
@@ -1634,6 +1634,30 @@ cmyth_proginfo_card_id(cmyth_proginfo_t prog)
 	}
 
 	return prog->proginfo_card_id;
+}
+
+unsigned long
+cmyth_proginfo_recordid(cmyth_proginfo_t prog)
+{
+	if (!prog) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: no program info\n", __FUNCTION__);
+		return -1;
+	}
+
+	return prog->proginfo_record_id;
+}
+
+long
+cmyth_proginfo_priority(cmyth_proginfo_t prog)
+{
+	if (!prog) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: no program info\n", __FUNCTION__);
+		return -1;
+	}
+
+  return prog->proginfo_rec_priority;
 }
 
 char *

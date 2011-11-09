@@ -117,6 +117,8 @@ EXPORTS
 	cmyth_proginfo_category
 	cmyth_proginfo_seriesid
 	cmyth_proginfo_programid
+	cmyth_proginfo_recordid
+	cmyth_proginfo_priority
 	cmyth_proginfo_stars
 	cmyth_proginfo_playgroup
 	cmyth_proginfo_originalairdate

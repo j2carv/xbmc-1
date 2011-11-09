@@ -807,6 +807,20 @@ extern char *cmyth_proginfo_seriesid(cmyth_proginfo_t prog);
 extern char *cmyth_proginfo_programid(cmyth_proginfo_t prog);
 
 /**
+ * Retrieve the record ID of the matching record rule
+ * \param prog proginfo handle
+ * \return unsigned long
+ */
+extern unsigned long cmyth_proginfo_recordid(cmyth_proginfo_t prog);
+
+/**
+ * Retrieve the priority of a program
+ * \param prog proginfo handle
+ * \return long
+ */
+extern long cmyth_proginfo_priority(cmyth_proginfo_t prog);
+
+/**
  * Retrieve the critics rating (number of stars) of a program.
  * \param prog proginfo handle
  * \return null-terminated string
