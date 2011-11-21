@@ -1656,8 +1656,8 @@ cmyth_proginfo_priority(cmyth_proginfo_t prog)
 			  "%s: no program info\n", __FUNCTION__);
 		return -1;
 	}
-
-  return prog->proginfo_rec_priority;
+  
+  return atoi(prog->proginfo_rec_priority);
 }
 
 char *

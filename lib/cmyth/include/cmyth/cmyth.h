@@ -1004,6 +1004,8 @@ extern long cmyth_channel_chanid(cmyth_channel_t channel);
 
 extern long cmyth_channel_channum(cmyth_channel_t channel);
 
+extern char * cmyth_channel_channumstr(cmyth_channel_t channel);
+
 extern char * cmyth_channel_name(cmyth_channel_t channel);
 
 extern char * cmyth_channel_icon(cmyth_channel_t channel);
