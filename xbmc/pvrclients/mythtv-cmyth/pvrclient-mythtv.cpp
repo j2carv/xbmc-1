@@ -52,6 +52,7 @@ using namespace ADDON;
 	  time_t rStarttime = rule.StartTime();
 	  switch( rule.Type() )
 	  {
+	  case MythTimer::NotRecording:
 	  case MythTimer::SingleRecord:
 	  case MythTimer::OverrideRecord:
 	  case MythTimer::DontRecord:
@@ -72,7 +73,7 @@ using namespace ADDON;
 	  return false;
   }
   
-  void RecordingRule::push_back(std::pair< PVR_TIMER, MythProgramInfo > &&_val)
+  void RecordingRule::push_back(std::pair< PVR_TIMER, MythProgramInfo > &_val)
   {
     SaveTimerString(_val.first);
     std::vector< std::pair< PVR_TIMER, MythProgramInfo > >::push_back(_val);
@@ -579,7 +580,8 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
     tag.iClientIndex = ((recRule - m_recordingRules.begin())<<16) + recRule->size();
 
     //recRule->SaveTimerString(tag);
-    recRule->push_back(std::pair< PVR_TIMER, MythProgramInfo >(tag, proginfo)); 
+	std::pair< PVR_TIMER, MythProgramInfo > rrtmp(tag, proginfo);
+    recRule->push_back(rrtmp); 
     
     PVR->TransferTimerEntry(handle,&tag);
   }
@@ -694,7 +696,7 @@ PVR_ERROR PVRClientMythTV::DeleteTimer(const PVR_TIMER &timer, bool bForceDelete
       return PVR_ERROR_NO_ERROR; 
   }
   //delete related Override and Don't Record timers
-  std::vector<RecordingRule* > &modifiers = r.GetModifiers();
+  std::vector<RecordingRule* > modifiers = r.GetModifiers();
   for(std::vector <RecordingRule* >::iterator it = modifiers.begin(); it != modifiers.end(); it++)
     m_db.DeleteTimer((*it)->RecordID());
   if(!m_db.DeleteTimer(r.RecordID()))
