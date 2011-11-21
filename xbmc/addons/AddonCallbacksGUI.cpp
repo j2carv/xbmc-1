@@ -41,6 +41,7 @@
 #include "guilib/GUIPanelContainer.h"
 #include "guilib/GUIFixedListContainer.h"
 #include "epg/GUIEPGGridContainer.h"
+#include "dialogs/GUIDialogYesNo.h"
 
 #define CONTROL_BTNVIEWASICONS  2
 #define CONTROL_BTNSORTBY       3
@@ -65,6 +66,7 @@ CAddonCallbacksGUI::CAddonCallbacksGUI(CAddon* addon)
   m_callbacks->GetScreenHeight                = CAddonCallbacksGUI::GetScreenHeight;
   m_callbacks->GetScreenWidth                 = CAddonCallbacksGUI::GetScreenWidth;
   m_callbacks->GetVideoResolution             = CAddonCallbacksGUI::GetVideoResolution;
+  m_callbacks->Dialog_ShowYesNo               = CAddonCallbacksGUI::Dialog_ShowYesNo;
   m_callbacks->Window_New                     = CAddonCallbacksGUI::Window_New;
   m_callbacks->Window_Delete                  = CAddonCallbacksGUI::Window_Delete;
   m_callbacks->Window_SetCallbacks            = CAddonCallbacksGUI::Window_SetCallbacks;
@@ -176,6 +178,21 @@ int CAddonCallbacksGUI::GetScreenWidth()
 int CAddonCallbacksGUI::GetVideoResolution()
 {
   return (int)g_graphicsContext.GetVideoResolution();
+}
+
+int CAddonCallbacksGUI::Dialog_ShowYesNo(const char* heading, const char* line0, const char* line1, const char* line2, int* bCanceled, const char* noLabel, const char* yesLabel)
+{
+  const CStdString strHeading = heading? heading : "";
+  const CStdString strLine0 = line0? line0 : "";
+  const CStdString strLine1 = line1? line1 : "";
+  const CStdString strLine2 = line2? line2 : "";
+  bool boolCanceled=false;
+  const CStdString strNoLabel = noLabel? noLabel : "";
+  const CStdString strYesLabel = yesLabel? yesLabel : "";
+  bool retval = CGUIDialogYesNo::ShowAndGetInput(strHeading, strLine0, strLine1, strLine2, boolCanceled, strNoLabel, strYesLabel);
+  if(bCanceled)
+    *bCanceled = boolCanceled? 1 : 0;
+  return static_cast<int>(retval);
 }
 
 GUIHANDLE CAddonCallbacksGUI::Window_New(void *addonData, const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog)

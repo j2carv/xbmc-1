@@ -125,6 +125,10 @@ public:
       dlsym(m_libXBMC_gui, "GUI_get_video_resolution");
     if (GetVideoResolution == NULL)   { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    Dialog_showYesNo        = (int (*)(const char* heading, const char* line0, const char* line1, const char* line2, int* bCanceled, const char* noLabel, const char* yesLabel))
+      dlsym(m_libXBMC_gui, "GUI_Dialog_ShowYesNo");
+    if (Dialog_showYesNo == NULL)     { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+    
     Window_create           = (CAddonGUIWindow* (*)(const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog))
       dlsym(m_libXBMC_gui, "GUI_Window_create");
     if (Window_create == NULL)        { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -173,7 +177,6 @@ public:
       dlsym(m_libXBMC_gui, "GUI_ListItem_destroy");
     if (ListItem_destroy == NULL)     { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-
     return GUI_register_me(m_Handle) > 0;
   }
 
@@ -182,6 +185,7 @@ public:
   int (*GetScreenHeight)();
   int (*GetScreenWidth)();
   int (*GetVideoResolution)();
+  int (*Dialog_showYesNo)(const char* heading, const char* line0, const char* line1, const char* line2, int* bCanceled, const char* noLabel, const char* yesLabel);
   CAddonGUIWindow* (*Window_create)(const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog);
   void (*Window_destroy)(CAddonGUIWindow* p);
   CAddonGUISpinControl* (*Control_getSpin)(CAddonGUIWindow *window, int controlId);

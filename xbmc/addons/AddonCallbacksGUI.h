@@ -48,6 +48,8 @@ public:
   static int          GetScreenHeight();
   static int          GetScreenWidth();
   static int          GetVideoResolution();
+  
+  static int          Dialog_ShowYesNo(const char* heading, const char* line0, const char* line1, const char* line2, int* bCanceled, const char* noLabel, const char* yesLabel);
 
   static GUIHANDLE    Window_New(void *addonData, const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog);
   static void         Window_Delete(void *addonData, GUIHANDLE handle);
