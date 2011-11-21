@@ -19,7 +19,7 @@ public:
   std::vector< RecordingRule* > GetModifiers();
   bool HasModifiers();
   bool SameTimeslot(RecordingRule& rule);
-  void push_back(std::pair< PVR_TIMER, MythProgramInfo > &&_val);
+  void push_back(std::pair< PVR_TIMER, MythProgramInfo > &_val);
 
 private:
   void SaveTimerString(PVR_TIMER& timer);
