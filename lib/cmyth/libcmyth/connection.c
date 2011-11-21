@@ -553,7 +553,7 @@ cmyth_conn_connect_file(cmyth_proginfo_t prog,  cmyth_conn_t control,
 	cmyth_dbg(CMYTH_DBG_PROTO, "%s: connecting data connection\n",
 		  __FUNCTION__);
 	if (control->conn_version >= 17) {
-		myth_host = cmyth_conn_get_setting_unlocked(control, prog->proginfo_host,
+		myth_host = cmyth_conn_get_setting_unlocked(control, prog->proginfo_hostname,
 		                                   "BackendServerIP");
 	}
 	if (!myth_host) {

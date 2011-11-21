@@ -1073,6 +1073,16 @@ cmyth_channel_channum(cmyth_channel_t channel)
 }
 
 char *
+cmyth_channel_channumstr(cmyth_channel_t channel)
+{
+	if (!channel) {
+		return -EINVAL;
+	}
+	return channel->chanstr;
+}
+
+
+char *
 cmyth_channel_name(cmyth_channel_t channel)
 {
 	if (!channel) {
@@ -1171,6 +1181,7 @@ cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db)
 		channel = cmyth_channel_create();
 		channel->chanid = safe_atol(row[0]);
 		channel->channum = safe_atoi(row[1]);
+    strncpy(channel->chanstr, row[1], 10);
 		channel->name = ref_strdup(row[2]);
 		channel->icon = ref_strdup(row[3]);
 		channel->visible = safe_atoi(row[4]);
@@ -1901,7 +1912,7 @@ int cmyth_mysql_get_prog_finder_time_title_chan(cmyth_database_t db,cmyth_progra
 {
   MYSQL_RES *res= NULL;
 	MYSQL_ROW row;
-  const char *query_str = "SELECT program.chanid,UNIX_TIMESTAMP(program.starttime),UNIX_TIMESTAMP(program.endtime),program.title,program.description,program.subtitle,program.programid,program.seriesid,program.category,channel.channum,channel.callsign,channel.name,channel.sourceid FROM program INNER JOIN channel ON program.chanid=channel.chanid WHERE program.chanid = ? AND program.title = ? AND program.starttime = FROM_UNIXTIME( ? ) ORDER BY (channel.channum + 0), program.starttime ASC ";
+  const char *query_str = "SELECT program.chanid,UNIX_TIMESTAMP(program.starttime),UNIX_TIMESTAMP(program.endtime),program.title,program.description,program.subtitle,program.programid,program.seriesid,program.category,channel.channum,channel.callsign,channel.name,channel.sourceid FROM program INNER JOIN channel ON program.chanid=channel.chanid WHERE program.chanid = ? AND program.title LIKE ? AND program.starttime = FROM_UNIXTIME( ? ) AND program.manualid = 0 ORDER BY (channel.channum + 0), program.starttime ASC ";
 	int rows=0;
 
   char* esctitle=cmyth_mysql_escape_chars(db,title);
