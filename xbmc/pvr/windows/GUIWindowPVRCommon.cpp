@@ -589,55 +589,54 @@ bool CGUIWindowPVRCommon::PlayRecording(CFileItem *item, bool bPlayMinimized /* 
     return false;
 
   CStdString stream = item->GetPVRRecordingInfoTag()->m_strStreamURL;
-  if (stream == "")
-    return false;
-
-  /* Isolate the folder from the filename */
-  size_t found = stream.find_last_of("/");
-  if (found == CStdString::npos)
-    found = stream.find_last_of("\\");
-
-  if (found != CStdString::npos)
+  if (stream != "")
   {
-    /* Check here for asterisk at the begin of the filename */
-    if (stream[found+1] == '*')
+    /* Isolate the folder from the filename */
+    size_t found = stream.find_last_of("/");
+    if (found == CStdString::npos)
+      found = stream.find_last_of("\\");
+
+    if (found != CStdString::npos)
     {
-      /* Create a "stack://" url with all files matching the extension */
-      CStdString ext = URIUtils::GetExtension(stream);
-      CStdString dir = stream.substr(0, found).c_str();
-
-      CFileItemList items;
-      CDirectory::GetDirectory(dir, items);
-      items.Sort(SORT_METHOD_FILE ,SORT_ORDER_ASC);
-
-      vector<int> stack;
-      for (int i = 0; i < items.Size(); ++i)
+      /* Check here for asterisk at the begin of the filename */
+      if (stream[found+1] == '*')
       {
-        if (URIUtils::GetExtension(items[i]->GetPath()) == ext)
-          stack.push_back(i);
+        /* Create a "stack://" url with all files matching the extension */
+        CStdString ext = URIUtils::GetExtension(stream);
+        CStdString dir = stream.substr(0, found).c_str();
+
+        CFileItemList items;
+        CDirectory::GetDirectory(dir, items);
+        items.Sort(SORT_METHOD_FILE ,SORT_ORDER_ASC);
+
+        vector<int> stack;
+        for (int i = 0; i < items.Size(); ++i)
+        {
+          if (URIUtils::GetExtension(items[i]->GetPath()) == ext)
+            stack.push_back(i);
+        }
+
+        if (stack.size() > 0)
+        {
+          /* If we have a stack change the path of the item to it */
+          CStackDirectory dir;
+          CStdString stackPath = dir.ConstructStackPath(items, stack);
+          item->SetPath(stackPath);
+        }
       }
-
-      if (stack.size() > 0)
+      else
       {
-        /* If we have a stack change the path of the item to it */
-        CStackDirectory dir;
-        CStdString stackPath = dir.ConstructStackPath(items, stack);
-        item->SetPath(stackPath);
+        /* If no asterisk is present play only the given stream URL */
+        item->SetPath(stream);
       }
     }
     else
     {
-      /* If no asterisk is present play only the given stream URL */
-      item->SetPath(stream);
+      CLog::Log(LOGERROR, "PVRManager - %s - can't open recording: no valid filename", __FUNCTION__);
+      CGUIDialogOK::ShowAndGetInput(19033,0,19036,0);
+      return false;
     }
   }
-  else
-  {
-    CLog::Log(LOGERROR, "PVRManager - %s - can't open recording: no valid filename", __FUNCTION__);
-    CGUIDialogOK::ShowAndGetInput(19033,0,19036,0);
-    return false;
-  }
-
   g_application.getApplicationMessenger().PlayFile(*item, false);
 
   return true;
