@@ -11,7 +11,8 @@ public:
   MythChannel();
   MythChannel(cmyth_channel_t cmyth_channel,bool isRadio);
   int ID();
-  int Number();
+  int NumberInt();
+  CStdString Number();
   int SourceID();
   CStdString Name();
   CStdString Icon();

@@ -23,10 +23,16 @@ int  MythChannel::ID()
   return CMYTH->ChannelChanid(*m_channel_t);
 }
 
-int  MythChannel::Number()
+int  MythChannel::NumberInt()
 {
   return CMYTH->ChannelChannum(*m_channel_t);
 }
+
+CStdString MythChannel::Number()
+{
+  CStdString retval( CMYTH->ChannelChannumstr(*m_channel_t));
+  return retval;
+} 
 
 int MythChannel::SourceID()
 {

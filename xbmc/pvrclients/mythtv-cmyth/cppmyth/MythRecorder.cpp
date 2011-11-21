@@ -25,8 +25,7 @@ m_recorder_t(new MythPointerThreadSafe<cmyth_recorder_t>()),livechainupdated(new
 bool MythRecorder::SpawnLiveTV(MythChannel &channel)
 {
   char* pErr=NULL;
-  CStdString channelNum;
-  channelNum.Format("%i",channel.Number());
+  CStdString channelNum = channel.Number();
   m_conn.Lock();
   //m_recorder_t->Lock();
   //check channel
@@ -95,8 +94,7 @@ bool MythRecorder::CheckChannel(MythChannel &channel)
 {
   m_conn.Lock();
   //m_recorder_t->Lock();
-  CStdString channelNum;
-  channelNum.Format("%i",channel.Number());
+  CStdString channelNum=channel.Number();
   bool retval=CMYTH->RecorderCheckChannel(*m_recorder_t,channelNum.GetBuffer())==0;
   //m_recorder_t->Unlock();
   m_conn.Unlock();
@@ -115,8 +113,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
     m_conn.Unlock();
     return false;
   }
-  CStdString channelNum;
-  channelNum.Format("%i",channel.Number());
+  CStdString channelNum=channel.Number();
   if(CMYTH->RecorderPause(*m_recorder_t)!=0)
   {
     XBMC->Log(LOG_ERROR,"%s: Failed to pause recorder %i",__FUNCTION__,ID());

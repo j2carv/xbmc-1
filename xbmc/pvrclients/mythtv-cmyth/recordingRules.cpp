@@ -159,7 +159,7 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
 
   time_t starttime = rule.StartTime();
   tm *lc = localtime(&starttime);
-  int shift = lc->tm_wday? 6 : lc->tm_wday-1;//Monday is the first day
+  int shift = lc->tm_wday? lc->tm_wday-1 : 6;//Monday is the first day
 
   switch( rule.Type()) 
   {
@@ -167,9 +167,8 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
     case MythTimer::DontRecord:      
     case MythTimer::OverrideRecord:
   case MythTimer::SingleRecord:
-    time.Format("%s %s %s %s %s",
+    time.Format("%s %s %s %s",
       DayToString(shift),
-      " ",
       XBMC->GetLocalizedDate(rule.StartTime(),false,true),
       XBMC->GetLocalizedString(19159),
       XBMC->GetLocalizedTime(rule.StartTime(), false)
@@ -186,10 +185,9 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
     time="Once";
     break;
   case MythTimer::WeekslotRecord:
-    time.Format("%s %s %s %s %s %s",
+    time.Format("%s %s %s %s %s",
       "Every ",
       DayToString(shift),
-      " ",
       XBMC->GetLocalizedDate(rule.StartTime(),false,true),
       XBMC->GetLocalizedString(19159),
       XBMC->GetLocalizedTime(rule.StartTime(), false)
