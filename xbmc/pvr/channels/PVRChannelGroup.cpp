@@ -878,9 +878,15 @@ bool CPVRChannelGroup::Renumber(void)
 
 void CPVRChannelGroup::ResetChannelNumberCache(void)
 {
+  CSingleLock lock(m_critSection);
+
   /* reset the channel number cache */
-  if (g_PVRManager.IsSelectedGroup(*this))
-    SetSelectedGroup();
+  if (!IsInternalGroup())
+    g_PVRChannelGroups->GetGroupAll(m_bRadio)->ResetChannelNumbers();
+
+  /* set all channel numbers on members of this group */
+  for (unsigned int iChannelPtr = 0; iChannelPtr < size(); iChannelPtr++)
+    at(iChannelPtr).channel->SetCachedChannelNumber(at(iChannelPtr).iChannelNumber);
 }
 
 bool CPVRChannelGroup::HasChangedChannels(void) const
@@ -930,18 +936,6 @@ void CPVRChannelGroup::ResetChannelNumbers(void)
     at(iChannelPtr).channel->SetCachedChannelNumber(0);
 }
 
-void CPVRChannelGroup::SetSelectedGroup(void)
-{
-  CSingleLock lock(m_critSection);
-
-  if (!IsInternalGroup())
-    g_PVRChannelGroups->GetGroupAll(m_bRadio)->ResetChannelNumbers();
-
-  /* set all channel numbers on members of this group */
-  for (unsigned int iChannelPtr = 0; iChannelPtr < size(); iChannelPtr++)
-    at(iChannelPtr).channel->SetCachedChannelNumber(at(iChannelPtr).iChannelNumber);
-}
-
 void CPVRChannelGroup::Notify(const Observable &obs, const CStdString& msg)
 {
   if (msg.Equals("settings"))
@@ -970,18 +964,6 @@ void CPVRChannelGroup::Notify(const Observable &obs, const CStdString& msg)
 bool CPVRPersistGroupJob::DoWork(void)
 {
   return m_group->Persist();
-}
-
-const CDateTime CPVRChannelGroup::GetFirstEPGDate(void)
-{
-  // TODO should use two separate containers, one for radio, one for tv
-  return g_EpgContainer.GetFirstEPGDate();
-}
-
-const CDateTime CPVRChannelGroup::GetLastEPGDate(void)
-{
-  // TODO should use two separate containers, one for radio, one for tv
-  return g_EpgContainer.GetLastEPGDate();
 }
 
 int CPVRChannelGroup::GetEPGSearch(CFileItemList &results, const EpgSearchFilter &filter)

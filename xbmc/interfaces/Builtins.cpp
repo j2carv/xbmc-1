@@ -111,6 +111,8 @@ const BUILT_IN commands[] = {
   { "Quit",                       false,  "Quit XBMC" },
   { "Hibernate",                  false,  "Hibernates the system" },
   { "Suspend",                    false,  "Suspends the system" },
+  { "InhibitIdleShutdown",        false,  "Inhibit idle shutdown" },
+  { "AllowIdleShutdown",          false,  "Allow idle shutdown" },
   { "RestartApp",                 false,  "Restart XBMC" },
   { "Minimize",                   false,  "Minimize XBMC" },
   { "Reset",                      false,  "Reset the xbox (warm reboot)" },
@@ -271,6 +273,11 @@ int CBuiltins::Execute(const CStdString& execString)
   else if (execute.Equals("quit"))
   {
     g_application.getApplicationMessenger().Quit();
+  }
+  else if (execute.Equals("inhibitidleshutdown"))
+  {
+    bool inhibit = (params.size() == 1 && params[0].Equals("true"));
+    g_application.getApplicationMessenger().InhibitIdleShutdown(inhibit);
   }
   else if (execute.Equals("minimize"))
   {
@@ -569,14 +576,28 @@ int CBuiltins::Execute(const CStdString& execString)
     {
       CFileItemList items;
       CDirectory::GetDirectory(item.GetPath(),items,g_settings.m_videoExtensions);
-      g_playlistPlayer.Add(PLAYLIST_VIDEO,items);
-      g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_VIDEO);
+      int playlist = PLAYLIST_MUSIC;
+      for (int i = 0; i < items.Size(); i++)
+      {
+        if (items[i]->IsVideo())
+        {
+          playlist = PLAYLIST_VIDEO;
+          break;
+        }
+      }
+      g_playlistPlayer.ClearPlaylist(playlist);
+      g_playlistPlayer.Add(playlist, items);
+      g_playlistPlayer.SetCurrentPlaylist(playlist);
       g_playlistPlayer.Play();
     }
     else
     {
+      int playlist = item.IsAudio() ? PLAYLIST_MUSIC : PLAYLIST_VIDEO;
+      g_playlistPlayer.ClearPlaylist(playlist);
+      g_playlistPlayer.SetCurrentPlaylist(playlist);
+
       // play media
-      if (!g_application.PlayMedia(item, item.IsAudio() ? PLAYLIST_MUSIC : PLAYLIST_VIDEO))
+      if (!g_application.PlayMedia(item, playlist))
       {
         CLog::Log(LOGERROR, "XBMC.PlayMedia could not play media: %s", params[0].c_str());
         return false;
@@ -964,7 +985,7 @@ int CBuiltins::Execute(const CStdString& execString)
     bool restart = false;
     if (params.size() > 0 && params[0].CompareNoCase("restart") == 0)
       restart = true;
-    CAutorun::PlayDisc(restart);
+    CAutorun::PlayDisc(g_mediaManager.GetDiscPath(), restart);
 #endif
   }
   else if (execute.Equals("ripcd"))

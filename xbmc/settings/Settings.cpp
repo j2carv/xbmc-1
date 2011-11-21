@@ -108,6 +108,8 @@ void CSettings::Initialize()
   m_discStubExtensions = ".disc";
   // internal music extensions
   m_musicExtensions += "|.sidstream|.oggstream|.nsfstream|.asapstream|.cdda";
+  // internal video extensions
+  m_videoExtensions += "|.pvr";
 
   #ifdef __APPLE__
     CStdString logDir = getenv("HOME");
@@ -756,9 +758,14 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
   if (g_guiSettings.GetBool("debug.showloginfo"))
   {
     g_advancedSettings.m_logLevel = std::max(g_advancedSettings.m_logLevelHint, LOG_LEVEL_DEBUG_FREEMEM);
-    CLog::SetLogLevel(g_advancedSettings.m_logLevel);
     CLog::Log(LOGNOTICE, "Enabled debug logging due to GUI setting (%d)", g_advancedSettings.m_logLevel);
   }
+  else
+  {
+    g_advancedSettings.m_logLevel = std::min(g_advancedSettings.m_logLevelHint, LOG_LEVEL_DEBUG/*LOG_LEVEL_NORMAL*/);
+    CLog::Log(LOGNOTICE, "Disabled debug logging due to GUI setting. Level %d.", g_advancedSettings.m_logLevel);
+  }  
+  CLog::SetLogLevel(g_advancedSettings.m_logLevel);
   return true;
 }
 

@@ -209,7 +209,6 @@ namespace PVR
 
     //@}
 
-    virtual void SetSelectedGroup(void);
     virtual void ResetChannelNumbers(void);
 
     virtual void Notify(const Observable &obs, const CStdString& msg);
@@ -366,18 +365,6 @@ namespace PVR
      * @return The amount of entries that were added.
      */
     virtual int GetEPGNext(CFileItemList &results);
-
-    /*!
-     * @brief Get the start time of the first entry.
-     * @return The start time.
-     */
-    virtual const CDateTime GetFirstEPGDate(void);
-
-    /*!
-      * @brief Get the end time of the last entry.
-      * @return The end time.
-      */
-    virtual const CDateTime GetLastEPGDate(void);
 
   protected:
     /*!
