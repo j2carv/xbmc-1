@@ -88,6 +88,13 @@ DLLEXPORT int GUI_get_video_resolution()
   return m_cb->GetVideoResolution();
 }
 
+
+// Dialogs
+DLLEXPORT int GUI_Dialog_ShowYesNo(const char* heading, const char* line0, const char* line1, const char* line2, int* bCanceled, const char* noLabel, const char* yesLabel)
+{
+  return m_cb->Dialog_ShowYesNo(heading, line0, line1, line2, bCanceled, noLabel, yesLabel);
+}
+
 DLLEXPORT CAddonGUIWindow* GUI_Window_create(const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog)
 {
   return new CAddonGUIWindow(xmlFilename, defaultSkin, forceFallback, asDialog);

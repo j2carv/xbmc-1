@@ -51,6 +51,7 @@ typedef void (*GUIUnlock)();
 typedef int (*GUIGetScreenHeight)();
 typedef int (*GUIGetScreenWidth)();
 typedef int (*GUIGetVideoResolution)();
+typedef int (*GUIDialog_ShowYesNo)(const char* heading, const char* line0, const char* line1, const char* line2, int* bCanceled, const char* noLabel, const char* yesLabel);
 typedef GUIHANDLE   (*GUIWindow_New)(void *addonData, const char *xmlFilename, const char *defaultSkin, bool forceFallback, bool asDialog);
 typedef void        (*GUIWindow_Delete)(void *addonData, GUIHANDLE handle);
 typedef void        (*GUIWindow_SetCallbacks)(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*)(GUIHANDLE handle), bool (*)(GUIHANDLE handle, int), bool (*)(GUIHANDLE handle, int), bool (*)(GUIHANDLE handle, int),bool (*)(GUIHANDLE ,int ,int , unsigned int));
@@ -126,6 +127,7 @@ typedef struct CB_GUILib
   GUIGetScreenHeight                  GetScreenHeight;
   GUIGetScreenWidth                   GetScreenWidth;
   GUIGetVideoResolution               GetVideoResolution;
+  GUIDialog_ShowYesNo                 Dialog_ShowYesNo;
   GUIWindow_New                       Window_New;
   GUIWindow_Delete                    Window_Delete;
   GUIWindow_SetCallbacks              Window_SetCallbacks;
