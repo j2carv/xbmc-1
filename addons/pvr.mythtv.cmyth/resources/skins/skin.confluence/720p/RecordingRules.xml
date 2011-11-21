@@ -49,7 +49,7 @@
   					<label>19029</label>
   				</control>
   				<control type="label">
-  					<description>Search header label</description>
+  					<description>Time header label</description>
   					<posx>580</posx>
   					<posy>20</posy>
   					<width>300</width>
@@ -59,10 +59,10 @@
   					<shadowcolor>black</shadowcolor>
   					<align>center</align>
   					<aligny>center</aligny>
-  					<label>137</label>
+  					<label>555</label>
   				</control>
   				<control type="label">
-  					<description>Time header label</description>
+  					<description>Search header label</description>
   					<posx>220</posx>
   					<posy>20</posy>
   					<width>300</width>
@@ -72,7 +72,7 @@
   					<shadowcolor>black</shadowcolor>
   					<align>center</align>
   					<aligny>center</aligny>
-  					<label>555</label>
+  					<label>137</label>
   				</control>
   				<control type="label">
   					<description>Status header label</description>
@@ -159,7 +159,7 @@
   							<align>center</align>
   							<aligny>center</aligny>
   							<selectedcolor>selected</selectedcolor>
-  							<info>ListItem.Property(time)</info>
+  							<info>ListItem.Property(search)</info>
   						</control>
   						<control type="label">
   							<posx>730</posx>
@@ -170,7 +170,7 @@
   							<align>center</align>
   							<aligny>center</aligny>
   							<selectedcolor>selected</selectedcolor>
-  							<info>ListItem.Property(search)</info>
+  							<info>ListItem.Property(time)</info>
   						</control>
   						<control type="label">
   							<posx>1018</posx>
@@ -256,7 +256,7 @@
   							<align>center</align>
   							<aligny>center</aligny>
   							<selectedcolor>selected</selectedcolor>
-  							<info>ListItem.Property(time)</info>
+  							<info>ListItem.Property(search)</info>
   						</control>
   						<control type="label">
   							<posx>730</posx>
@@ -267,7 +267,7 @@
   							<align>center</align>
   							<aligny>center</aligny>
   							<selectedcolor>selected</selectedcolor>
-  							<info>ListItem.Property(search)</info>
+  							<info>ListItem.Property(time)</info>
   						</control>
   						<control type="label">
   							<posx>1018</posx>

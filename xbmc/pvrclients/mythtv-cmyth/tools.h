@@ -83,4 +83,17 @@ void inline cSleep(const int ms)
 #endif
 }
 
+int inline daytime(time_t *time)
+{
+	struct tm* ptm = localtime( time );
+	int retval = ptm->tm_sec*60+ptm->tm_min*60+ptm->tm_hour;
+	return retval;	
+}
+
+int inline weekday(time_t *time)
+{
+	struct tm* ptm = localtime( time );
+	int retval = ptm->tm_wday;
+	return retval;	
+}
 #endif //__TOOLS_H

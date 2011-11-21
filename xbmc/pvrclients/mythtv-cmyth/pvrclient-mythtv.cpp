@@ -4,6 +4,91 @@
 #include "recordingRules.h"
 using namespace ADDON;
 
+
+  RecordingRule::RecordingRule(const MythTimer& timer)
+	  :MythTimer(timer),m_parent(0)
+  {}
+
+  RecordingRule& RecordingRule::operator=(const MythTimer& t)
+  {
+    MythTimer::operator=(t);
+    clear();
+    return *this;
+  }
+
+  bool RecordingRule::operator==(const int &id)
+  {
+    return id==RecordID();
+  }
+
+  RecordingRule* RecordingRule::GetParent()
+  {
+	  return m_parent;
+  }
+  
+  void RecordingRule::SetParent(RecordingRule& parent)
+  {
+	  m_parent = &parent;
+  }
+  
+  void RecordingRule::AddModifier(RecordingRule& modifier)
+  {
+	  m_modifiers.push_back(&modifier);
+  } 
+  
+  std::vector< RecordingRule* > RecordingRule::GetModifiers()
+  {
+	  return m_modifiers;
+  }
+  
+  bool RecordingRule::HasModifiers()
+  {
+	  return !m_modifiers.empty();
+  }
+  
+  bool RecordingRule::SameTimeslot(RecordingRule& rule)
+  {
+	  time_t starttime = StartTime();
+	  time_t rStarttime = rule.StartTime();
+	  switch( rule.Type() )
+	  {
+	  case MythTimer::SingleRecord:
+	  case MythTimer::OverrideRecord:
+	  case MythTimer::DontRecord:
+		  return rStarttime == starttime && rule.EndTime() == EndTime() && rule.ChanID() == ChanID();
+	  case MythTimer::FindDailyRecord:
+	  case MythTimer::FindWeeklyRecord:
+	  case MythTimer::FindOneRecord:
+		  return rule.Title() == Title();
+	  case MythTimer::TimeslotRecord:
+		  return rule.Title() == Title() && daytime( &starttime) == daytime( &rStarttime ) &&  rule.ChanID() == ChanID();
+	  case MythTimer::ChannelRecord:
+		  return rule.Title() == Title() && rule.ChanID() == ChanID(); //TODO: dup
+	  case MythTimer::AllRecord:
+		return rule.Title() == Title();//TODO: dup
+	  case MythTimer::WeekslotRecord:
+		  return rule.Title() == Title() && daytime( &starttime) == daytime( &rStarttime ) && weekday( &starttime) == weekday( &rStarttime) &&  rule.ChanID() == ChanID();
+	  }
+	  return false;
+  }
+  
+  void RecordingRule::push_back(std::pair< PVR_TIMER, MythProgramInfo > &&_val)
+  {
+    SaveTimerString(_val.first);
+    std::vector< std::pair< PVR_TIMER, MythProgramInfo > >::push_back(_val);
+  }
+
+  void RecordingRule::SaveTimerString(PVR_TIMER& timer) 
+  {
+    m_stringStore.push_back(boost::shared_ptr<CStdString>(new CStdString(timer.strTitle)));
+    timer.strTitle=m_stringStore.back()->c_str();
+    m_stringStore.push_back(boost::shared_ptr<CStdString>(new CStdString(timer.strDirectory)));
+    timer.strDirectory=m_stringStore.back()->c_str();
+    m_stringStore.push_back(boost::shared_ptr<CStdString>(new CStdString(timer.strSummary)));
+    timer.strSummary=m_stringStore.back()->c_str();
+  }
+  
+
 PVRClientMythTV::PVRClientMythTV()
   :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap()
 {
@@ -292,7 +377,7 @@ PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
       tag.bIsHidden=!it->second.Visible();
       tag.bIsRadio=it->second.IsRadio();
       tag.iUniqueId=it->first;
-      tag.iChannelNumber=it->second.Number(); //Swap ID and Number?
+      tag.iChannelNumber=it->second.NumberInt(); //Use ID instead as mythtv channel number is a string?
       CStdString chanName= it->second.Name();
       tag.strChannelName = chanName;
       CStdString icon = it->second.Icon();//TODO: Fix icons
@@ -397,6 +482,21 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
   std::map< int, MythTimer > timers=m_db.GetTimers();
+  m_recordingRules.clear();
+  
+  for(std::map< int, MythTimer >::iterator it = timers.begin();it != timers.end();it++)
+    m_recordingRules.push_back(it->second);
+  for(std::vector <RecordingRule >::iterator it = m_recordingRules.begin();it != m_recordingRules.end(); it++)
+    if(it->Type() == MythTimer::DontRecord || it->Type() == MythTimer::OverrideRecord)
+      for(std::vector <RecordingRule >::iterator it2 = m_recordingRules.begin();it2 != m_recordingRules.end(); it2++)
+        if(it2->Type() != MythTimer::DontRecord && it2->Type() != MythTimer::OverrideRecord)
+			if(it->SameTimeslot(*it2)&&!it->GetParent())
+          {
+            it2->AddModifier(*it);
+            it->SetParent(*it2);
+          }
+
+  
   boost::unordered_map< CStdString, MythProgramInfo > upcomingRecordings = m_con.GetPendingPrograms();
   for (boost::unordered_map< CStdString, MythProgramInfo >::iterator it = upcomingRecordings.begin(); it != upcomingRecordings.end(); it++)
   {
@@ -408,6 +508,13 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
     tag.iClientIndex=proginfo.RecordID();
     tag.startTime=proginfo.StartTime();
     CStdString title=proginfo.Title();
+    if(title.empty())
+    {
+      MythProgram epgProgram;
+      title="%";
+      m_db.FindProgram(tag.startTime,tag.iClientChannelUid,title,&epgProgram);
+      title=epgProgram.title;
+    }
     tag.strTitle=title;
     CStdString summary=proginfo.Description(); 
     tag.strSummary=summary;
@@ -467,6 +574,13 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
     tag.iLifetime=0;
     tag.strDirectory="";
 
+    std::vector< RecordingRule >::iterator recRule = std::find(m_recordingRules.begin(), m_recordingRules.end() , it->second.RecordID()); 
+    
+    tag.iClientIndex = ((recRule - m_recordingRules.begin())<<16) + recRule->size();
+
+    //recRule->SaveTimerString(tag);
+    recRule->push_back(std::pair< PVR_TIMER, MythProgramInfo >(tag, proginfo)); 
+    
     PVR->TransferTimerEntry(handle,&tag);
   }
   /*
@@ -560,6 +674,7 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
     return PVR_ERROR_NOT_POSSIBLE;
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,id);
+  //PVR->TriggerTimerUpdate();
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -568,25 +683,30 @@ PVR_ERROR PVRClientMythTV::DeleteTimer(const PVR_TIMER &timer, bool bForceDelete
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
   std::map< int, MythTimer > timers=m_db.GetTimers();
-  if(timers.at(timer.iClientIndex).Type()==MythTimer::FindOneRecord || timers.at(timer.iClientIndex).Type()==MythTimer::SingleRecord)
+  RecordingRule r = m_recordingRules[(timer.iClientIndex)>>16]; 
+  if(r.GetParent())
+    r = *r.GetParent();
+  if(r.Type()!=MythTimer::FindOneRecord && r.Type()!=MythTimer::SingleRecord)
   {
-  if(!m_db.DeleteTimer(timer.iClientIndex))
+    CStdString line0;
+    line0.Format(XBMC->GetLocalizedString(30008)/*"This will delete the recording rule and \nan additional %i timer(s)."*/,r.size()-1);
+	if(!(GUI->Dialog_showYesNo(XBMC->GetLocalizedString(19060)/*"Delete Timer"*/,line0,"",XBMC->GetLocalizedString(30007)/*"Do you still want to delete?"*/,NULL,NULL,NULL)))
+      return PVR_ERROR_NO_ERROR; 
+  }
+  //delete related Override and Don't Record timers
+  std::vector<RecordingRule* > &modifiers = r.GetModifiers();
+  for(std::vector <RecordingRule* >::iterator it = modifiers.begin(); it != modifiers.end(); it++)
+    m_db.DeleteTimer((*it)->RecordID());
+  if(!m_db.DeleteTimer(r.RecordID()))
     return PVR_ERROR_NOT_POSSIBLE;
   m_con.UpdateSchedules(-1);
-  }
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return PVR_ERROR_NO_ERROR;
 }
 
-PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
+void PVRClientMythTV::PVRtoMythTimer(const PVR_TIMER timer, MythTimer& mt)
 {
-  if(g_bExtraDebug)
-    XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
-  std::map< int, MythTimer > timers=m_db.GetTimers();
-  if(timers.at(timer.iClientIndex).Type()==MythTimer::SingleRecord)
-  {
-  MythTimer mt;
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
   mt.ChanID(timer.iClientChannelUid);
@@ -598,17 +718,99 @@ PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
   mt.Priority(timer.iPriority);
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
+  mt.Title(timer.strTitle);
   CStdString title=mt.Title();
   mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
   mt.RecordID(timer.iClientIndex);
-  if(!m_db.UpdateTimer(mt))
+}
+
+PVR_ERROR PVRClientMythTV::UpdateTimer(const PVR_TIMER &timer)
+{
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i, ID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid,timer.iClientIndex);
+  RecordingRule r = m_recordingRules[(timer.iClientIndex)>>16]; 
+  PVR_TIMER oldPvrTimer = r[(timer.iClientIndex)&0xffff].first;
+  {
+    bool createNewRule = false;
+    bool createNewOverrideRule = false;
+  MythTimer mt;
+  PVRtoMythTimer(timer,mt);
+  mt.Description(oldPvrTimer.strSummary);//Fix broken description
+  mt.Inactive(false);
+  mt.RecordID(r.RecordID());
+
+  //These should trigger a manual search or a new rule
+  if(oldPvrTimer.iClientChannelUid != timer.iClientChannelUid ||
+	 oldPvrTimer.endTime != timer.endTime ||
+	 oldPvrTimer.startTime != timer.startTime ||
+	 oldPvrTimer.startTime != timer.startTime ||
+	 strcmp(oldPvrTimer.strTitle, timer.strTitle) ||
+	 //strcmp(oldPvrTimer.strSummary, timer.strSummary) ||
+	 timer.bIsRepeating
+	 )
+    createNewRule = true;
+
+  //Change type
+  if(oldPvrTimer.state != timer.state)
+  {
+	if( r.Type() != MythTimer::SingleRecord && !createNewRule)
+    {
+    if(timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED)
+      mt.Type( MythTimer::DontRecord );
+    else
+      mt.Type( MythTimer::OverrideRecord );
+    createNewOverrideRule = true;
+    }
+    else
+      mt.Inactive( timer.state == PVR_TIMER_STATE_ABORTED ||timer.state ==  PVR_TIMER_STATE_CANCELLED);
+  }
+
+  //These can be updated without triggering a new rule
+  if(oldPvrTimer.iMarginEnd != timer.iMarginEnd ||
+	 oldPvrTimer.iPriority != timer.iPriority ||
+	 oldPvrTimer.iMarginStart != timer.iMarginStart )
+    createNewOverrideRule = true;
+  
+  CStdString title = timer.strTitle;
+  if(createNewRule)
+    mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
+  if(createNewOverrideRule && r.SearchType() == MythTimer::ManualSearch)
+	  mt.SearchType( MythTimer::ManualSearch);
+  
+  if(r.Type() == MythTimer::DontRecord || r.Type() == MythTimer::OverrideRecord)
+	createNewOverrideRule = false;
+  
+  if(createNewRule && r.Type() != MythTimer::SingleRecord  )
+  {
+  if(!m_db.AddTimer(mt))
     return PVR_ERROR_NOT_POSSIBLE;
-  m_con.UpdateSchedules(timer.iClientIndex);
+   
+   MythTimer mtold;
+   PVRtoMythTimer(oldPvrTimer,mtold);
+   mtold.Type(MythTimer::DontRecord);
+   mtold.Inactive(false);
+   mtold.RecordID(r.RecordID());
+   int id=r.RecordID();
+   if(r.Type() == MythTimer::DontRecord || r.Type() == MythTimer::OverrideRecord)
+	m_db.UpdateTimer(mtold);
+   else
+	id=m_db.AddTimer(mtold);//Blocks old record rule
+   m_con.UpdateSchedules(id);
+  }
+  else if(createNewOverrideRule &&  r.Type() != MythTimer::SingleRecord )
+  {
+    if(mt.Type() != MythTimer::DontRecord && mt.Type() != MythTimer::OverrideRecord)
+      mt.Type(MythTimer::OverrideRecord);
+    if(!m_db.AddTimer(mt))
+      return PVR_ERROR_NOT_POSSIBLE;
   }
   else
   {
-    //create new override timer
+	if(!m_db.UpdateTimer(mt))
+	    return PVR_ERROR_NOT_POSSIBLE;
+  }
+  m_con.UpdateSchedules(mt.RecordID());
   }
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);

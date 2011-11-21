@@ -211,6 +211,7 @@ typedef struct cmyth_program {
 	int event_flags;
 	int startoffset;
 	int endoffset;
+  cmyth_program(){memset(this,0,sizeof(cmyth_program));}
 }cmyth_program_t;
 
 typedef struct cmyth_recgrougs {
@@ -962,6 +963,10 @@ if (ChannelChanid == NULL)      { fprintf(stderr, "Unable to assign function %s\
 dlsym(m_libcmyth, "cmyth_channel_channum");
 if (ChannelChannum == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    ChannelChannumstr      = (char* (*)(cmyth_channel_t channel))
+dlsym(m_libcmyth, "cmyth_channel_channumstr");
+if (ChannelChannumstr == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     ChannelName      = (char* (*)(cmyth_channel_t channel))
 dlsym(m_libcmyth, "cmyth_channel_name");
 if (ChannelName == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1380,6 +1385,7 @@ void (*FileSetClosedCallback)(cmyth_file_t file,void (* callback)(cmyth_file_t))
 int (*FileRead)(cmyth_file_t file,char* buf,unsigned long len);
 long (*ChannelChanid)(cmyth_channel_t channel);
 long (*ChannelChannum)(cmyth_channel_t channel);
+char* (*ChannelChannumstr)(cmyth_channel_t channel);
 char* (*ChannelName)(cmyth_channel_t channel);
 char* (*ChannelIcon)(cmyth_channel_t channel);
 int (*ChannelVisible)(cmyth_channel_t channel);
