@@ -57,11 +57,20 @@ cmyth_database_close(cmyth_database_t db)
     }
 }
 
+static void
+cmyth_database_destroy(cmyth_database_t db)
+{
+	cmyth_dbg(CMYTH_DBG_DEBUG, "%s\n", __FUNCTION__);
+	cmyth_database_close(db);
+}
+
 cmyth_database_t
 cmyth_database_init(char *host, char *db_name, char *user, char *pass)
 {
 	cmyth_database_t rtrn = ref_alloc(sizeof(*rtrn));
 	cmyth_dbg(CMYTH_DBG_DEBUG, "%s\n", __FUNCTION__);
+
+  ref_set_destroy(rtrn, (ref_destroy_t)cmyth_database_destroy);
 
 	if (rtrn != NULL) {
 	    rtrn->db_host = ref_strdup(host);
