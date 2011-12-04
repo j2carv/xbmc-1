@@ -232,9 +232,9 @@ void CPVRGUIInfo::UpdateQualityData(void)
 
 void CPVRGUIInfo::UpdateMisc(void)
 {
-  bool bStarted = g_PVRManager.IsStarted();
   CSingleLock lock(m_critSection);
-
+  bool bStarted = g_PVRManager.IsStarted();
+  
   m_strPlayingClientName      = bStarted ? g_PVRClients->GetPlayingClientName() : "";
   m_bHasRecordings            = bStarted && g_PVRRecordings->GetNumRecordings() > 0;
   m_bHasNonRecordingTimers    = bStarted && m_iTimerAmount - m_iRecordingTimerAmount > 0;
@@ -777,6 +777,7 @@ void CPVRGUIInfo::UpdatePlayingTag(void)
         m_playingEpgTag = new CEpgInfoTag(*newTag);
 
       m_iDuration = m_playingEpgTag ? m_playingEpgTag->GetDuration() * 1000 : 0;
+      lock.Leave();
       g_PVRManager.UpdateCurrentFile();
     }
   }

@@ -963,6 +963,7 @@ PVR_ADDON_CAPABILITIES CPVRManager::GetCurrentAddonCapabilities(void)
 
 void CPVRManager::StartChannelScan(void)
 {
+  CExclusiveLock lock(m_critSectionTriggers);
   if (IsStarted() && m_addons)
     m_addons->StartChannelScan();
 }
