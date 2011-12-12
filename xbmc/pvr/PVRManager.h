@@ -26,7 +26,6 @@
 #include "threads/Event.h"
 #include "windows/GUIWindowPVRCommon.h"
 #include "addons/include/xbmc_pvr_types.h"
-#include "threads/SharedSection.h"
 
 class CGUIDialogExtendedProgressBar;
 
@@ -514,7 +513,6 @@ namespace PVR
 
     ManagerState GetState(void) const;
 
-    void SetState(ManagerState state);
     /** @name containers */
     //@{
     CPVRChannelGroupsContainer *    m_channelGroups;               /*!< pointer to the channel groups container */
@@ -524,13 +522,13 @@ namespace PVR
     CPVRGUIInfo *                   m_guiInfo;                     /*!< pointer to the guiinfo data */
     //@}
 
-    CSharedSection                  m_critSectionTriggers;         /*!< critical section for triggered updates */
+    CCriticalSection                m_critSectionTriggers;         /*!< critical section for triggered updates */
     CEvent                          m_triggerEvent;                /*!< triggers an update */
     std::vector<CJob *>             m_pendingUpdates;              /*!< vector of pending pvr updates */
 
     CFileItem *                     m_currentFile;                 /*!< the PVR file that is currently playing */
     CPVRDatabase *                  m_database;                    /*!< the database for all PVR related data */
-    CSharedSection                  m_critSection;                 /*!< critical section for all changes to this class, except for changes to triggers */
+    CCriticalSection                m_critSection;                 /*!< critical section for all changes to this class, except for changes to triggers */
     bool                            m_bFirstStart;                 /*!< true when the PVR manager was started first, false otherwise */
     bool                            m_bIsSwitchingChannels;        /*!< true while switching channels */
     CGUIDialogExtendedProgressBar * m_loadingProgressDialog;       /*!< progress dialog that is displayed while the pvrmanager is loading */

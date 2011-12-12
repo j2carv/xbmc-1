@@ -258,7 +258,6 @@ void CPVRGUIInfo::UpdateQualityData(void)
 
 void CPVRGUIInfo::UpdateMisc(void)
 {
-  CSingleLock lock(m_critSection);
   bool bStarted = g_PVRManager.IsStarted();
   CSingleLock lock(m_critSection);
   CStdString strPlayingClientName      = bStarted ? g_PVRClients->GetPlayingClientName() : StringUtils::EmptyString;
@@ -855,7 +854,6 @@ void CPVRGUIInfo::UpdatePlayingTag(void)
           m_iDuration     = m_playingEpgTag->GetDuration() * 1000;
         }
       }
-      lock.Leave();
       g_PVRManager.UpdateCurrentFile();
     }
   }
