@@ -349,6 +349,18 @@ extern int cmyth_conn_get_protocol_version(cmyth_conn_t conn);
 extern char * cmyth_conn_get_setting(cmyth_conn_t conn,
                const char* hostname, const char* setting);
 
+/**
+ * Set Setting
+ */
+
+/**
+ * Get hostname
+ */
+
+/**
+ * Set own hostname
+ */
+
 /*
  * -----------------------------------------------------------------
  * Event Operations
