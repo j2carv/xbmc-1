@@ -19,7 +19,7 @@
  *
  */
 
-#if defined(__APPLE__) && !defined(__arm__)
+#if defined(TARGET_DARWIN_OSX)
 
 //hack around problem with xbmc's typedef int BOOL
 // and obj-c's typedef unsigned char BOOL
@@ -32,12 +32,14 @@
 #include "utils/log.h"
 #include "XBMCHelper.h"
 #include "utils/SystemInfo.h"
+#include "CocoaInterface.h"
 #undef BOOL
 
 #include <SDL/SDL_events.h>
 
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
+#import <IOKit/graphics/IOGraphicsLib.h>
 #import <Carbon/Carbon.h>   // ShowMenuBar, HideMenuBar
 
 
@@ -182,31 +184,167 @@ void UnblankDisplays(void)
     {
       // Get rid of the blanking windows we created.
       [blankingWindows[i] close];
-      [blankingWindows[i] release];
+      if ([blankingWindows[i] isReleasedWhenClosed] == NO)
+        [blankingWindows[i] release];
       blankingWindows[i] = 0;
     }
   }
 }
 
-CGDisplayFadeReservationToken DisplayFadeToBlack(void)
+CGDisplayFadeReservationToken DisplayFadeToBlack(bool fade)
 {
   // Fade to black to hide resolution-switching flicker and garbage.
   CGDisplayFadeReservationToken fade_token = kCGDisplayFadeReservationInvalidToken;
-  if (CGAcquireDisplayFadeReservation (5, &fade_token) == kCGErrorSuccess )
+  if (CGAcquireDisplayFadeReservation (5, &fade_token) == kCGErrorSuccess && fade)
     CGDisplayFade(fade_token, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, TRUE);
 
   return(fade_token);
 }
 
-void DisplayFadeFromBlack(CGDisplayFadeReservationToken fade_token)
+void DisplayFadeFromBlack(CGDisplayFadeReservationToken fade_token, bool fade)
 {
   if (fade_token != kCGDisplayFadeReservationInvalidToken) 
   {
-    CGDisplayFade(fade_token, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, FALSE);
+    if (fade)
+      CGDisplayFade(fade_token, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, FALSE);
     CGReleaseDisplayFadeReservation(fade_token);
   }
 }
 
+NSString* screenNameForDisplay(CGDirectDisplayID displayID)
+{
+    NSString *screenName = nil;
+    
+    NSDictionary *deviceInfo = (NSDictionary *)IODisplayCreateInfoDictionary(CGDisplayIOServicePort(displayID), kIODisplayOnlyPreferredName);
+    NSDictionary *localizedNames = [deviceInfo objectForKey:[NSString stringWithUTF8String:kDisplayProductName]];
+    
+    if ([localizedNames count] > 0) {
+        screenName = [[localizedNames objectForKey:[[localizedNames allKeys] objectAtIndex:0]] retain];
+    }
+    
+    [deviceInfo release];
+    return [screenName autorelease];
+}
+
+void ShowHideNSWindow(NSWindow *wind, bool show)
+{
+  if (show)
+    [wind orderFront:nil];
+  else
+    [wind orderOut:nil];
+}
+
+static NSWindow *curtainWindow;
+void fadeInDisplay(NSScreen *theScreen, double fadeTime)
+{
+  int     fadeSteps     = 100;
+  double  fadeInterval  = (fadeTime / (double) fadeSteps);
+
+  if (curtainWindow != nil)
+  {
+    for (int step = 0; step < fadeSteps; step++)
+    {
+      double fade = 1.0 - (step * fadeInterval);
+      [curtainWindow setAlphaValue:fade];
+
+      NSDate *nextDate = [NSDate dateWithTimeIntervalSinceNow:fadeInterval];
+      [[NSRunLoop currentRunLoop] runUntilDate:nextDate];
+    }
+  }
+  [curtainWindow close];
+  curtainWindow = nil;
+
+  [NSCursor unhide];
+}
+
+void fadeOutDisplay(NSScreen *theScreen, double fadeTime)
+{
+  int     fadeSteps     = 100;
+  double  fadeInterval  = (fadeTime / (double) fadeSteps);
+
+  [NSCursor hide];
+
+  curtainWindow = [[NSWindow alloc]
+    initWithContentRect:[theScreen frame]
+    styleMask:NSBorderlessWindowMask
+    backing:NSBackingStoreBuffered
+    defer:YES
+    screen:theScreen];
+
+  [curtainWindow setAlphaValue:0.0];
+  [curtainWindow setBackgroundColor:[NSColor blackColor]];
+  [curtainWindow setLevel:NSScreenSaverWindowLevel];
+
+  [curtainWindow makeKeyAndOrderFront:nil];
+  [curtainWindow setFrame:[curtainWindow
+    frameRectForContentRect:[theScreen frame]]
+    display:YES
+    animate:NO];
+
+  for (int step = 0; step < fadeSteps; step++)
+  {
+    double fade = step * fadeInterval;
+    [curtainWindow setAlphaValue:fade];
+
+    NSDate *nextDate = [NSDate dateWithTimeIntervalSinceNow:fadeInterval];
+    [[NSRunLoop currentRunLoop] runUntilDate:nextDate];
+  }
+}
+
+// try to find mode that matches the desired size, refreshrate
+// non interlaced, nonstretched, safe for hardware
+CFDictionaryRef GetMode(int width, int height, double refreshrate, int screenIdx)
+{
+  if( screenIdx >= (signed)[[NSScreen screens] count])
+    return NULL;
+    
+  Boolean stretched;
+  Boolean interlaced;
+  Boolean safeForHardware;
+  Boolean televisionoutput;
+  int w, h, bitsperpixel;
+  double rate;
+  RESOLUTION_INFO res;   
+  
+  CLog::Log(LOGDEBUG, "GetMode looking for suitable mode with with %d x %d @ %f Hz on display %d\n", width, height, refreshrate, screenIdx);
+
+  CFArrayRef displayModes = CGDisplayAvailableModes(GetDisplayID(screenIdx));
+  
+  if (NULL == displayModes)
+  {
+    CLog::Log(LOGERROR, "GetMode - no displaymodes found!");
+    return NULL;
+  }
+
+  for (int i=0; i < CFArrayGetCount(displayModes); ++i)
+  {
+    CFDictionaryRef displayMode = (CFDictionaryRef)CFArrayGetValueAtIndex(displayModes, i);
+
+    stretched = GetDictionaryBoolean(displayMode, kCGDisplayModeIsStretched);
+    interlaced = GetDictionaryBoolean(displayMode, kCGDisplayModeIsInterlaced);
+    bitsperpixel = GetDictionaryInt(displayMode, kCGDisplayBitsPerPixel);
+    safeForHardware = GetDictionaryBoolean(displayMode, kCGDisplayModeIsSafeForHardware);
+    televisionoutput = GetDictionaryBoolean(displayMode, kCGDisplayModeIsTelevisionOutput);
+    w = GetDictionaryInt(displayMode, kCGDisplayWidth);
+    h = GetDictionaryInt(displayMode, kCGDisplayHeight);      
+    rate = GetDictionaryDouble(displayMode, kCGDisplayRefreshRate);
+
+
+    if( (bitsperpixel == 32)      && 
+        (safeForHardware == YES)  && 
+        (stretched == NO)         && 
+        (interlaced == NO)        &&
+        (w == width)              &&
+        (h == height)             &&
+        (rate == refreshrate || rate == 0)      )
+    {
+      CLog::Log(LOGDEBUG, "GetMode found a match!");    
+      return displayMode;
+    }
+  }
+  CLog::Log(LOGERROR, "GetMode - no match found!");  
+  return NULL;
+}
 
 //---------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------
@@ -243,6 +381,7 @@ bool CWinSystemOSX::DestroyWindowSystem()
   delete m_osx_events;
   m_osx_events = NULL;
 
+  UnblankDisplays();
   if (m_glContext)
   {
     NSOpenGLContext* oldContext = (NSOpenGLContext*)m_glContext;
@@ -278,6 +417,11 @@ bool CWinSystemOSX::CreateNewWindow(const CStdString& name, bool fullScreen, RES
   if (!view)
     return false;
   
+  // if we are not starting up windowed, then hide the initial SDL window
+  // so we do not see it flash before the fade-out and switch to fullscreen.
+  if (g_guiSettings.m_LookAndFeelResolution != RES_WINDOW)
+    ShowHideNSWindow([view window], false);
+
   // disassociate view from context
   [cur_context clearDrawable];
   
@@ -353,6 +497,8 @@ bool CWinSystemOSX::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
   return true;
 }
 
+static bool needtoshowme = true;
+
 bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {  
   static NSWindow* windowedFullScreenwindow = NULL;  
@@ -364,12 +510,18 @@ bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   bool was_fullscreen = m_bFullScreen;
   NSOpenGLContext* cur_context;
   
+  // Fade to black to hide resolution-switching flicker and garbage.
+  CGDisplayFadeReservationToken fade_token = DisplayFadeToBlack(needtoshowme);
+  
   // If we're already fullscreen then we must be moving to a different display.
   // Recurse to reset fullscreen mode and then continue.
   if (was_fullscreen && fullScreen)
   {
+    needtoshowme = false;
+    ShowHideNSWindow([last_view window], needtoshowme);
     RESOLUTION_INFO& window = g_settings.m_ResInfo[RES_WINDOW];
     CWinSystemOSX::SetFullScreen(false, window, blankOtherDisplays);
+    needtoshowme = true;
   }
   
   m_nWidth      = res.iWidth;
@@ -378,12 +530,16 @@ bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
 
   cur_context = [NSOpenGLContext currentContext];
   if (!cur_context)
+  {
+    DisplayFadeFromBlack(fade_token, needtoshowme);  
     return false;
-  
+  }
+
   if(windowedFullScreenwindow != NULL)
   {
     [windowedFullScreenwindow close];
-    [windowedFullScreenwindow release];
+    if ([windowedFullScreenwindow isReleasedWhenClosed] == NO)
+      [windowedFullScreenwindow release];
     windowedFullScreenwindow = NULL;
   }
   
@@ -391,17 +547,21 @@ bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   {
     // FullScreen Mode
     NSOpenGLContext* newContext = NULL;
-  
-    // Fade to black to hide resolution-switching flicker and garbage.
-    CGDisplayFadeReservationToken fade_token = DisplayFadeToBlack();
-    
+
+    // check runtime, we only allow this on 10.5+
+    if (floor(NSAppKitVersionNumber) >= 949)
+    {
+      //switch videomode
+      SwitchToVideoMode(res.iWidth, res.iHeight, res.fRefreshRate, res.iScreen);
+    }
+
     // Save info about the windowed context so we can restore it when returning to windowed.
     last_view = [cur_context view];
     last_view_size = [last_view frame].size;
     last_view_origin = [last_view frame].origin;
     last_window_screen = [[last_view window] screen];
     last_window_origin = [[last_view window] frame].origin;
-    
+   
     if (g_guiSettings.GetBool("videoscreen.fakefullscreen"))
     {
       // This is Cocca Windowed FullScreen Mode
@@ -497,15 +657,10 @@ bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
     // activate context
     [newContext makeCurrentContext];
     m_lastOwnedContext = newContext;
-    
-    DisplayFadeFromBlack(fade_token);
   }
   else
   {
     // Windowed Mode
-  	// Fade to black to hide resolution-switching flicker and garbage.
-    CGDisplayFadeReservationToken fade_token = DisplayFadeToBlack();
-    
     // exit fullscreen
     [cur_context clearDrawable];
     
@@ -524,7 +679,8 @@ bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
       if(windowedFullScreenwindow != NULL)
       {
         [windowedFullScreenwindow close];
-        [windowedFullScreenwindow release];
+        if ([windowedFullScreenwindow isReleasedWhenClosed] == NO)
+          [windowedFullScreenwindow release];
         windowedFullScreenwindow = NULL;
       }
       
@@ -564,10 +720,11 @@ bool CWinSystemOSX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
     // Activate context.
     [newContext makeCurrentContext];
     m_lastOwnedContext = newContext;
-    
-    DisplayFadeFromBlack(fade_token);
   }
 
+  DisplayFadeFromBlack(fade_token, needtoshowme);  
+
+  ShowHideNSWindow([last_view window], needtoshowme);
   // need to make sure SDL tracks any window size changes
   ResizeWindow(m_nWidth, m_nHeight, -1, -1);
 
@@ -581,35 +738,30 @@ void CWinSystemOSX::UpdateResolutions()
   // Add desktop resolution
   int w, h;
   double fps;
-  GetScreenResolution(&w, &h, &fps);
+
+  //first screen goes into the current desktop mode
+  GetScreenResolution(&w, &h, &fps, 0);  
   UpdateDesktopResolution(g_settings.m_ResInfo[RES_DESKTOP], 0, w, h, fps);
-
-  // Add full screen settings for additional monitors
-  int numDisplays = [[NSScreen screens] count];
-  for (int i = 1; i < numDisplays; i++)
+  
+  //all other screens need new resolution_info objects and have to
+  //sit on the start of the m_ResInfo vector
+  //because CGUIWindowSettingsCategory::FillInScreens expects this
+  //for enumerating the available displays
+  for(int i = 1; i < GetNumScreens(); i++)
   {
-    CFDictionaryRef mode = CGDisplayCurrentMode( GetDisplayID(i) );
-    if (mode)
-    {
-      w = GetDictionaryInt(mode, kCGDisplayWidth);
-      h = GetDictionaryInt(mode, kCGDisplayHeight);
-      fps = GetDictionaryDouble(mode, kCGDisplayRefreshRate);
-      if ((int)fps == 0)
-      {
-        // NOTE: The refresh rate will be REPORTED AS 0 for many DVI and notebook displays.
-        fps = 60.0;
-      }
-      CLog::Log(LOGINFO, "Extra display %d is %dx%d\n", i, w, h);
-
-      RESOLUTION_INFO res;
-
-      UpdateDesktopResolution(res, i, w, h, fps);
-      g_graphicsContext.ResetOverscan(res);
-      g_settings.m_ResInfo.push_back(res);
-    }
+    RESOLUTION_INFO res;      
+    //get current resolution of screen i
+    UpdateDesktopResolution(res, i, w, h, fps);
+    g_settings.m_ResInfo.push_back(res);
   }
   
-  //GetVideoModes();
+  // check runtime, we only allow this on 10.5+
+  if (floor(NSAppKitVersionNumber) >= 949)
+  {
+    //now just fill in the possible reolutions for the attached screens
+    //and push to the m_ResInfo vector
+    FillInVideoModes();
+  }
 }
 
 /*
@@ -723,10 +875,12 @@ void* CWinSystemOSX::CreateFullScreenContext(int screen_index, void* shareCtx)
   return newContext;
 }
 
-void CWinSystemOSX::GetScreenResolution(int* w, int* h, double* fps)
+void CWinSystemOSX::GetScreenResolution(int* w, int* h, double* fps, int screenIdx)
 {
   // Figure out the screen size. (default to main screen)
-  CGDirectDisplayID display_id = kCGDirectMainDisplay;
+  if(screenIdx >= GetNumScreens())
+    return;
+  CGDirectDisplayID display_id = GetDisplayID(screenIdx);
   CFDictionaryRef mode  = CGDisplayCurrentMode(display_id);
   
   NSOpenGLContext* context = [NSOpenGLContext currentContext];
@@ -766,88 +920,98 @@ void CWinSystemOSX::EnableVSync(bool enable)
   [[NSOpenGLContext currentContext] setValues:(const long int*)&swapInterval forParameter:NSOpenGLCPSwapInterval];
 }
 
-bool CWinSystemOSX::SwitchToVideoMode(int width, int height, double refreshrate)
+bool CWinSystemOSX::SwitchToVideoMode(int width, int height, double refreshrate, int screenIdx)
 {
-  int match = 0;
+  if( screenIdx >= GetNumScreens())
+    return false;
+
+  int match = 0;    
   CFDictionaryRef dispMode = NULL;
   // Figure out the screen size. (default to main screen)
-  CGDirectDisplayID display_id = kCGDirectMainDisplay;
-  
-  NSOpenGLContext* context = [NSOpenGLContext currentContext];
-  if (context)
+  CGDirectDisplayID display_id = GetDisplayID(screenIdx);
+
+  // find mode that matches the desired size, refreshrate
+  // non interlaced, nonstretched, safe for hardware
+  dispMode = GetMode(width, height, refreshrate, screenIdx);
+
+  //not found - fallback to bestemdeforparameters
+  if (!dispMode)
   {
-    NSView* view;
-  
-    view = [context view];
-    if (view)
-    {
-      NSWindow* window;
-      window = [view window];
-      if (window)
-      {
-        display_id = GetDisplayIDFromScreen( [window screen] );      
-      }
-    }
-  }
-
-  // find mode that matches the desired size
-  dispMode = CGDisplayBestModeForParametersAndRefreshRate(
-    display_id, 32, width, height, (CGRefreshRate)(refreshrate), &match);
-
-  if (!match)
     dispMode = CGDisplayBestModeForParameters(display_id, 32, width, height, &match);
 
-  if (!match)
-    dispMode = CGDisplayBestModeForParameters(display_id, 16, width, height, &match);
+    if (!match)
+      dispMode = CGDisplayBestModeForParameters(display_id, 16, width, height, &match);
 
-  if (!match)
-    return false;
+    if (!match)
+      return false;
+  }
 
   // switch mode and return success
   CGDisplayCapture(display_id);
   CGDisplayConfigRef cfg;
   CGBeginDisplayConfiguration(&cfg);
-  CGConfigureDisplayFadeEffect(cfg, 0.3f, 0.5f, 0, 0, 0);
+  // we don't need to do this, we are already faded.
+  //CGConfigureDisplayFadeEffect(cfg, 0.3f, 0.5f, 0, 0, 0);
   CGConfigureDisplayMode(cfg, display_id, dispMode);
   CGError err = CGCompleteDisplayConfiguration(cfg, kCGConfigureForAppOnly);
   CGDisplayRelease(display_id);
   
+  Cocoa_CVDisplayLinkUpdate();
+
   return (err == kCGErrorSuccess);
 }
 
-//BOOL interlaced = (CGDisplayModeGetIOFlags((CGDisplayModeRef)displayMode) & kDisplayModeInterlacedFlag);
-
-void CWinSystemOSX::GetVideoModes(void)
+void CWinSystemOSX::FillInVideoModes()
 {
-  CGDirectDisplayID displayID = kCGDirectMainDisplay;
-  CFArrayRef displayModes = CGDisplayAvailableModes(displayID);
-  if (NULL == displayModes)
-    return;
+  // Add full screen settings for additional monitors
+  int numDisplays = [[NSScreen screens] count];
 
-  Boolean stretched;
-  Boolean interlaced;
-  Boolean safeForHardware;
-  Boolean televisionoutput;
-  int width, height, bitsperpixel;
-  double refreshrate;
-
-  for (int i=0; i<CFArrayGetCount(displayModes); ++i)
+  for (int disp = 0; disp < numDisplays; disp++)
   {
-    CFDictionaryRef displayMode = (CFDictionaryRef)CFArrayGetValueAtIndex(displayModes, i);
+    Boolean stretched;
+    Boolean interlaced;
+    Boolean safeForHardware;
+    Boolean televisionoutput;
+    int w, h, bitsperpixel;
+    double refreshrate;
+    RESOLUTION_INFO res;   
 
-    stretched = GetDictionaryBoolean(displayMode, kCGDisplayModeIsStretched);
-    interlaced = GetDictionaryBoolean(displayMode, kCGDisplayModeIsInterlaced);
-    bitsperpixel = GetDictionaryInt(displayMode, kCGDisplayBitsPerPixel);
-    safeForHardware = GetDictionaryBoolean(displayMode, kCGDisplayModeIsSafeForHardware);
-    televisionoutput = GetDictionaryBoolean(displayMode, kCGDisplayModeIsTelevisionOutput);
+    CFArrayRef displayModes = CGDisplayAvailableModes(GetDisplayID(disp));
+    NSString *dispName = screenNameForDisplay(GetDisplayID(disp));
+    CLog::Log(LOGDEBUG, "Display %i has name %s", disp, [dispName UTF8String]);
+    
+    if (NULL == displayModes)
+      continue;
 
-    if((bitsperpixel == 32) && (safeForHardware == YES) && (stretched == NO) && (interlaced == NO))
+    for (int i=0; i < CFArrayGetCount(displayModes); ++i)
     {
-      width = GetDictionaryInt(displayMode, kCGDisplayWidth);
-      height = GetDictionaryInt(displayMode, kCGDisplayHeight);
-      refreshrate = GetDictionaryDouble(displayMode, kCGDisplayRefreshRate);
-      if ((int)refreshrate == 0)  // LCD display?
-        refreshrate = 150.0;      // Divisible by 25Hz and 30Hz to minimise AV sync waiting
+      CFDictionaryRef displayMode = (CFDictionaryRef)CFArrayGetValueAtIndex(displayModes, i);
+
+      stretched = GetDictionaryBoolean(displayMode, kCGDisplayModeIsStretched);
+      interlaced = GetDictionaryBoolean(displayMode, kCGDisplayModeIsInterlaced);
+      bitsperpixel = GetDictionaryInt(displayMode, kCGDisplayBitsPerPixel);
+      safeForHardware = GetDictionaryBoolean(displayMode, kCGDisplayModeIsSafeForHardware);
+      televisionoutput = GetDictionaryBoolean(displayMode, kCGDisplayModeIsTelevisionOutput);
+
+      if( (bitsperpixel == 32)      && 
+          (safeForHardware == YES)  && 
+          (stretched == NO)         && 
+          (interlaced == NO)        )
+      {
+        w = GetDictionaryInt(displayMode, kCGDisplayWidth);
+        h = GetDictionaryInt(displayMode, kCGDisplayHeight);      
+        refreshrate = GetDictionaryDouble(displayMode, kCGDisplayRefreshRate);
+        if ((int)refreshrate == 0)  // LCD display?
+        {
+          // NOTE: The refresh rate will be REPORTED AS 0 for many DVI and notebook displays.
+          refreshrate = 60.0;
+        }
+        CLog::Log(LOGINFO, "Found possible resolution for display %d with %d x %d @ %f Hz\n", disp, w, h, refreshrate);
+        
+        UpdateDesktopResolution(res, disp, w, h, refreshrate);
+        g_graphicsContext.ResetOverscan(res);
+        g_settings.m_ResInfo.push_back(res);        
+      }
     }
   }
 }
