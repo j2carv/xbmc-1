@@ -2742,9 +2742,12 @@
     <ClCompile Include="..\..\xbmc\interfaces\json-rpc\PVROperations.cpp">
       <Filter>interfaces\json-rpc</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="..\..\xbmc\cores\paplayer\PCMCodec.cpp">
       <Filter>cores\paplayer</Filter>
     </ClCompile>
+=======
+>>>>>>> FIX: VS compile errors.
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -5481,6 +5484,7 @@
     <ClInclude Include="..\..\xbmc\interfaces\json-rpc\PVROperations.h">
       <Filter>interfaces\json-rpc</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="..\..\xbmc\cores\AudioRenderers\IAudioRenderer.h" />
     <ClInclude Include="..\..\xbmc\interfaces\python\xbmcmodule\pythreadstate.h">
       <Filter>interfaces\python\xbmcmodule</Filter>
@@ -5488,6 +5492,8 @@
     <ClInclude Include="..\..\xbmc\cores\paplayer\PCMCodec.h">
       <Filter>cores\paplayer</Filter>
     </ClInclude>
+=======
+>>>>>>> FIX: VS compile errors.
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\xbmc\win32\XBMC_PC.rc">

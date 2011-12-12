@@ -523,7 +523,7 @@ CPVRTimerInfoTag *CPVRTimers::InstantTimer(CPVRChannel *channel, bool bStartTime
 
   int iDuration = g_guiSettings.GetInt("pvrrecord.instantrecordtime");
   CDateTime endTime = CDateTime::GetUTCDateTime() + CDateTimeSpan(0, 0, iDuration ? iDuration : 120, 0);
-  if(!epgTag)
+  if(bHasEpgNow)
     newTimer->SetEndFromUTC(endTime);
 
   /* unused only for reference */
