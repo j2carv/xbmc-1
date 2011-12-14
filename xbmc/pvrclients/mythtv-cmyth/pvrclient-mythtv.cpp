@@ -327,10 +327,10 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
       tag.startTime=it->starttime;
       tag.strTitle=it->title;
       tag.strPlot= it->description;
-      unsigned int seriesid=atoi(it->seriesid);
+      /*unsigned int seriesid=atoi(it->seriesid);
       if(seriesid!=0)
         tag.iUniqueBroadcastId=atoi(it->seriesid);
-      else
+      else*/
         tag.iUniqueBroadcastId=(tag.startTime<<16)+(tag.iChannelNumber&0xffff);
       int genre=Genre(it->category);
       tag.iGenreSubType=genre&0x0F;
