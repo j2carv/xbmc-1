@@ -325,7 +325,11 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
       tag.endTime=it->endtime;
       tag.iChannelNumber=it->channum;
       tag.startTime=it->starttime;
-      tag.strTitle=it->title;
+      CStdString title=it->title;
+      CStdString subtitle=it->subtitle;
+      if (!subtitle.IsEmpty())
+        title+=": " + subtitle;
+      tag.strTitle=title;
       tag.strPlot= it->description;
       /*unsigned int seriesid=atoi(it->seriesid);
       if(seriesid!=0)
@@ -423,6 +427,9 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       CStdString plot=it->second.Description();
       CStdString path=it->second.Path();
       CStdString title=it->second.Title();
+      CStdString subtitle=it->second.Subtitle();
+      if (!subtitle.IsEmpty())
+        title+=": " + subtitle;
 
       tag.strChannelName=chanName;
       tag.strPlot=plot;
