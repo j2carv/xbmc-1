@@ -16,6 +16,7 @@ public:
   MythProgramInfo(cmyth_proginfo_t cmyth_proginfo);
   CStdString ProgramID();
   CStdString Title();
+  CStdString Subtitle();
   CStdString Path();
   CStdString Description();
   CStdString ChannelName();

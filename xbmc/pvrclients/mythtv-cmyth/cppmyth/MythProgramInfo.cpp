@@ -38,6 +38,15 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
     return retval;
   }
 
+  CStdString MythProgramInfo::Subtitle()
+  {
+    CStdString retval;
+    char* subtitle=CMYTH->ProginfoSubtitle(*m_proginfo_t);
+    retval=subtitle;
+    CMYTH->RefRelease(subtitle);
+    return retval;
+  }
+
   CStdString MythProgramInfo::Path()
    {
     CStdString retval;
