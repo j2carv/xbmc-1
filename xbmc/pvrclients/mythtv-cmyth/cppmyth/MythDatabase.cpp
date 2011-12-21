@@ -66,7 +66,7 @@ std::vector<MythProgram> MythDatabase::GetGuide(time_t starttime, time_t endtime
   m_database_t->Lock();
   int len=CMYTH->MysqlGetGuide(*m_database_t,&programs,starttime,endtime);
   m_database_t->Unlock();
-  if(len==0)
+  if(len<1)
     return std::vector<MythProgram>();
   std::vector<MythProgram> retval(programs,programs+len);
   CMYTH->RefRelease(programs);
