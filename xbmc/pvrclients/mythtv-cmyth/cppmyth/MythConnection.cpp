@@ -178,3 +178,48 @@ void MythConnection::Unlock()
   m_conn_t->Unlock();
   
 }
+
+  CStdString MythConnection::GetSetting(CStdString hostname,CStdString setting)
+  {
+    CStdString retval;
+    Lock();
+    char * value = CMYTH->ConnGetSetting(*m_conn_t,hostname.Buffer(),setting.Buffer());
+    retval = value;
+    CMYTH->RefRelease(value);
+    value = NULL;
+    Unlock();
+    return retval;
+  }
+
+  bool MythConnection::SetSetting(CStdString hostname,CStdString setting,CStdString value)
+  {
+    bool retval = false;
+    Lock();
+    retval = CMYTH->ConnSetSetting(*m_conn_t,hostname.Buffer(),setting.Buffer(),value.Buffer()) >= 0;
+    Unlock();
+    return retval;
+  }
+
+  CStdString MythConnection::GetHostname()
+  {
+    CStdString retval;
+    Lock();
+    char * hostname = CMYTH->ConnGetClientHostname(*m_conn_t);
+    retval = hostname;
+    CMYTH->RefRelease(hostname);
+    hostname = NULL;
+    Unlock();
+    return retval;
+  }
+
+  CStdString MythConnection::GetBackendHostname()
+  {
+    CStdString retval;
+    Lock();
+    char * hostname = CMYTH->ConnGetBackendHostname(*m_conn_t);
+    retval = hostname;
+    CMYTH->RefRelease(hostname);
+    hostname = NULL;
+    Unlock();
+    return retval;
+  }

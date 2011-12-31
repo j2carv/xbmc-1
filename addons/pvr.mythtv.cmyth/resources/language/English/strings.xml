@@ -10,5 +10,6 @@
     <string id="30006">Recording Rules</string>
     <string id="30007">Do you still want to delete?</string>
     <string id="30008">This will delete the recording rule and &#xA;an additional %i timer(s).</string>	
+    <string id="30009">Allow live TV to move scheduled shows</string>	
 </strings>
 

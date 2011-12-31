@@ -423,6 +423,22 @@ if (ConnGetFreeRecorderCount == NULL)      { fprintf(stderr, "Unable to assign f
 dlsym(m_libcmyth, "cmyth_conn_get_protocol_version");
 if (ConnGetProtocolVersion == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    ConnGetSetting      = (char* (*)(cmyth_conn_t conn,const char* hostname, const char* setting))
+dlsym(m_libcmyth, "cmyth_conn_get_setting");
+if (ConnGetSetting == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    ConnSetSetting      = (int (*)(cmyth_conn_t conn,const char* hostname, const char* setting, const char* value))
+dlsym(m_libcmyth, "cmyth_conn_set_setting");
+if (ConnSetSetting == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    ConnGetBackendHostname      = (char* (*)(cmyth_conn_t conn))
+dlsym(m_libcmyth, "cmyth_conn_get_backend_hostname");
+if (ConnGetBackendHostname == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    ConnGetClientHostname      = (char* (*)(cmyth_conn_t conn))
+dlsym(m_libcmyth, "cmyth_conn_get_client_hostname");
+if (ConnGetClientHostname == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     EventGet      = (cmyth_event_t (*)(cmyth_conn_t conn, char* data, int len))
 dlsym(m_libcmyth, "cmyth_event_get");
 if (EventGet == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1250,6 +1266,10 @@ int (*ConnGetFreespace)(cmyth_conn_t control, long long* total, long long* used)
 int (*ConnHung)(cmyth_conn_t control);
 int (*ConnGetFreeRecorderCount)(cmyth_conn_t conn);
 int (*ConnGetProtocolVersion)(cmyth_conn_t conn);
+char* (*ConnGetSetting)(cmyth_conn_t conn,const char* hostname, const char* setting);
+int (*ConnSetSetting)(cmyth_conn_t conn,const char* hostname, const char* setting, const char* value);
+char* (*ConnGetBackendHostname)(cmyth_conn_t conn);
+char* (*ConnGetClientHostname)(cmyth_conn_t conn);
 cmyth_event_t (*EventGet)(cmyth_conn_t conn, char* data, int len);
 int (*EventSelect)(cmyth_conn_t conn, struct timeval* timeout);
 cmyth_recorder_t (*RecorderCreate)(void);
@@ -1451,6 +1471,7 @@ char* (*RefStrdup)(char* str);
 void* (*RefRealloc)(void* p, size_t len);
 void (*RefSetDestroy)(void* block, ref_destroy_t func);
 void (*RefAllocShow)(void);
+
 
 
 protected:

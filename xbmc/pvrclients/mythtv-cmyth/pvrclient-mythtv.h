@@ -74,6 +74,8 @@ public:
 
   PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook);
 
+  bool GetLiveTVPriority();
+  void SetLiveTVPriority(bool enabled);
 private:
   struct mythcat{};
   struct pvrcat{};

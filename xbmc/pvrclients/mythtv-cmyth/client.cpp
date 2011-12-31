@@ -32,12 +32,13 @@ using namespace ADDON;
  * Default values are defined inside client.h
  * and exported to the other source files.
  */
-CStdString   g_szHostname             = DEFAULT_HOST;         ///< The Host name or IP of the mythtv server
-int          g_iMythPort              = DEFAULT_PORT;         ///< The mythtv Port (default is 6543)
-CStdString   g_szMythDBuser           = DEFAULT_DB_USER;      ///< The mythtv sql username (default is mythtv)
-CStdString   g_szMythDBpassword       = DEFAULT_DB_PASSWORD;  ///< The mythtv sql password (default is mythtv)
-CStdString   g_szMythDBname           = DEFAULT_DB_NAME;      ///< The mythtv sql database name (default is mythconverg)
-bool         g_bExtraDebug            = DEFAULT_EXTRA_DEBUG;  ///< Output extensive debug information to the log
+CStdString   g_szHostname             = DEFAULT_HOST;             ///< The Host name or IP of the mythtv server
+int          g_iMythPort              = DEFAULT_PORT;             ///< The mythtv Port (default is 6543)
+CStdString   g_szMythDBuser           = DEFAULT_DB_USER;          ///< The mythtv sql username (default is mythtv)
+CStdString   g_szMythDBpassword       = DEFAULT_DB_PASSWORD;      ///< The mythtv sql password (default is mythtv)
+CStdString   g_szMythDBname           = DEFAULT_DB_NAME;          ///< The mythtv sql database name (default is mythconverg)
+bool         g_bExtraDebug            = DEFAULT_EXTRA_DEBUG;      ///< Output extensive debug information to the log
+bool         g_bLiveTVPriority        = DEFAULT_LIVETV_PRIORITY;  ///< MythTV Backend setting to allow live TV to move scheduled shows
 ///* Client member variables */
 
 bool         m_recordingFirstRead;
@@ -172,6 +173,16 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     return m_CurStatus;
   }
 
+  /* Read setting "LiveTV Priority" from backend database */
+  bool savedLiveTVPriority;
+  if(!XBMC->GetSetting("livetv_priority", &savedLiveTVPriority))
+    savedLiveTVPriority = DEFAULT_LIVETV_PRIORITY;
+  g_bLiveTVPriority = g_client->GetLiveTVPriority();
+  if (g_bLiveTVPriority != savedLiveTVPriority)
+  {
+    g_client->SetLiveTVPriority(savedLiveTVPriority);
+  }
+
   PVR_MENUHOOK recRuleHook;
   recRuleHook.iHookId=RECORDING_RULES;
   recRuleHook.iLocalizedStringId=RECORDING_RULES;
@@ -282,6 +293,25 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     g_szMythDBname = (const char*) settingValue;
     if (tmp_sMythDBname != g_szMythDBname)
       return ADDON_STATUS_NEED_RESTART;
+  }
+  else if (str == "extradebug")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'extra debug' from %u to %u", g_bExtraDebug, *(bool*) settingValue);
+    if (g_bExtraDebug != *(bool*) settingValue)
+    {
+	  g_bExtraDebug = *(bool*) settingValue;
+      return ADDON_STATUS_OK;
+    }
+  }
+  else if (str == "livetv_priority")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'extra debug' from %u to %u", g_bLiveTVPriority, *(bool*) settingValue);
+    if (g_bLiveTVPriority != *(bool*) settingValue && m_CurStatus != ADDON_STATUS_LOST_CONNECTION)
+    {
+	  g_bLiveTVPriority = *(bool*) settingValue;
+    g_client->SetLiveTVPriority(g_bLiveTVPriority);
+    return ADDON_STATUS_OK;
+    }
   }
   return ADDON_STATUS_OK;
 }

@@ -350,17 +350,29 @@ extern char * cmyth_conn_get_setting(cmyth_conn_t conn,
                const char* hostname, const char* setting);
 
 /**
- * Set Setting
+ * Set a MythTV setting for a hostname
+ * \param conn connection handle
+ * \param hostname hostname to apply the setting to
+ * \param setting the setting name to set
+ * \param value the value of the setting
+ * \retval <0 for failure
  */
+extern int cmyth_conn_set_setting(cmyth_conn_t conn,
+               const char* hostname, const char* setting, const char* value);
 
 /**
- * Get hostname
+ * Get the backend hostname used in the settings database
+ * \param conn connection handle
+ * \retval ref counted string with backend hostname
  */
+extern char* cmyth_conn_get_backend_hostname(cmyth_conn_t conn);
 
 /**
- * Set own hostname
+ * Get the client hostname used when creating the backend connection   
+ * \param conn connection handle
+ * \retval ref counted string with client hostname
  */
-
+extern char* cmyth_conn_get_client_hostname(cmyth_conn_t conn);
 /*
  * -----------------------------------------------------------------
  * Event Operations

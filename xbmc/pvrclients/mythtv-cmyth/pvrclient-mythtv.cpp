@@ -1077,3 +1077,27 @@ PVR_ERROR PVRClientMythTV::CallMenuHook(const PVR_MENUHOOK &menuhook)
   }
   return PVR_ERROR_NO_ERROR;
 }
+
+  bool PVRClientMythTV::GetLiveTVPriority()
+  {
+    if(!m_con.IsNull())
+    {
+      CStdString value;
+      value = m_con.GetSetting(m_con.GetHostname(),"LiveTVPriority");
+      
+      if( value.compare("1")==0)
+        return true;
+      else
+        return false;
+    }
+    return false;
+  }
+  
+  void PVRClientMythTV::SetLiveTVPriority(bool enabled)
+  {
+    if(!m_con.IsNull())
+    {
+      CStdString value = enabled? "1" : "0";
+      m_con.SetSetting(m_con.GetHostname(),"LiveTVPriority",value);
+    }
+  }
