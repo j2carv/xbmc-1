@@ -86,6 +86,15 @@ DLLEXPORT bool XBMC_get_setting(const char* settingName, void *settingValue)
   return m_cb->GetSetting(m_Handle->addonData, settingName, settingValue);
 }
 
+/*DLLEXPORT bool XBMC_update_setting(const char* settingName, void *settingValue)
+{
+  if (m_cb == NULL)
+    return false;
+
+  return m_cb->UpdateSetting(m_Handle->addonData, settingName, settingValue);
+}*/
+
+
 DLLEXPORT void XBMC_queue_notification(const queue_msg_t type, const char *format, ... )
 {
   if (m_cb == NULL)

@@ -133,6 +133,81 @@ void CAddonCallbacksAddon::QueueNotification(void *addonData, const queue_msg_t 
   }
 }
 
+/*bool CAddonCallbacksAddon::UpdateAddonSetting(void *addonData, const char *strSettingName, void *settingValue)
+{
+  CAddonCallbacks* addon = (CAddonCallbacks*) addonData;
+  if (addon == NULL || strSettingName == NULL || settingValue == NULL)
+  {
+    CLog::Log(LOGERROR, "CAddonCallbacksAddon - %s - called with a null pointer", __FUNCTION__);
+    return false;
+  }
+
+  CAddonCallbacksAddon* addonHelper = addon->GetHelperAddon();
+
+  try
+  {
+    CLog::Log(LOGDEBUG, "CAddonCallbacksAddon - %s - add-on '%s' requests update of setting '%s'", __FUNCTION__, addonHelper->m_addon->Name().c_str(), strSettingName);
+
+    if (!addonHelper->m_addon->ReloadSettings())
+    {
+      CLog::Log(LOGERROR, "CAddonCallbacksAddon - %s - could't get settings for add-on '%s'", __FUNCTION__, addonHelper->m_addon->Name().c_str());
+      return false;
+    }
+
+    const TiXmlElement *category = addonHelper->m_addon->GetSettingsXML()->FirstChildElement("category");
+    if (!category) // add a default one...
+      category = addonHelper->m_addon->GetSettingsXML();
+
+    while (category)
+    {
+      const TiXmlElement *setting = category->FirstChildElement("setting");
+      while (setting)
+      {
+        const char *id = setting->Attribute("id");
+        const char *type = setting->Attribute("type");
+        CStdString value;
+        if (strcmpi(id, strSettingName) == 0 && type)
+        {
+          if (strcmpi(type, "text")   == 0 || strcmpi(type, "ipaddress") == 0 ||
+              strcmpi(type, "folder") == 0 || strcmpi(type, "action")    == 0 ||
+              strcmpi(type, "music")  == 0 || strcmpi(type, "pictures")  == 0 ||
+              strcmpi(type, "folder") == 0 || strcmpi(type, "programs")  == 0 ||
+              strcmpi(type, "files")  == 0 || strcmpi(type, "fileenum")  == 0)
+          {
+            value = (char*) settingValue;
+            addonHelper->m_addon->UpdateSetting(id).c_str(), value);
+            return true;
+          }
+          else if (strcmpi(type, "number") == 0 || strcmpi(type, "enum") == 0 ||
+                   strcmpi(type, "labelenum") == 0)
+          {
+            value.Format("%i",*(int*) settingValue);
+            addonHelper->m_addon->UpdateSetting(id).c_str(), value);
+            return true;
+          }
+          else if (strcmpi(type, "bool") == 0)
+          {
+            value = *(bool*) settingValue?"true" : "false";
+            addonHelper->m_addon->UpdateSetting(id).c_str(), value);
+            return true;
+          }
+        }
+        setting = setting->NextSiblingElement("setting");
+      }
+      category = category->NextSiblingElement("category");
+    }
+    CLog::Log(LOGERROR, "CAddonCallbacksAddon - %s - can't find setting '%s' in '%s'", __FUNCTION__, strSettingName, addonHelper->m_addon->Name().c_str());
+  }
+  catch (std::exception &e)
+  {
+    CLog::Log(LOGERROR, "CAddonCallbacksAddon - %s - exception '%s' caught in call in add-on '%s'. please contact the developer of this addon: %s",
+        __FUNCTION__, e.what(), addonHelper->m_addon->Name().c_str(), addonHelper->m_addon->Author().c_str());
+  }
+
+  return false;
+}*/
+
+
 bool CAddonCallbacksAddon::GetAddonSetting(void *addonData, const char *strSettingName, void *settingValue)
 {
   CAddonCallbacks* addon = (CAddonCallbacks*) addonData;

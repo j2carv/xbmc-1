@@ -33,6 +33,10 @@ public:
   bool IsNull();
   void Lock();
   void Unlock();
+  CStdString GetSetting(CStdString hostname,CStdString setting);
+  bool SetSetting(CStdString hostname,CStdString setting,CStdString value);
+  CStdString GetHostname();
+  CStdString GetBackendHostname();
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
   CStdString m_server;

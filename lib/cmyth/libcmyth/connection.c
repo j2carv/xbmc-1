@@ -44,6 +44,7 @@
 #include <cmyth_local.h>
 
 static char * cmyth_conn_get_setting_unlocked(cmyth_conn_t conn, const char* hostname, const char* setting);
+static int cmyth_conn_set_setting_unlocked(cmyth_conn_t conn, const char* hostname, const char* setting, const char* value);
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -1349,6 +1350,93 @@ cmyth_conn_get_setting(cmyth_conn_t conn, const char* hostname, const char* sett
 	return result;
 }
 
+int cmyth_conn_set_setting(cmyth_conn_t conn,
+               const char* hostname, const char* setting, const char* value)
+{
+	int result = -1;
+
+	pthread_mutex_lock(&mutex);
+	result = cmyth_conn_set_setting_unlocked(conn, hostname, setting, value);
+	pthread_mutex_unlock(&mutex);
+
+	return result;
+}
+
+char * 
+cmyth_conn_get_backend_hostname(cmyth_conn_t conn)
+{
+	int count, err;
+	char* result = NULL;
+
+  pthread_mutex_lock(&mutex);
+	if(conn->conn_version < 17) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: protocol version doesn't support QUERY_HOSTNAME\n",
+			  __FUNCTION__);
+		return NULL;
+	}
+
+	if (!conn) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: no connection\n",
+			  __FUNCTION__);
+		return NULL;
+	}
+
+	if ((err = cmyth_send_message(conn,  "QUERY_HOSTNAME")) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_send_message() failed (%d)\n",
+			  __FUNCTION__, err);
+		goto err;
+	}
+
+	if ((count=cmyth_rcv_length(conn)) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_rcv_length() failed (%d)\n",
+			  __FUNCTION__, count);
+		goto err;
+	}
+
+	result = ref_alloc(count+1);
+	count -= cmyth_rcv_string(conn, &err,
+				    result, count, count);
+	if (err < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_rcv_string() failed (%d)\n",
+			  __FUNCTION__, err);
+		goto err;
+	}
+
+	while(count > 0 && !err) {
+		char buffer[100];
+		count -= cmyth_rcv_string(conn, &err, buffer, sizeof(buffer)-1, count);
+		buffer[sizeof(buffer)-1] = 0;
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: odd left over data %s\n", __FUNCTION__, buffer);
+	}
+  pthread_mutex_unlock(&mutex);
+
+  if(!strcmp("-1",result))  {
+    cmyth_dbg(CMYTH_DBG_PROTO,
+		          "%s: Failed to retrieve backend hostname.\n",
+		          __FUNCTION__);
+    return NULL;
+  }
+	return result;
+err:
+  pthread_mutex_unlock(&mutex);
+	if(result)
+		ref_release(result);
+
+	return NULL;
+}
+
+char *
+cmyth_conn_get_client_hostname(cmyth_conn_t conn)
+{
+  char* result=NULL;
+  result = ref_strdup(my_hostname);
+  return result;
+}
+
+
 static char *
 cmyth_conn_get_setting_unlocked(cmyth_conn_t conn, const char* hostname, const char* setting)
 {
@@ -1414,3 +1502,37 @@ err:
 	return NULL;
 }
 
+static int cmyth_conn_set_setting_unlocked(cmyth_conn_t conn,
+               const char* hostname, const char* setting, const char* value)
+{
+	char msg[1024];
+  int err = 0;
+	
+	if(conn->conn_version < 17) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: protocol version doesn't support SET_SETTING\n",
+			  __FUNCTION__);
+		return -1;
+	}
+
+	if (!conn) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: no connection\n",
+			  __FUNCTION__);
+		return -2;
+	}
+
+	snprintf(msg, sizeof(msg), "SET_SETTING %s %s %s", hostname, setting, value);
+	if ((err = cmyth_send_message(conn, msg)) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_send_message() failed (%d)\n",
+			  __FUNCTION__, err);
+		return -3;
+	}
+
+	if (cmyth_rcv_okay(conn, "OK") < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_okay() failed\n",
+			  __FUNCTION__);
+		return -4;
+	}
+
+	return 1;
+}

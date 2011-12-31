@@ -247,3 +247,7 @@ EXPORTS
 	cmyth_channel_multiplex
 	cmyth_mysql_get_recorder_list
 	cmyth_mysql_get_prog_finder_time_title_chan
+	cmyth_conn_set_setting
+	cmyth_conn_get_backend_hostname
+	cmyth_conn_get_client_hostname
+	cmyth_conn_get_setting
