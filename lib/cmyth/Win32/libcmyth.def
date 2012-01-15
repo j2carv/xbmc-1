@@ -240,6 +240,17 @@ EXPORTS
 	cmyth_timer_searchtype
 	cmyth_timer_inactive
 	cmyth_timer_channame
+	cmyth_timer_dup_method
+	cmyth_timer_dup_in
+	cmyth_timer_rec_group
+	cmyth_timer_store_group
+	cmyth_timer_play_group
+	cmyth_timer_autotranscode
+	cmyth_timer_userjobs
+	cmyth_timer_autocommflag
+	cmyth_timer_autoexpire
+	cmyth_timer_maxepisodes
+	cmyth_timer_maxnewest
 	cmyth_timerlist_get_item
 	cmyth_timerlist_get_count
 	cmyth_mysql_get_channelgroups
@@ -252,3 +263,8 @@ EXPORTS
 	cmyth_conn_get_backend_hostname
 	cmyth_conn_get_client_hostname
 	cmyth_conn_get_setting
+	cmyth_timer_transcoder
+	cmyth_mysql_get_storagegroups
+	cmyth_mysql_get_playgroups
+	cmyth_mysql_get_recprofiles
+	cmyth_mysql_get_cardtype
