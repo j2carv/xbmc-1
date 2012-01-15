@@ -8,6 +8,11 @@ using namespace ADDON;
 #define BUTTON_CANCEL                   7
 #define HEADER_LABEL                    8
 
+#define RECRULE_NEWRULE 0
+#define RECRULE_EDIT 1
+#define RECRULE_ENABLE 2
+#define RECRULE_DELETE 3
+
 RecordingRulesWindow::RecordingRulesWindow(std::map< int, MythTimer > &recordingRules)
   :m_window(NULL),m_list(NULL),m_recRules(recordingRules)
 {
@@ -101,20 +106,47 @@ bool RecordingRulesWindow::OnInit()
   
   AddonListItemPtr listItem(GUI->ListItem_create("Add rule...","","","",""));
   listItem->SetProperty("time","Add rule...");
+  listItem->SetProperty("ContextMenuOverride","1401");
+  m_window->AddContextMenuButton(1401,RECRULE_NEWRULE,"New Rule");
   m_list->AddItem(listItem.get());
   for(std::map< int, MythTimer >::iterator it=m_recRules.begin();it!=m_recRules.end();it++)
-    m_list->AddItem(AddRecordingRule(it->second).get());  
-  m_window->AddContextMenuButton(14,1,"Test label 1");
-  m_window->AddContextMenuButton(14,2,"Test label 2");
+    m_list->AddItem(AddRecordingRule(it->second).get());
+  if(m_recRules.size())
+  {
+    //m_window->AddContextMenuButton(1401,RECRULE_SORTNAME,"Sort by: Name");
+    //m_window->AddContextMenuButton(1401,RECRULE_SORTDATE,"Sort by: Name");
+  }
+  m_window->AddContextMenuButton(14,RECRULE_NEWRULE,"New Rule");
+  m_window->AddContextMenuButton(14,RECRULE_EDIT,"Edit Rule");
+  m_window->AddContextMenuButton(14,RECRULE_ENABLE,"Rule enabled");
+  m_window->AddContextMenuButton(14,RECRULE_DELETE,"Delete");
   return true;
 }
 
 bool RecordingRulesWindow::OnContextMenu(int controlId,int itemNumber, unsigned int contextButtonId)
 {
-  if(controlId == 14)
+  if(controlId == 14 || controlId == 1401)
   {
-    XBMC->Log(LOG_DEBUG,"Item number: %i selected. Button %i pressed",itemNumber,contextButtonId);
+    CAddonListItem* listItem = m_list->GetItem(itemNumber);
+    CStdString t = m_recRules.at(atoi(listItem->GetLabel())).Title();
+    switch(contextButtonId)
+    {
+    case RECRULE_NEWRULE:      
+      XBMC->Log(LOG_DEBUG,"Item number: %i selected. Item title: %s. Button new rule pressed",itemNumber,t.c_str());
+      break;
+    case RECRULE_EDIT:
+      XBMC->Log(LOG_DEBUG,"Item number: %i selected. Button edit rule pressed",itemNumber);
+      break;
+    case RECRULE_ENABLE:
+      XBMC->Log(LOG_DEBUG,"Item number: %i selected. Button enable rule pressed",itemNumber);
+      break;
+    case RECRULE_DELETE:
+      XBMC->Log(LOG_DEBUG,"Item number: %i selected. Button delete rule pressed",itemNumber);
+      break;
+      }
+    delete listItem;
   }
+  
   return true;
 }
 

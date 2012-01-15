@@ -274,6 +274,8 @@ bool PVRClientMythTV::Connect()
   if(m_channelGroups.size()==0)
     XBMC->Log(LOG_INFO,"%s: No channelgroups",__FUNCTION__);
   
+  std::vector<MythRecordingProfile > rp = m_db.GetRecordingProfiles();
+
   return true;
 }
 
@@ -494,11 +496,12 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
   
   for(std::map< int, MythTimer >::iterator it = timers.begin();it != timers.end();it++)
     m_recordingRules.push_back(it->second);
-  for(std::vector <RecordingRule >::iterator it = m_recordingRules.begin();it != m_recordingRules.end(); it++)
+  //Search for modifiers and add links to them  
+  for(std::vector <RecordingRule >::iterator it = m_recordingRules.begin();it != m_recordingRules.end(); it++) 
     if(it->Type() == MythTimer::DontRecord || it->Type() == MythTimer::OverrideRecord)
       for(std::vector <RecordingRule >::iterator it2 = m_recordingRules.begin();it2 != m_recordingRules.end(); it2++)
         if(it2->Type() != MythTimer::DontRecord && it2->Type() != MythTimer::OverrideRecord)
-			if(it->SameTimeslot(*it2)&&!it->GetParent())
+          if(it->SameTimeslot(*it2)&&!it->GetParent())
           {
             it2->AddModifier(*it);
             it->SetParent(*it2);
@@ -661,6 +664,7 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, start: %i, end: %i, chanID: %i",__FUNCTION__,timer.strTitle,timer.startTime,timer.iClientChannelUid);
   MythTimer mt;
+  m_con.DefaultTimer(mt);
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
   mt.ChanID(timer.iClientChannelUid);
