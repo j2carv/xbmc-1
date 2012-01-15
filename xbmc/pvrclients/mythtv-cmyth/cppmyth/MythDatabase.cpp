@@ -90,10 +90,37 @@ std::map<int, MythTimer> MythDatabase::GetTimers()
   return retval;
 }
 
+std::vector<MythRecordingProfile > MythDatabase::GetRecordingProfiles()
+{
+  std::vector<MythRecordingProfile > retval;
+  cmyth_recprofile* cmythProfiles;
+  m_database_t->Lock();
+  int len = CMYTH->MysqlGetRecprofiles(*m_database_t,&cmythProfiles);
+  for(int i=0;i<len;i++)
+  {
+    std::vector<MythRecordingProfile >::iterator it = std::find(retval.begin(),retval.end(),CStdString(cmythProfiles[i].cardtype));
+    if(it == retval.end())
+    {
+      retval.push_back(MythRecordingProfile());
+      it = --retval.end();
+      it->Format("%s",cmythProfiles[i].cardtype);
+    }
+    it->profile.insert(std::pair<int, CStdString >(cmythProfiles[i].id,cmythProfiles[i].name));
+  }
+  CMYTH->RefRelease(cmythProfiles);
+  m_database_t->Unlock();
+  return retval;
+}
+
+
 int MythDatabase::AddTimer(MythTimer &timer)
 {
+
   m_database_t->Lock();
-  int retval=CMYTH->MysqlAddTimer(*m_database_t,timer.ChanID(),timer.m_channame.Buffer(),timer.m_description.Buffer(),timer.StartTime(), timer.EndTime(),timer.m_title.Buffer(),timer.m_category.Buffer(),timer.Type(),timer.m_subtitle.Buffer(),timer.Priority(),timer.StartOffset(),timer.EndOffset(),timer.SearchType(),timer.Inactive()?1:0);
+
+  int retval=CMYTH->MysqlAddTimer(*m_database_t,timer.ChanID(),timer.m_channame.Buffer(),timer.m_description.Buffer(),timer.StartTime(), timer.EndTime(),timer.m_title.Buffer(),timer.m_category.Buffer(),
+    timer.Type(),timer.m_subtitle.Buffer(),timer.Priority(),timer.StartOffset(),timer.EndOffset(),timer.SearchType(),timer.Inactive()?1:0,timer.DupMethod(),timer.CheckDupIn(),timer.RecGroup().Buffer(),
+    timer.StoreGroup().Buffer(),timer.PlayGroup().Buffer(),timer.AutoTranscode(),timer.Userjobs(),timer.AutoCommFlag(),timer.AutoExpire(),timer.MaxEpisodes(),timer.NewExpireOldRecord(),timer.Transcoder());
   timer.m_recordid=retval;
   m_database_t->Unlock();
   return retval;
@@ -110,7 +137,9 @@ int MythDatabase::AddTimer(MythTimer &timer)
   bool MythDatabase::UpdateTimer(MythTimer &timer)
   {
   m_database_t->Lock();
-  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,timer.RecordID(),timer.ChanID(),timer.m_channame.Buffer(),timer.m_description.Buffer(),timer.StartTime(), timer.EndTime(),timer.m_title.Buffer(),timer.m_category.Buffer(),timer.Type(),timer.m_subtitle.Buffer(),timer.Priority(),timer.StartOffset(),timer.EndOffset(),timer.SearchType(),timer.Inactive()?1:0)==0;
+  bool retval = CMYTH->MysqlUpdateTimer(*m_database_t,timer.RecordID(),timer.ChanID(),timer.m_channame.Buffer(),timer.m_description.Buffer(),timer.StartTime(), timer.EndTime(),timer.m_title.Buffer(),
+    timer.m_category.Buffer(),timer.Type(),timer.m_subtitle.Buffer(),timer.Priority(),timer.StartOffset(),timer.EndOffset(),timer.SearchType(),timer.Inactive()?1:0,timer.DupMethod(),timer.CheckDupIn(),timer.RecGroup().Buffer(),
+    timer.StoreGroup().Buffer(),timer.PlayGroup().Buffer(),timer.AutoTranscode(),timer.Userjobs(),timer.AutoCommFlag(),timer.AutoExpire(),timer.MaxEpisodes(),timer.NewExpireOldRecord(),timer.Transcoder())==0;
   m_database_t->Unlock();
   return retval;
   }

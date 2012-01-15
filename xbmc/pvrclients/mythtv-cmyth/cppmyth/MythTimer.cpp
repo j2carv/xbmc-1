@@ -10,7 +10,8 @@ using namespace ADDON;
 
 
 MythTimer::MythTimer()
-  : m_recordid(-1),m_chanid(-1),m_channame(""),m_starttime(0),m_endtime(0),m_title(""),m_description(""),m_type(NotRecording),m_category(""),m_subtitle(""),m_priority(0),m_startoffset(0),m_endoffset(0),m_searchtype(NoSearch),m_inactive(true)
+  : m_recordid(-1),m_chanid(-1),m_channame(""),m_starttime(0),m_endtime(0),m_title(""),m_description(""),m_type(NotRecording),m_category(""),m_subtitle(""),m_priority(0),m_startoffset(0),m_endoffset(0),m_searchtype(NoSearch),m_inactive(true),
+    m_dupmethod(CheckSubDesc), m_dupin(InAll), m_recgroup("Default"), m_storegroup("Default"), m_playgroup("Default"), m_autotranscode(false), m_userjobs(0), m_autocommflag(false), m_autoexpire(false), m_maxepisodes(0), m_maxnewest(0), m_transcoder(0)
 {}
 
 
@@ -29,23 +30,46 @@ MythTimer::MythTimer()
     m_startoffset(CMYTH->TimerStartoffset(cmyth_timer)),
     m_endoffset(CMYTH->TimerEndoffset(cmyth_timer)),
     m_searchtype(static_cast<TimerSearchType>(CMYTH->TimerSearchtype(cmyth_timer))),
-    m_inactive(CMYTH->TimerInactive(cmyth_timer)!=0)
+    m_inactive(CMYTH->TimerInactive(cmyth_timer)!=0),
+    m_dupmethod(static_cast< DuplicateControlMethods >(CMYTH->TimerDupMethod(cmyth_timer))),
+    m_dupin(static_cast< CheckDuplicatesInTypes >(CMYTH->TimerDupIn(cmyth_timer))),
+    m_recgroup(""),
+    m_storegroup(""),
+    m_playgroup(""),
+    m_autotranscode(CMYTH->TimerAutotranscode(cmyth_timer) == 1),
+    m_userjobs(CMYTH->TimerUserjobs(cmyth_timer)),
+    m_autocommflag(CMYTH->TimerAutocommflag(cmyth_timer) == 1),
+    m_autoexpire(CMYTH->TimerAutoexpire(cmyth_timer) == 1),
+    m_maxepisodes(CMYTH->TimerMaxepisodes(cmyth_timer)),
+    m_maxnewest(CMYTH->TimerMaxnewest(cmyth_timer) == 1),
+    m_transcoder(CMYTH->TimerTranscoder(cmyth_timer))
   {
     char *title = CMYTH->TimerTitle(cmyth_timer);
     char *description = CMYTH->TimerDescription(cmyth_timer);
     char *category = CMYTH->TimerCategory(cmyth_timer);
     char *subtitle = CMYTH->TimerSubtitle(cmyth_timer);
     char *channame = CMYTH->TimerChanname(cmyth_timer);
+    char *recgroup = CMYTH->TimerRecGroup(cmyth_timer);
+    char *storegroup = CMYTH->TimerStoreGroup(cmyth_timer);
+    char *playgroup = CMYTH->TimerPlayGroup(cmyth_timer);
+
     m_title = title;
     m_description = description;
     m_category = category;
     m_subtitle = subtitle;
     m_channame = channame;
+    m_recgroup = recgroup;
+    m_storegroup = storegroup;
+    m_playgroup = playgroup;
+
     CMYTH->RefRelease(title);
     CMYTH->RefRelease(description);
     CMYTH->RefRelease(category);
     CMYTH->RefRelease(subtitle);
     CMYTH->RefRelease(channame);
+    CMYTH->RefRelease(recgroup);
+    CMYTH->RefRelease(storegroup);
+    CMYTH->RefRelease(playgroup);
     if(release)
       CMYTH->RefRelease(cmyth_timer);
   }
@@ -199,3 +223,140 @@ MythTimer::MythTimer()
     {
       m_searchtype=searchtype;
     }
+
+   MythTimer::DuplicateControlMethod  MythTimer::DupMethod()
+   {
+     return m_dupmethod;
+   }
+
+  void  MythTimer::DupMethod( MythTimer::DuplicateControlMethod method)
+  {
+    m_dupmethod = method;
+  }
+
+  MythTimer::CheckDuplicatesInType  MythTimer::CheckDupIn()
+  {
+    return m_dupin;
+  }
+  
+  void  MythTimer::CheckDupIn( MythTimer::CheckDuplicatesInType in)
+  {
+    m_dupin = in;
+  }
+
+  CStdString  MythTimer::RecGroup()
+  {
+    return m_recgroup;
+  }
+
+  void  MythTimer::RecGroup(CStdString group)
+  {
+    m_recgroup = group;
+  }
+
+  CStdString  MythTimer::StoreGroup()
+  {
+    return m_storegroup;
+  }
+
+  void  MythTimer::StoreGroup(CStdString group)
+  {
+    m_storegroup = group;
+  }
+
+  CStdString  MythTimer::PlayGroup()
+  {
+    return m_playgroup;
+  }
+
+  void  MythTimer::PlayGroup(CStdString group)
+  {
+    m_playgroup = group;
+  }
+
+  bool  MythTimer::AutoTranscode()
+  {
+    return m_autotranscode;
+  }
+
+  void  MythTimer::AutoTranscode(bool enable)
+  {
+    m_autotranscode = enable;
+  }
+
+  bool  MythTimer::Userjob(int jobnumber)
+  {
+    if(jobnumber<1 || jobnumber > 4)
+      return false;
+    return (m_userjobs&(1<<(jobnumber-1))) == 1 ;
+  }
+
+  void  MythTimer::Userjob(int jobnumber, bool enable)
+  {
+    if(jobnumber<1 || jobnumber > 4)
+      return;
+    if(enable)
+      m_userjobs |= 1 << (jobnumber - 1);
+    else
+      m_userjobs &= ~(1 << (jobnumber - 1) );
+  }
+
+  int MythTimer::Userjobs()
+  {
+    return m_userjobs;
+  }
+
+  void MythTimer::Userjobs(int jobs)
+  {
+    m_userjobs = jobs;
+  }
+
+  bool  MythTimer::AutoCommFlag()
+  {
+    return m_autocommflag;
+  }
+  
+  void  MythTimer::AutoCommFlag(bool enable)
+  {
+    m_autocommflag = enable;
+  }
+
+  bool  MythTimer::AutoExpire()
+  {
+    return m_autoexpire;
+  }
+
+  void  MythTimer::AutoExpire(bool enable)
+  {
+    m_autoexpire = enable;
+  }
+
+  int  MythTimer::MaxEpisodes()
+  {
+    return m_maxepisodes;
+  }
+
+  void  MythTimer::MaxEpisodes(int max)
+  {
+    m_maxepisodes = max;
+  }
+
+  bool  MythTimer::NewExpireOldRecord()
+  {
+    return m_maxnewest;
+  }
+
+  void  MythTimer::NewExpireOldRecord(bool enable)
+  {
+    m_maxnewest = enable;
+  }
+
+  int MythTimer::Transcoder()
+  {
+    return m_transcoder;
+  }
+
+  void MythTimer::Transcoder(int transcoder)
+  {
+    m_transcoder = transcoder;
+  }

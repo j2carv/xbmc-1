@@ -51,6 +51,7 @@ public:
   void Priority(int priority);
   bool Inactive() const;
   void Inactive(bool inactive);
+
 typedef enum TimerSearchTypes
 {
     NoSearch = 0,
@@ -62,6 +63,49 @@ typedef enum TimerSearchTypes
 } TimerSearchType;
   TimerSearchType SearchType() const;
   void SearchType(TimerSearchType searchtype);
+  typedef enum DuplicateControlMethods
+  {
+    CheckNone     = 0x01,
+    CheckSub      = 0x02,
+    CheckDesc     = 0x04,
+    CheckSubDesc  = 0x06,
+    CheckSubThenDesc = 0x08
+  }  DuplicateControlMethod;
+  typedef enum CheckDuplicatesInTypes
+  {
+    InRecorded     = 0x01,
+    InOldRecorded  = 0x02,
+    InAll          = 0x0F,
+    NewEpi         = 0x10
+  } CheckDuplicatesInType;
+
+  DuplicateControlMethod DupMethod();
+  void DupMethod(DuplicateControlMethod method);
+  CheckDuplicatesInType CheckDupIn();
+  void CheckDupIn(CheckDuplicatesInType in);
+  CStdString RecGroup();
+  void RecGroup(CStdString group);
+  CStdString StoreGroup();
+  void StoreGroup(CStdString group);
+  CStdString PlayGroup();
+  void PlayGroup(CStdString group);
+  bool AutoTranscode();
+  void AutoTranscode(bool enable);
+  bool Userjob(int jobnumber);
+  void Userjob(int jobnumber, bool enable);
+  int Userjobs();
+  void Userjobs(int jobs);
+  bool AutoCommFlag();
+  void AutoCommFlag(bool enable);
+  bool AutoExpire();
+  void AutoExpire(bool enable);
+  int MaxEpisodes();
+  void MaxEpisodes(int max);
+  bool NewExpireOldRecord();
+  void NewExpireOldRecord(bool enable);
+  int Transcoder();
+  void Transcoder(int transcoder);
+
 private:
   int m_recordid;
   int m_chanid; 
@@ -78,4 +122,17 @@ private:
   int m_endoffset;
   TimerSearchType m_searchtype;
   bool m_inactive;
+
+  DuplicateControlMethod m_dupmethod;
+  CheckDuplicatesInType m_dupin;
+  CStdString m_recgroup;
+  CStdString m_storegroup;
+  CStdString m_playgroup;
+  bool m_autotranscode;
+  int m_userjobs;
+  bool m_autocommflag;
+  bool m_autoexpire;
+  int m_maxepisodes;
+  bool m_maxnewest;
+  int m_transcoder;
 };
