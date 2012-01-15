@@ -240,7 +240,7 @@ public:
   virtual void SetVisible(bool yesNo);
   virtual void AddItem(CAddonListItem *item);
   virtual void AddItems(CAddonListItem* items[],int size);
-  virtual CAddonListItem GetItem(int index);
+  virtual CAddonListItem* GetItem(int index);
   virtual int GetSelected();
   virtual void ResetList();
 
@@ -294,7 +294,7 @@ friend class CAddonGUIListContainer;
 
 public:
   CAddonListItem(const char *label, const char *label2, const char *iconImage, const char *thumbnailImage, const char *path);
-  virtual ~CAddonListItem(void);
+  virtual ~CAddonListItem(void){}
 
   virtual const char  *GetLabel();
   virtual void         SetLabel(const char *label);

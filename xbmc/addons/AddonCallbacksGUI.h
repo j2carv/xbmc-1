@@ -175,7 +175,8 @@ private:
   CEvent           m_actionEvent;
   CAddon          *m_addon;
   CStdString       m_mediaDir;
-  void SelectContainerItem(CGUIControl* control, int itemNumber,bool select);
+  int SelectContainerItem(CGUIControl* control, int offset,bool select); 
+  CGUIListItemPtr GetSelectedContainerItem(CGUIControl* control,int offset);
 };
 
 class CGUIAddonWindowDialog : public CGUIAddonWindow

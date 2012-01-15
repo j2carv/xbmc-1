@@ -42,6 +42,7 @@
 #include "guilib/GUIFixedListContainer.h"
 #include "epg/GUIEPGGridContainer.h"
 #include "dialogs/GUIDialogYesNo.h"
+#include "GUIInfoManager.h"
 
 #define CONTROL_BTNVIEWASICONS  2
 #define CONTROL_BTNSORTBY       3
@@ -1105,8 +1106,8 @@ GUIHANDLE CAddonCallbacksGUI::Control_ListContainer_GetItem(void *addonData, GUI
 
   CGUIListContainer *pListContainer = (CGUIListContainer*)handle;
   
-  if(pListContainer->GetListItem(index,0)->IsFileItem())
-    pFileItem = (CFileItem*)pListContainer->GetListItem(index,0).get();
+  if(pListContainer->GetListItem(index,INFOFLAG_LISTITEM_POSITION)->IsFileItem())
+    pFileItem = (CFileItem*)pListContainer->GetListItem(index,INFOFLAG_LISTITEM_POSITION).get();
   return pFileItem;
 }
 
@@ -1474,8 +1475,10 @@ bool CGUIAddonWindow::OnMessage(CGUIMessage& message)
           else if (controlClicked->IsContainer() && message.GetParam1() == ACTION_MOUSE_RIGHT_CLICK && m_mContextButtons.count(iControl))
           {
             iCurrentContextMenuControl = iControl;
-            SelectContainerItem( controlClicked, message.GetParam2(),true);
-            bool retval = CGUIMediaWindow::OnPopupMenu(message.GetParam2());
+            int iItemSelected = SelectContainerItem( controlClicked, message.GetParam2(),true);
+            if(GetSelectedContainerItem(controlClicked, message.GetParam2())->HasProperty("ContextMenuOverride"))
+              iCurrentContextMenuControl = atoi(GetSelectedContainerItem(controlClicked, message.GetParam2())->GetProperty("ContextMenuOverride").asString("-1").c_str());
+            bool retval = CGUIMediaWindow::OnPopupMenu(iItemSelected);
             SelectContainerItem( controlClicked, message.GetParam2(),false);
             return retval;
 //            PyXBMCAction* inf = new PyXBMCAction;
@@ -1496,27 +1499,58 @@ bool CGUIAddonWindow::OnMessage(CGUIMessage& message)
   return CGUIMediaWindow::OnMessage(message);
 }
 
-void CGUIAddonWindow::SelectContainerItem(CGUIControl* control, int itemNumber,bool select)
+int CGUIAddonWindow::SelectContainerItem(CGUIControl* control, int offset,bool select)
+{
+  int iItemSelected = -1;
+  switch ( control->GetControlType() )
+  {
+  case CGUIControl::GUICONTAINER_LIST:
+    iItemSelected = ((CGUIListContainer*)control)->GetSelectedItem();
+    ((CGUIListContainer*)control)->GetListItem(offset)->Select(select);
+    break;
+  case CGUIControl::GUICONTAINER_EPGGRID: 
+    iItemSelected = ((EPG::CGUIEPGGridContainer*)control)->GetSelectedItem();
+    ((EPG::CGUIEPGGridContainer*)control)->GetListItem(offset)->Select(select);
+    break;
+  case CGUIControl::GUICONTAINER_FIXEDLIST:  
+    iItemSelected = ((CGUIFixedListContainer*)control)->GetSelectedItem();
+    ((CGUIFixedListContainer*)control)->GetListItem(offset)->Select(select);
+    break;
+  case CGUIControl::GUICONTAINER_PANEL:  
+    iItemSelected = ((CGUIPanelContainer*)control)->GetSelectedItem();
+    ((CGUIPanelContainer*)control)->GetListItem(offset)->Select(select);
+    break;
+  case CGUIControl::GUICONTAINER_WRAPLIST:  
+    iItemSelected = ((CGUIWrappingListContainer*)control)->GetSelectedItem();
+    ((CGUIWrappingListContainer*)control)->GetListItem(offset)->Select(select);
+    break;
+  }  
+  return iItemSelected;
+}
+
+CGUIListItemPtr CGUIAddonWindow::GetSelectedContainerItem(CGUIControl* control,int offset)
 {
   switch ( control->GetControlType() )
   {
   case CGUIControl::GUICONTAINER_LIST:
-    ((CGUIListContainer*)control)->GetListItem(itemNumber)->Select(select);
+    return  ((CGUIListContainer*)control)->GetListItem(offset);
     break;
   case CGUIControl::GUICONTAINER_EPGGRID: 
-    ((EPG::CGUIEPGGridContainer*)control)->GetListItem(itemNumber)->Select(select);
+    return  ((EPG::CGUIEPGGridContainer*)control)->GetListItem(offset);
     break;
   case CGUIControl::GUICONTAINER_FIXEDLIST:  
-    ((CGUIFixedListContainer*)control)->GetListItem(itemNumber)->Select(select);
+    return  ((CGUIFixedListContainer*)control)->GetListItem(offset);
     break;
   case CGUIControl::GUICONTAINER_PANEL:  
-    ((CGUIPanelContainer*)control)->GetListItem(itemNumber)->Select(select);
+    return  ((CGUIPanelContainer*)control)->GetListItem(offset);
     break;
   case CGUIControl::GUICONTAINER_WRAPLIST:  
-    ((CGUIWrappingListContainer*)control)->GetListItem(itemNumber)->Select(select);
+    return  ((CGUIWrappingListContainer*)control)->GetListItem(offset);
     break;
-  }
+  }  
+  return CGUIListItemPtr(); 
 }
+
 
 void CGUIAddonWindow::AllocResources(bool forceLoad /*= FALSE */)
 {
@@ -1615,7 +1649,8 @@ void CGUIAddonWindow::AddContextMenuButton(int controlId,unsigned int contextBut
 
 void CGUIAddonWindow::GetContextButtons(int itemNumber, CContextButtons &buttons)
 {
-  buttons = m_mContextButtons.at(iCurrentContextMenuControl);
+  if(m_mContextButtons.count(iCurrentContextMenuControl))
+    buttons = m_mContextButtons.at(iCurrentContextMenuControl);
   // maybe on day we can make an easy way to do this context menu
   // with out this method overriding the MediaWindow version, it will display 'Add to Favorites'
 }

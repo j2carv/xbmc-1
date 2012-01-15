@@ -433,12 +433,12 @@ void  CAddonGUIListContainer::AddItems(CAddonListItem* items[],int size)
 }
 
 
-CAddonListItem CAddonGUIListContainer::GetItem(int index)
+CAddonListItem* CAddonGUIListContainer::GetItem(int index)
 {
   if (!m_ListHandle)
     return NULL;
   GUIHANDLE item=(GUIHANDLE)m_cb->Control_ListContainer_GetItem(m_Handle->addonData,m_ListHandle,m_Items,index);
-  return CAddonListItem(item);
+  return new CAddonListItem(item);
 }
 
 int CAddonGUIListContainer::GetSelected()
@@ -598,10 +598,10 @@ CAddonListItem::CAddonListItem(GUIHANDLE ListItemHandle)
 {
 }
 
-CAddonListItem::~CAddonListItem(void)
+/*CAddonListItem::~CAddonListItem(void)
 {
   //m_ListItemHandle will leak if it has not been assigned to a list (i.e. a smartpointer)
-}
+}*/
 
 const char *CAddonListItem::GetLabel()
 {
