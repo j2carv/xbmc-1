@@ -38,7 +38,7 @@ public:
   bool SetSetting(CStdString hostname,CStdString setting,CStdString value);
   CStdString GetHostname();
   CStdString GetBackendHostname();
-  void MythConnection::DefaultTimer(MythTimer &timer);
+  void DefaultTimer(MythTimer &timer);
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
   CStdString m_server;
