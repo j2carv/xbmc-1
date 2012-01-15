@@ -307,6 +307,12 @@ typedef struct  cmyth_rec {
   int sourceid;
 } cmyth_rec_t;
 
+typedef struct cmyth_recprofile{
+int id;
+char name[128];
+char cardtype[32];
+} cmyth_recprofile_t;
+
 #define CMYTH_DBG_NONE  -1
 #define CMYTH_DBG_ERROR  0
 #define CMYTH_DBG_WARN   1
@@ -1171,6 +1177,54 @@ if (TimerInactive == NULL)      { fprintf(stderr, "Unable to assign function %s\
 dlsym(m_libcmyth, "cmyth_timer_channame");
 if (TimerChanname == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    TimerDupMethod      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_dup_method");
+if (TimerDupMethod == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerDupIn      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_dup_in");
+if (TimerDupIn == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerRecGroup      = (char* (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_rec_group");
+if (TimerRecGroup == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerStoreGroup      = (char* (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_store_group");
+if (TimerStoreGroup == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerPlayGroup      = (char* (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_play_group");
+if (TimerPlayGroup == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerAutotranscode      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_autotranscode");
+if (TimerAutotranscode == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerUserjobs      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_userjobs");
+if (TimerUserjobs == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerAutocommflag      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_autocommflag");
+if (TimerAutocommflag == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerAutoexpire      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_autoexpire");
+if (TimerAutoexpire == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerMaxepisodes      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_maxepisodes");
+if (TimerMaxepisodes == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerMaxnewest      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_maxnewest");
+if (TimerMaxnewest == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    TimerTranscoder      = (int (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_transcoder");
+if (TimerTranscoder == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     TimerlistGetItem      = (cmyth_timer_t (*)(cmyth_timerlist_t pl, int index))
 dlsym(m_libcmyth, "cmyth_timerlist_get_item");
 if (TimerlistGetItem == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1183,7 +1237,7 @@ if (TimerlistGetCount == NULL)      { fprintf(stderr, "Unable to assign function
 dlsym(m_libcmyth, "cmyth_mysql_get_timers");
 if (MysqlGetTimers == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive))
+    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder))
 dlsym(m_libcmyth, "cmyth_mysql_add_timer");
 if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1191,7 +1245,7 @@ if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\
 dlsym(m_libcmyth, "cmyth_mysql_delete_timer");
 if (MysqlDeleteTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive))
+    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder))
 dlsym(m_libcmyth, "cmyth_mysql_update_timer");
 if (MysqlUpdateTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1218,6 +1272,22 @@ if (MysqlGetRecorderList == NULL)      { fprintf(stderr, "Unable to assign funct
     MysqlGetProgFinderTimeTitleChan      = (int (*)(cmyth_database_t db,cmyth_program_t* prog, char* title,time_t starttime,int chanid))
 dlsym(m_libcmyth, "cmyth_mysql_get_prog_finder_time_title_chan");
 if (MysqlGetProgFinderTimeTitleChan == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    MysqlGetStoragegroups      = (int (*)(cmyth_database_t db, char*** profiles))
+dlsym(m_libcmyth, "cmyth_mysql_get_storagegroups");
+if (MysqlGetStoragegroups == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    MysqlGetPlaygroups      = (int (*)(cmyth_database_t db, char*** profiles))
+dlsym(m_libcmyth, "cmyth_mysql_get_playgroups");
+if (MysqlGetPlaygroups == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    MysqlGetRecprofiles      = (int (*)(cmyth_database_t db, cmyth_recprofile_t** profiles))
+dlsym(m_libcmyth, "cmyth_mysql_get_recprofiles");
+if (MysqlGetRecprofiles == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    MysqlGetCardtype      = (char* (*)(cmyth_database_t db, int chanid))
+dlsym(m_libcmyth, "cmyth_mysql_get_cardtype");
+if (MysqlGetCardtype == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
     RefRelease      = (void (*)(void* p))
 dlsym(m_libcmyth, "ref_release");
@@ -1453,18 +1523,34 @@ int (*TimerEndoffset)(cmyth_timer_t timer);
 int (*TimerSearchtype)(cmyth_timer_t timer);
 int (*TimerInactive)(cmyth_timer_t timer);
 char* (*TimerChanname)(cmyth_timer_t timer);
+int (*TimerDupMethod)(cmyth_timer_t timer);
+int (*TimerDupIn)(cmyth_timer_t timer);
+char* (*TimerRecGroup)(cmyth_timer_t timer);
+char* (*TimerStoreGroup)(cmyth_timer_t timer);
+char* (*TimerPlayGroup)(cmyth_timer_t timer);
+int (*TimerAutotranscode)(cmyth_timer_t timer);
+int (*TimerUserjobs)(cmyth_timer_t timer);
+int (*TimerAutocommflag)(cmyth_timer_t timer);
+int (*TimerAutoexpire)(cmyth_timer_t timer);
+int (*TimerMaxepisodes)(cmyth_timer_t timer);
+int (*TimerMaxnewest)(cmyth_timer_t timer);
+int (*TimerTranscoder)(cmyth_timer_t timer);
 cmyth_timer_t (*TimerlistGetItem)(cmyth_timerlist_t pl, int index);
 int (*TimerlistGetCount)(cmyth_timerlist_t pl);
 cmyth_timerlist_t (*MysqlGetTimers)(cmyth_database_t db);
-int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive);
+int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder);
 int (*MysqlDeleteTimer)(cmyth_database_t db, int recordid);
-int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive);
+int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder);
 int (*MysqlGetChannelgroups)(cmyth_database_t db,cmyth_channelgroups_t** changroups);
 int (*MysqlGetChannelidsInGroup)(cmyth_database_t db,unsigned int groupid,int** chanids);
 int (*ChannelSourceid)(cmyth_channel_t channel);
 int (*ChannelMultiplex)(cmyth_channel_t channel);
 int (*MysqlGetRecorderList)(cmyth_database_t db,cmyth_rec_t** reclist);
 int (*MysqlGetProgFinderTimeTitleChan)(cmyth_database_t db,cmyth_program_t* prog, char* title,time_t starttime,int chanid);
+int (*MysqlGetStoragegroups)(cmyth_database_t db, char*** profiles);
+int (*MysqlGetPlaygroups)(cmyth_database_t db, char*** profiles);
+int (*MysqlGetRecprofiles)(cmyth_database_t db, cmyth_recprofile_t** profiles);
+char* (*MysqlGetCardtype)(cmyth_database_t db, int chanid);
 void (*RefRelease)(void* p);
 void* (*RefHold)(void* p);
 char* (*RefStrdup)(char* str);

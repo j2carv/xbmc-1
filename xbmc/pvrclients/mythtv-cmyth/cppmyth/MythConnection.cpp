@@ -3,6 +3,7 @@
 #include "MythFile.h"
 #include "MythProgramInfo.h"
 #include "MythEventHandler.h"
+#include "MythTimer.h"
 #include "client.h"
 
 using namespace ADDON;
@@ -222,4 +223,46 @@ void MythConnection::Unlock()
     hostname = NULL;
     Unlock();
     return retval;
+  }
+
+
+  
+/*
+Profile = Default
+recpriority = 0
+maxepisodes = 0
+maxnewest = 0
+recgroup = Default
+dupmethod = 6
+dupin = 15
+playgroup = Default
+storagegroup = Default
+
+Defaults for MythTimer
+AutoTranscode / DefaultTranscoder
+AutoRunUserJob1
+AutoRunUserJob2
+AutoRunUserJob3
+AutoRunUserJob4
+autocommflag => AutoCommercialFlag
+AutoExpireDefault
+transcoder => DefaultTranscoder?? 
+
+start/endoffset => DefaultStartOffset/DefaultEndOffset
+
+*/
+
+  void MythConnection::DefaultTimer(MythTimer &timer)
+  {
+    timer.AutoTranscode(atoi(GetSetting("NULL","AutoTranscode").c_str())>0);
+    timer.Userjob(1,atoi(GetSetting("NULL","AutoRunUserJob1").c_str())>0);
+    timer.Userjob(2,atoi(GetSetting("NULL","AutoRunUserJob2").c_str())>0);
+    timer.Userjob(3,atoi(GetSetting("NULL","AutoRunUserJob3").c_str())>0);
+    timer.Userjob(4,atoi(GetSetting("NULL","AutoRunUserJob4").c_str())>0);
+    timer.AutoCommFlag(atoi(GetSetting("NULL","AutoCommercialFlag").c_str())>0);
+    timer.AutoExpire(atoi(GetSetting("NULL","AutoExpireDefault").c_str())>0);
+    timer.Transcoder(atoi(GetSetting("NULL","DefaultTranscoder").c_str()));
+    timer.StartOffset(atoi(GetSetting("NULL","DefaultStartOffset").c_str()));
+    timer.StartOffset(atoi(GetSetting("NULL","DefaultEndOffset").c_str()));
+        
   }

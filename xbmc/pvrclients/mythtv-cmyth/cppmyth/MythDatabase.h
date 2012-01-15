@@ -15,6 +15,12 @@ typedef cmyth_program_t MythProgram;
 typedef std::pair< CStdString, std::vector< int > > MythChannelGroup;
 //typedef std::vector< MythChannel > MythChannelList;
 
+class MythRecordingProfile : public CStdString{
+public:
+  std::map< int, CStdString > profile;
+};
+
+
 class MythDatabase
 {
 public:
@@ -31,6 +37,7 @@ public:
   boost::unordered_map< CStdString, std::vector< int > > GetChannelGroups();
   std::map< int, std::vector< int > > SourceList();
   bool IsNull();
+  std::vector<MythRecordingProfile > GetRecordingProfiles();
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_database_t > > m_database_t;
 };
