@@ -164,6 +164,23 @@ struct cmyth_timer {
   int searchtype;
   int inactive;
   char* channame;
+
+  int dup_method;
+  int dup_in;
+  char* rec_group;
+  char* store_group;
+  char* play_group;
+  int autotranscode;
+  int userjobs;
+  int autocommflag;
+  int autoexpire;
+  int maxepisodes;
+  int maxnewest;
+  int transcoder;
+  /*
+  char* profile;
+  int prefinput;
+  */
   };
 
 struct cmyth_timerlist {

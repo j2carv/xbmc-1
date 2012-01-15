@@ -1144,6 +1144,19 @@ extern int cmyth_timer_endoffset(cmyth_timer_t timer);
 extern int cmyth_timer_searchtype(cmyth_timer_t timer);
 extern int cmyth_timer_inactive(cmyth_timer_t timer);
 extern char* cmyth_timer_channame(cmyth_timer_t timer);
+extern int cmyth_timer_dup_method(cmyth_timer_t timer);
+extern int cmyth_timer_dup_in(cmyth_timer_t timer);
+extern char* cmyth_timer_rec_group(cmyth_timer_t timer);
+extern char* cmyth_timer_store_group(cmyth_timer_t timer);
+extern char* cmyth_timer_play_group(cmyth_timer_t timer);
+extern int cmyth_timer_autotranscode(cmyth_timer_t timer);
+extern int cmyth_timer_userjobs(cmyth_timer_t timer);
+extern int cmyth_timer_autocommflag(cmyth_timer_t timer);
+extern int cmyth_timer_autoexpire(cmyth_timer_t timer);
+extern int cmyth_timer_maxepisodes(cmyth_timer_t timer);
+extern int cmyth_timer_maxnewest(cmyth_timer_t timer);
+extern int cmyth_timer_transcoder(cmyth_timer_t timer);
+
 
 extern cmyth_timer_t cmyth_timerlist_get_item(cmyth_timerlist_t pl, int index);
 extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
@@ -1151,9 +1164,11 @@ extern int cmyth_timerlist_get_count(cmyth_timerlist_t pl);
 extern cmyth_timerlist_t cmyth_mysql_get_timers(cmyth_database_t db); 
 
 
-extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive); 
+extern int cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,
+  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder); 
 extern int cmyth_mysql_delete_timer(cmyth_database_t db, int recordid);
-extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive); 
+extern int cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,
+  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder); 
 
 typedef struct cmyth_channelgroups {
 	char channelgroup[65];
@@ -1177,5 +1192,21 @@ extern int cmyth_mysql_get_recorder_list(cmyth_database_t db,cmyth_rec_t** recli
 #endif /* __CMYTH_H */
 =======
 extern int cmyth_mysql_get_prog_finder_time_title_chan(cmyth_database_t db,cmyth_program_t *prog, char* title,time_t starttime,int chanid);
+
+extern int cmyth_mysql_get_storagegroups(cmyth_database_t db, char** *profiles);
+extern int cmyth_mysql_get_playgroups(cmyth_database_t db, char** *profiles);
+
+typedef struct cmyth_recprofile{
+int id;
+char name[128];
+char cardtype[32];
+} cmyth_recprofile_t;
+
+extern int cmyth_mysql_get_recprofiles(cmyth_database_t db, cmyth_recprofile_t** profiles);
+
+extern char* cmyth_mysql_get_cardtype(cmyth_database_t db, int chanid);
+
+
+
 #endif /* __CMYTH_H */
 >>>>>>> added: Improved support for mythtv timers
