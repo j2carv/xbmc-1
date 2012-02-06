@@ -84,34 +84,27 @@ bool SetTimeouts(serial_socket_t socket, int* iError, bool bBlocking)
 
 void CSerialSocket::Close(void)
 {
-  if (IsOpen())
-    SerialSocketClose(m_socket);
-  m_socket = INVALID_SERIAL_SOCKET_VALUE;
+  SerialSocketClose(m_socket);
 }
 
 void CSerialSocket::Shutdown(void)
 {
-  if (IsOpen())
-    SerialSocketClose(m_socket);
-  m_socket = INVALID_SERIAL_SOCKET_VALUE;
+  SerialSocketClose(m_socket);
 }
 
 ssize_t CSerialSocket::Write(void* data, size_t len)
 {
-  return IsOpen() ? SerialSocketWrite(m_socket, &m_iError, data, len) : -1;
+  return SerialSocketWrite(m_socket, &m_iError, data, len);
 }
 
 ssize_t CSerialSocket::Read(void* data, size_t len, uint64_t iTimeoutMs /* = 0 */)
 {
-  return IsOpen() ? SerialSocketRead(m_socket, &m_iError, data, len, iTimeoutMs) : -1;
+  return SerialSocketRead(m_socket, &m_iError, data, len, iTimeoutMs);
 }
 
 bool CSerialSocket::Open(uint64_t iTimeoutMs /* = 0 */)
 {
   iTimeoutMs = 0;
-  if (IsOpen())
-    return false;
-
   CStdString strComPath = "\\\\.\\" + m_strName;
   CLockObject lock(m_mutex);
   m_socket = CreateFile(strComPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);

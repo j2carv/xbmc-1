@@ -40,12 +40,11 @@ namespace PLATFORM
   public:
     CThread(void) :
         m_bStop(false),
-        m_bRunning(false),
-        m_bStopped(false) {}
+        m_bRunning(false) {}
 
     virtual ~CThread(void)
     {
-      StopThread(0);
+      StopThread();
     }
 
     static void *ThreadHandler(CThread *thread)
@@ -54,21 +53,17 @@ namespace PLATFORM
 
       if (thread)
       {
-        {
-          CLockObject lock(thread->m_threadMutex);
-          thread->m_bRunning = true;
-          thread->m_bStopped = false;
-          thread->m_threadCondition.Broadcast();
-        }
+        CLockObject lock(thread->m_threadMutex);
+        thread->m_bRunning = true;
+        lock.Unlock();
+        thread->m_threadCondition.Broadcast();
 
         retVal = thread->Process();
 
-        {
-          CLockObject lock(thread->m_threadMutex);
-          thread->m_bRunning = false;
-          thread->m_bStopped = true;
-          thread->m_threadCondition.Broadcast();
-        }
+        lock.Lock();
+        thread->m_bRunning = false;
+        lock.Unlock();
+        thread->m_threadCondition.Broadcast();
       }
 
       return retVal;
@@ -96,18 +91,14 @@ namespace PLATFORM
           if (ThreadsCreate(m_thread, CThread::ThreadHandler, ((void*)static_cast<CThread *>(this))))
           {
             if (bWait)
-              m_threadCondition.Wait(m_threadMutex, m_bRunning);
+              m_threadCondition.Wait(m_threadMutex);
             bReturn = true;
           }
         }
       return bReturn;
     }
 
-    /*!
-     * @brief Stop the thread
-     * @param iWaitMs negative = don't wait, 0 = infinite, or the amount of ms to wait
-     */
-    virtual bool StopThread(int iWaitMs = 5000)
+    virtual bool StopThread(bool bWaitForExit = true)
     {
       bool bReturn(true);
       bool bRunning(false);
@@ -115,25 +106,21 @@ namespace PLATFORM
         CLockObject lock(m_threadMutex);
         bRunning = IsRunning();
         m_bStop = true;
+        m_threadCondition.Broadcast();
       }
 
-      if (bRunning && iWaitMs >= 0)
+      if (bRunning && bWaitForExit)
       {
-        CLockObject lock(m_threadMutex);
-        bReturn = m_threadCondition.Wait(m_threadMutex, m_bStopped, iWaitMs);
+        void *retVal = NULL;
+        bReturn = ThreadsWait(m_thread, &retVal);
       }
-      else
-      {
-        bReturn = true;
-      }
-
-      return bReturn;
+      return true;
     }
 
     virtual bool Sleep(uint32_t iTimeout)
     {
       CLockObject lock(m_threadMutex);
-      return m_bStop ? false : m_threadCondition.Wait(m_threadMutex, m_bStopped, iTimeout);
+      return m_bStop ? false : m_threadCondition.Wait(m_threadMutex, iTimeout);
     }
 
     virtual void *Process(void) = 0;
@@ -142,11 +129,10 @@ namespace PLATFORM
     void SetRunning(bool bSetTo);
 
   private:
-    bool             m_bStop;
-    bool             m_bRunning;
-    bool             m_bStopped;
-    CCondition<bool> m_threadCondition;
-    CMutex           m_threadMutex;
-    thread_t         m_thread;
+    bool       m_bStop;
+    bool       m_bRunning;
+    CCondition m_threadCondition;
+    CMutex     m_threadMutex;
+    thread_t   m_thread;
   };
 };

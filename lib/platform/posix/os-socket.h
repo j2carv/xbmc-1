@@ -43,11 +43,6 @@
 #include <netdb.h>
 #include <poll.h>
 
-/* Needed on Mac OS/X */
-#ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
-#endif
-
 namespace PLATFORM
 {
   // Standard sockets
@@ -76,7 +71,7 @@ namespace PLATFORM
     if (socket == INVALID_SOCKET_VALUE)
     {
       *iError = EINVAL;
-      return -EINVAL;
+      return -1;
     }
 
     ssize_t iBytesWritten(0);
@@ -90,19 +85,19 @@ namespace PLATFORM
       if (returnv < 0)
       {
         *iError = errno;
-        return -errno;
+        return -1;
       }
       else if (returnv == 0)
       {
         *iError = ETIMEDOUT;
-        return -ETIMEDOUT;
+        return -1;
       }
 
       returnv = write(socket, (char*)data + iBytesWritten, len - iBytesWritten);
       if (returnv == -1)
       {
         *iError = errno;
-        return -errno;
+        return -1;
       }
       iBytesWritten += returnv;
     }
@@ -121,7 +116,7 @@ namespace PLATFORM
     if (socket == INVALID_SOCKET_VALUE)
     {
       *iError = EINVAL;
-      return -EINVAL;
+      return -1;
     }
 
     if (iTimeoutMs > 0)
@@ -150,7 +145,7 @@ namespace PLATFORM
       if (returnv == -1)
       {
         *iError = errno;
-        return -errno;
+        return -1;
       }
       else if (returnv == 0)
       {
@@ -161,7 +156,7 @@ namespace PLATFORM
       if (returnv == -1)
       {
         *iError = errno;
-        return -errno;
+        return -1;
       }
 
       iBytesRead += returnv;
@@ -210,7 +205,7 @@ namespace PLATFORM
     if (socket == INVALID_SOCKET_VALUE)
     {
       *iError = EINVAL;
-      return -EINVAL;
+      return -1;
     }
 
     if (iTimeoutMs > 0)

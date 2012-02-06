@@ -32,11 +32,10 @@
  */
 
 #define _FILE_OFFSET_BITS 64
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/time.h>
-#if !defined(__APPLE__) && !defined(__FreeBSD__)
+#ifndef __APPLE__
 #include <sys/prctl.h>
 #endif
 #include <pthread.h>

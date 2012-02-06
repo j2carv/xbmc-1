@@ -77,7 +77,7 @@ namespace PLATFORM
           m_iStopbits(iStopbits),
           m_iParity(iParity) {}
 
-      virtual ~CSerialSocket(void) { Close(); }
+      virtual ~CSerialSocket(void) {}
 
       virtual bool Open(uint64_t iTimeoutMs = 0);
       virtual void Close(void);

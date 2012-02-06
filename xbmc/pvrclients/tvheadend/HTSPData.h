@@ -25,22 +25,6 @@
 #include "../../../lib/platform/threads/threads.h"
 #include "HTSPConnection.h"
 
-class CHTSResult
-{
-public:
-  CHTSResult(void) : message(NULL), status(PVR_ERROR_NO_ERROR) {}
-  ~CHTSResult(void)
-  {
-    if (message != NULL)
-      htsmsg_destroy(message);
-  }
-
-  // the actual message
-  htsmsg *message;
-  // the return code
-  PVR_ERROR status;
-};
-
 class CHTSPData : public PLATFORM::CThread
 {
 public:
@@ -57,7 +41,7 @@ public:
    * @param message The message to send.
    * @return The returned message or NULL if an error occured or nothing was received.
    */
-  void         ReadResult(htsmsg_t *message, CHTSResult &result);
+  htsmsg_t *   ReadResult(htsmsg_t *message);
   int          GetProtocol(void) const   { return m_session->GetProtocol(); }
   const char * GetServerName(void) const { return m_session->GetServerName(); }
   const char * GetVersion(void) const    { return m_session->GetVersion(); }
@@ -85,8 +69,9 @@ protected:
 private:
   struct SMessage
   {
-    PLATFORM::CEvent* event;
-    htsmsg_t*         msg;
+    PLATFORM::CCondition* event;
+    PLATFORM::CMutex    * mutex;
+    htsmsg_t*             msg;
   };
   typedef std::map<int, SMessage> SMessages;
 
@@ -94,28 +79,19 @@ private:
   SChannels GetChannels(int tag);
   SChannels GetChannels(STag &tag);
   STags GetTags();
-  PVR_ERROR GetEvent(SEvent& event, uint32_t id);
+  bool GetEvent(SEvent& event, uint32_t id);
   bool SendEnableAsync();
   SRecordings GetDVREntries(bool recorded, bool scheduled);
 
-  void ParseChannelRemove(htsmsg_t* msg);
-  void ParseChannelUpdate(htsmsg_t* msg);
-  void ParseDVREntryDelete(htsmsg_t* msg);
-  void ParseDVREntryUpdate(htsmsg_t* msg);
-  static bool ParseEvent(htsmsg_t* msg, uint32_t id, SEvent &event);
-  void ParseTagRemove(htsmsg_t* msg);
-  void ParseTagUpdate(htsmsg_t* msg);
-
-  CHTSPConnection *          m_session;
-  bool                       m_bIsStarted;
-  PLATFORM::CCondition<bool> m_started;
-  PLATFORM::CMutex           m_mutex;
-  SChannels                  m_channels;
-  STags                      m_tags;
-  SEvents                    m_events;
-  SMessages                  m_queue;
-  SRecordings                m_recordings;
-  int                        m_iReconnectRetries;
-  bool                       m_bDisconnectWarningDisplayed;
+  CHTSPConnection *    m_session;
+  PLATFORM::CCondition m_started;
+  PLATFORM::CMutex     m_mutex;
+  SChannels            m_channels;
+  STags                m_tags;
+  SEvents              m_events;
+  SMessages            m_queue;
+  SRecordings          m_recordings;
+  int                  m_iReconnectRetries;
+  bool                 m_bDisconnectWarningDisplayed;
 };
 

@@ -37,7 +37,7 @@
 #include "../util/baudrate.h"
 #include "../posix/os-socket.h"
 
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__APPLE__)
 #ifndef XCASE
 #define XCASE	0
 #endif
@@ -53,32 +53,29 @@ using namespace PLATFORM;
 
 void CSerialSocket::Close(void)
 {
-  if (IsOpen())
-    SocketClose(m_socket);
+  SocketClose(m_socket);
 }
 
 void CSerialSocket::Shutdown(void)
 {
-  if (IsOpen())
-    SocketClose(m_socket);
+  SocketClose(m_socket);
 }
 
 ssize_t CSerialSocket::Write(void* data, size_t len)
 {
-  return IsOpen() ? SocketWrite(m_socket, &m_iError, data, len) : -1;
+  return SocketWrite(m_socket, &m_iError, data, len);
 }
 
 ssize_t CSerialSocket::Read(void* data, size_t len, uint64_t iTimeoutMs /* = 0 */)
 {
-  return IsOpen() ? SocketRead(m_socket, &m_iError, data, len, iTimeoutMs) : -1;
+  return SocketRead(m_socket, &m_iError, data, len, iTimeoutMs);
 }
 
 //setting all this stuff up is a pain in the ass
 bool CSerialSocket::Open(uint64_t iTimeoutMs /* = 0 */)
 {
   iTimeoutMs = 0;
-  if (IsOpen())
-    return false;
+  CLockObject lock(m_mutex);
 
   if (m_iDatabits != SERIAL_DATA_BITS_FIVE && m_iDatabits != SERIAL_DATA_BITS_SIX &&
       m_iDatabits != SERIAL_DATA_BITS_SEVEN && m_iDatabits != SERIAL_DATA_BITS_EIGHT)
