@@ -199,27 +199,27 @@ private:
   bool             m_bRunning;
 };
 
-/*TODO:
-class CGUIAddonDialogSettings : public CGUIDialogSettings
-{
-friend class CAddonCallbacksGUI;
-
-public:
- CGUIAddonDialogSettings(int id, const char *xmlFile);
- virtual ~CGUIDialogSettings(void){}
- virtual bool OnMessage(CGUIMessage &message);/*??*/
-
- virtual void OnSliderChange(void *data, CGUISliderControl *slider);/*??*/
-protected:
-  virtual void OnOkay() {};/*callback*/
-  virtual void OnCancel() {};/*callback*/
-  virtual bool OnBack(int actionID);/*??*/
-  virtual void OnInitWindow();/*??*/
-  virtual void SetupPage();/*??*/
-  virtual void CreateSettings() {};/*callback*/
-  virtual void OnSettingChanged(SettingInfo &setting) {};/*callback*/
-  SettingInfo GetSetting(int n);
-  };
-
+// TODO:
+//class CGUIAddonDialogSettings : public CGUIDialogSettings
+//{
+//friend class CAddonCallbacksGUI;
+//
+//public:
+// CGUIAddonDialogSettings(int id, const char *xmlFile);
+// virtual ~CGUIDialogSettings(void){}
+// virtual bool OnMessage(CGUIMessage &message);/*??*/
+//
+// virtual void OnSliderChange(void *data, CGUISliderControl *slider);/*??*/
+//protected:
+//  virtual void OnOkay() {};/*callback*/
+//  virtual void OnCancel() {};/*callback*/
+//  virtual bool OnBack(int actionID);/*??*/
+//  virtual void OnInitWindow();/*??*/
+//  virtual void SetupPage();/*??*/
+//  virtual void CreateSettings() {};/*callback*/
+//  virtual void OnSettingChanged(SettingInfo &setting) {};/*callback*/
+//  SettingInfo GetSetting(int n);
+//  };
+//
 };
-*/ /* namespace ADDON */
+ /* namespace ADDON */
