@@ -198,8 +198,9 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
       {
         XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
         PVR->TriggerTimerUpdate();
+        PVR->TriggerRecordingUpdate();
       }
-      if(myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_ADD||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_DELETE||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_UPDATE)
+      if(myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_ADD||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_DELETE||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_UPDATE||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE)
       {
         XBMC->Log(LOG_NOTICE,"Recording list change",__FUNCTION__);
         PVR->TriggerRecordingUpdate();
