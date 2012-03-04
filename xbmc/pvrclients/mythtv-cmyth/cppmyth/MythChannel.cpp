@@ -34,6 +34,12 @@ CStdString MythChannel::Number()
   return retval;
 } 
 
+ CStdString MythChannel::Callsign()
+{
+  CStdString retval( CMYTH->ChannelCallsign(*m_channel_t));
+  return retval;
+} 
+
 int MythChannel::SourceID()
 {
   return CMYTH->ChannelSourceid(*m_channel_t);

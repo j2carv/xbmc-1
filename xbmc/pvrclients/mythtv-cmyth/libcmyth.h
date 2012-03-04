@@ -989,6 +989,10 @@ if (ChannelChannum == NULL)      { fprintf(stderr, "Unable to assign function %s
 dlsym(m_libcmyth, "cmyth_channel_channumstr");
 if (ChannelChannumstr == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    ChannelCallsign      = (char* (*)(cmyth_channel_t channel))
+dlsym(m_libcmyth, "cmyth_channel_callsign");
+if (ChannelCallsign == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     ChannelName      = (char* (*)(cmyth_channel_t channel))
 dlsym(m_libcmyth, "cmyth_channel_name");
 if (ChannelName == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1173,9 +1177,9 @@ if (TimerSearchtype == NULL)      { fprintf(stderr, "Unable to assign function %
 dlsym(m_libcmyth, "cmyth_timer_inactive");
 if (TimerInactive == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    TimerChanname      = (char* (*)(cmyth_timer_t timer))
-dlsym(m_libcmyth, "cmyth_timer_channame");
-if (TimerChanname == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+    TimerCallsign      = (char* (*)(cmyth_timer_t timer))
+dlsym(m_libcmyth, "cmyth_timer_callsign");
+if (TimerCallsign == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
     TimerDupMethod      = (int (*)(cmyth_timer_t timer))
 dlsym(m_libcmyth, "cmyth_timer_dup_method");
@@ -1237,7 +1241,7 @@ if (TimerlistGetCount == NULL)      { fprintf(stderr, "Unable to assign function
 dlsym(m_libcmyth, "cmyth_mysql_get_timers");
 if (MysqlGetTimers == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder))
+    MysqlAddTimer      = (int (*)(cmyth_database_t db, int chanid,char* callsign,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder))
 dlsym(m_libcmyth, "cmyth_mysql_add_timer");
 if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1245,7 +1249,7 @@ if (MysqlAddTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\
 dlsym(m_libcmyth, "cmyth_mysql_delete_timer");
 if (MysqlDeleteTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder))
+    MysqlUpdateTimer      = (int (*)(cmyth_database_t db, int recordid, int chanid,char* callsign,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder))
 dlsym(m_libcmyth, "cmyth_mysql_update_timer");
 if (MysqlUpdateTimer == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1476,6 +1480,7 @@ int (*FileRead)(cmyth_file_t file,char* buf,unsigned long len);
 long (*ChannelChanid)(cmyth_channel_t channel);
 long (*ChannelChannum)(cmyth_channel_t channel);
 char* (*ChannelChannumstr)(cmyth_channel_t channel);
+char* (*ChannelCallsign)(cmyth_channel_t channel);
 char* (*ChannelName)(cmyth_channel_t channel);
 char* (*ChannelIcon)(cmyth_channel_t channel);
 int (*ChannelVisible)(cmyth_channel_t channel);
@@ -1522,7 +1527,7 @@ int (*TimerStartoffset)(cmyth_timer_t timer);
 int (*TimerEndoffset)(cmyth_timer_t timer);
 int (*TimerSearchtype)(cmyth_timer_t timer);
 int (*TimerInactive)(cmyth_timer_t timer);
-char* (*TimerChanname)(cmyth_timer_t timer);
+char* (*TimerCallsign)(cmyth_timer_t timer);
 int (*TimerDupMethod)(cmyth_timer_t timer);
 int (*TimerDupIn)(cmyth_timer_t timer);
 char* (*TimerRecGroup)(cmyth_timer_t timer);
@@ -1538,9 +1543,9 @@ int (*TimerTranscoder)(cmyth_timer_t timer);
 cmyth_timer_t (*TimerlistGetItem)(cmyth_timerlist_t pl, int index);
 int (*TimerlistGetCount)(cmyth_timerlist_t pl);
 cmyth_timerlist_t (*MysqlGetTimers)(cmyth_database_t db);
-int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder);
+int (*MysqlAddTimer)(cmyth_database_t db, int chanid,char* callsign,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder);
 int (*MysqlDeleteTimer)(cmyth_database_t db, int recordid);
-int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder);
+int (*MysqlUpdateTimer)(cmyth_database_t db, int recordid, int chanid,char* callsign,char* description, time_t starttime, time_t endtime,char* title,char* category, int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,  int dup_method, int dup_in, char* rec_group, char* store_group, char* play_group, int autotranscode, int userjobs, int autocommflag, int autoexpire, int maxepisodes, int maxnewest, int transcoder);
 int (*MysqlGetChannelgroups)(cmyth_database_t db,cmyth_channelgroups_t** changroups);
 int (*MysqlGetChannelidsInGroup)(cmyth_database_t db,unsigned int groupid,int** chanids);
 int (*ChannelSourceid)(cmyth_channel_t channel);
@@ -1557,7 +1562,6 @@ char* (*RefStrdup)(char* str);
 void* (*RefRealloc)(void* p, size_t len);
 void (*RefSetDestroy)(void* block, ref_destroy_t func);
 void (*RefAllocShow)(void);
-
 
 
 protected:

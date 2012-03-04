@@ -13,6 +13,7 @@ public:
   int ID();
   int NumberInt();
   CStdString Number();
+  CStdString Callsign();
   int SourceID();
   CStdString Name();
   CStdString Icon();

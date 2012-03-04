@@ -128,7 +128,7 @@ bool RecordingRulesWindow::OnContextMenu(int controlId,int itemNumber, unsigned 
   if(controlId == 14 || controlId == 1401)
   {
     CAddonListItem* listItem = m_list->GetItem(itemNumber);
-    CStdString t = m_recRules.at(atoi(listItem->GetLabel())).Title();
+    CStdString t = m_recRules.at(atoi(listItem->GetLabel())).Title(false);
     switch(contextButtonId)
     {
     case RECRULE_NEWRULE:      
@@ -187,8 +187,8 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
   if(rule.Type() == MythTimer::AllRecord || rule.ChanID()==0)
     channel = "Any";
   else
-    channel = rule.ChanName();
-
+    channel = rule.Callsign(); //TODO: Chan name instead??
+  
   time_t starttime = rule.StartTime();
   tm *lc = localtime(&starttime);
   int shift = lc->tm_wday? lc->tm_wday-1 : 6;//Monday is the first day
@@ -262,7 +262,7 @@ AddonListItemPtr RecordingRulesWindow::AddRecordingRule(MythTimer &rule)
   {
   case MythTimer::NoSearch:
     search.Format("%s",
-      rule.Title());
+      rule.Title(false));
     break;
   case MythTimer::TitleSearch:
     search.Format("%s %s %s",

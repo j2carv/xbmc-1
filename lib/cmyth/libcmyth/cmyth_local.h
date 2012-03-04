@@ -163,7 +163,7 @@ struct cmyth_timer {
   int endoffset;
   int searchtype;
   int inactive;
-  char* channame;
+  char* callsign;
 
   int dup_method;
   int dup_in;

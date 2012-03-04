@@ -13,14 +13,14 @@ public:
   void RecordID(int recordid);
   int ChanID() const;
   void ChanID(int chanid);
-  CStdString ChanName() const;
-  void ChanName(const CStdString& channame);
+  CStdString Callsign() const;
+  void Callsign(const CStdString& chancallsign);
   time_t StartTime() const;
   void StartTime(time_t starttime);
   time_t EndTime() const;
   void EndTime(time_t endtime);
-  CStdString Title() const;
-  void Title(const CStdString& title);
+  CStdString Title(bool subtitleEncoded) const;
+  void Title(const CStdString& title,bool subtitleEncoded);
   CStdString Subtitle() const;
   void Subtitle(const CStdString& subtitle);
   CStdString Description() const;
@@ -109,7 +109,7 @@ typedef enum TimerSearchTypes
 private:
   int m_recordid;
   int m_chanid; 
-  CStdString m_channame;
+  CStdString m_callsign;
   time_t m_starttime;  
   time_t m_endtime;    
 	CStdString m_title;

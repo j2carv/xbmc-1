@@ -15,7 +15,7 @@ public:
   MythProgramInfo();
   MythProgramInfo(cmyth_proginfo_t cmyth_proginfo);
   CStdString ProgramID();
-  CStdString Title();
+  CStdString Title(bool subtitleEncoded);
   CStdString Subtitle();
   CStdString Path();
   CStdString Description();

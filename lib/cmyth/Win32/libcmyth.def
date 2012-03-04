@@ -238,7 +238,7 @@ EXPORTS
 	cmyth_timer_endoffset
 	cmyth_timer_searchtype
 	cmyth_timer_inactive
-	cmyth_timer_channame
+	cmyth_timer_callsign
 	cmyth_timer_dup_method
 	cmyth_timer_dup_in
 	cmyth_timer_rec_group
@@ -267,3 +267,4 @@ EXPORTS
 	cmyth_mysql_get_playgroups
 	cmyth_mysql_get_recprofiles
 	cmyth_mysql_get_cardtype
+	cmyth_channel_callsign
