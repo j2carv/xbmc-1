@@ -60,15 +60,15 @@ using namespace ADDON;
 	  case MythTimer::FindDailyRecord:
 	  case MythTimer::FindWeeklyRecord:
 	  case MythTimer::FindOneRecord:
-		  return rule.Title() == Title();
+		  return rule.Title(false) == Title(false);
 	  case MythTimer::TimeslotRecord:
-		  return rule.Title() == Title() && daytime( &starttime) == daytime( &rStarttime ) &&  rule.ChanID() == ChanID();
+		  return rule.Title(false) == Title(false) && daytime( &starttime) == daytime( &rStarttime ) &&  rule.ChanID() == ChanID();
 	  case MythTimer::ChannelRecord:
-		  return rule.Title() == Title() && rule.ChanID() == ChanID(); //TODO: dup
+		  return rule.Title(false) == Title(false) && rule.ChanID() == ChanID(); //TODO: dup
 	  case MythTimer::AllRecord:
-		return rule.Title() == Title();//TODO: dup
+		return rule.Title(false) == Title(false);//TODO: dup
 	  case MythTimer::WeekslotRecord:
-		  return rule.Title() == Title() && daytime( &starttime) == daytime( &rStarttime ) && weekday( &starttime) == weekday( &rStarttime) &&  rule.ChanID() == ChanID();
+		  return rule.Title(false) == Title(false) && daytime( &starttime) == daytime( &rStarttime ) && weekday( &starttime) == weekday( &rStarttime) &&  rule.ChanID() == ChanID();
 	  }
 	  return false;
   }
@@ -428,11 +428,8 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       CStdString chanName=it->second.ChannelName();
       CStdString plot=it->second.Description();
       CStdString path=it->second.Path();
-      CStdString title=it->second.Title();
-      CStdString subtitle=it->second.Subtitle();
-      if (!subtitle.IsEmpty())
-        title+=": " + subtitle;
-
+      CStdString title=it->second.Title(true);
+      
       tag.strChannelName=chanName;
       tag.strPlot=plot;
       CStdString id=it->second.Path();
@@ -518,7 +515,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
     tag.iClientChannelUid=proginfo.ChannelID();
     tag.iClientIndex=proginfo.RecordID();
     tag.startTime=proginfo.StartTime();
-    CStdString title=proginfo.Title();
+    CStdString title=proginfo.Title(true);
     if(title.empty())
     {
       MythProgram epgProgram;
@@ -668,7 +665,7 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
   mt.ChanID(timer.iClientChannelUid);
-  mt.ChanName(m_channels.at(timer.iClientChannelUid).Name());
+  mt.Callsign(m_channels.at(timer.iClientChannelUid).Callsign());
   mt.Description(timer.strSummary);
   mt.EndOffset(timer.iMarginEnd);
   mt.EndTime(timer.endTime);
@@ -676,8 +673,8 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   mt.Priority(timer.iPriority);
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
-  mt.Title(timer.strTitle);
-  CStdString title=mt.Title();
+  mt.Title(timer.strTitle,true);
+  CStdString title=mt.Title(false);
   mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
   int id=m_db.AddTimer(mt);
@@ -723,7 +720,7 @@ void PVRClientMythTV::PVRtoMythTimer(const PVR_TIMER timer, MythTimer& mt)
   CStdString category=Genre(timer.iGenreType);
   mt.Category(category);
   mt.ChanID(timer.iClientChannelUid);
-  mt.ChanName(m_channels.at(timer.iClientChannelUid).Name());
+  mt.Callsign(m_channels.at(timer.iClientChannelUid).Callsign());
   mt.Description(timer.strSummary);
   mt.EndOffset(timer.iMarginEnd);
   mt.EndTime(timer.endTime);
@@ -731,8 +728,8 @@ void PVRClientMythTV::PVRtoMythTimer(const PVR_TIMER timer, MythTimer& mt)
   mt.Priority(timer.iPriority);
   mt.StartOffset(timer.iMarginStart);
   mt.StartTime(timer.startTime);
-  mt.Title(timer.strTitle);
-  CStdString title=mt.Title();
+  mt.Title(timer.strTitle,true);
+  CStdString title=mt.Title(false);
   mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
   mt.RecordID(timer.iClientIndex);

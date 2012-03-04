@@ -29,12 +29,18 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
     return retval;
   }
 
-  CStdString MythProgramInfo::Title()
+  CStdString MythProgramInfo::Title(bool subtitleEncoded)
   {
     CStdString retval;
     char* title=CMYTH->ProginfoTitle(*m_proginfo_t);
     retval=title;
     CMYTH->RefRelease(title);
+    if(subtitleEncoded)
+    {
+      CStdString subtitle = this->Subtitle();
+      if(!subtitle.empty())
+        retval.Format("%s::%s",retval,subtitle);
+    }
     return retval;
   }
 

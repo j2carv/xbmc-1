@@ -1104,6 +1104,16 @@ cmyth_channel_name(cmyth_channel_t channel)
 }
 
 char *
+cmyth_channel_callsign(cmyth_channel_t channel)
+{
+	if (!channel) {
+		return NULL;
+	}
+	return ref_hold(channel->callsign);
+}
+
+
+char *
 cmyth_channel_icon(cmyth_channel_t channel)
 {
 	if (!channel) {
@@ -1161,7 +1171,7 @@ cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db)
 {
 	MYSQL_RES *res = NULL;
 	MYSQL_ROW row;
-	const char *query_str = "SELECT chanid, channum, name, icon, visible, sourceid, mplexid FROM channel;";
+	const char *query_str = "SELECT chanid, channum, name, icon, visible, sourceid, mplexid, callsign FROM channel;";
 	int rows = 0;
 	int i;
 	cmyth_mysql_query_t * query;
@@ -1199,6 +1209,7 @@ cmyth_chanlist_t cmyth_mysql_get_chanlist(cmyth_database_t db)
 		channel->visible = safe_atoi(row[4]);
     channel->sourceid = safe_atoi(row[5]);
     channel->multiplex = safe_atoi(row[6]);
+    channel->callsign = ref_strdup(row[7]);
 		chanlist->chanlist_list[rows] = channel;
 		i = 0;
 		rows++;
@@ -1477,7 +1488,7 @@ cmyth_mysql_get_timers(cmyth_database_t db)
     timer->endoffset = safe_atoi(row[11]);
     timer->searchtype = safe_atoi(row[12]);
     timer->inactive = safe_atoi(row[13]);
-    timer->channame = ref_strdup(row[14]);
+    timer->callsign = ref_strdup(row[14]);
     timer->dup_method = safe_atoi(row[15]);
     timer->dup_in = safe_atoi(row[16]);
     timer->rec_group = ref_strdup(row[17]);
@@ -1502,7 +1513,7 @@ cmyth_mysql_get_timers(cmyth_database_t db)
 
 
 int 
-cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,     
+cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* callsign, char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,     
   int dup_method,
   int dup_in,
   char* rec_group,
@@ -1524,7 +1535,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
   char* esctitle = cmyth_mysql_escape_chars(db,title);
   char* escdescription = cmyth_mysql_escape_chars(db,description);
   char* esccategory = cmyth_mysql_escape_chars(db,category);
-  char* escchanname=cmyth_mysql_escape_chars(db,channame);
+  char* esccallsign=cmyth_mysql_escape_chars(db,callsign);
   char* escsubtitle = cmyth_mysql_escape_chars(db,subtitle);
   
   char* escrec_group = cmyth_mysql_escape_chars(db,rec_group);
@@ -1544,7 +1555,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
     || cmyth_mysql_query_param_str(query, esccategory ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
-    || cmyth_mysql_query_param_str(query, escchanname ) < 0
+    || cmyth_mysql_query_param_str(query, esccallsign ) < 0
     || cmyth_mysql_query_param_str(query, escsubtitle ) < 0
     || cmyth_mysql_query_param_long(query, priority ) < 0
     || cmyth_mysql_query_param_long(query, startoffset ) < 0
@@ -1585,7 +1596,7 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* channame, char* desc
   ref_release(esctitle);
   ref_release(escdescription);
   ref_release(esccategory);
-  ref_release(escchanname);
+  ref_release(esccallsign);
   ref_release(escsubtitle);
 	
   ref_release(escrec_group);
@@ -1625,7 +1636,7 @@ cmyth_mysql_delete_timer(cmyth_database_t db, int recordid)
 }
 
 int 
-cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* channame,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,
+cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* callsign,char* description, time_t starttime, time_t endtime,char* title,char* category,int type,char* subtitle,int priority,int startoffset,int endoffset,int searchtype,int inactive,
   int dup_method,
   int dup_in,
   char* rec_group,
@@ -1647,7 +1658,7 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
   char* esctitle=cmyth_mysql_escape_chars(db,title);
   char* escdescription=cmyth_mysql_escape_chars(db,description);
   char* esccategory=cmyth_mysql_escape_chars(db,category);
-  char* escchanname=cmyth_mysql_escape_chars(db,channame);
+  char* esccallsign=cmyth_mysql_escape_chars(db,callsign);
   char* escsubtitle=cmyth_mysql_escape_chars(db,subtitle);
 
   char* escrec_group = cmyth_mysql_escape_chars(db,rec_group);
@@ -1671,7 +1682,7 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
     || cmyth_mysql_query_param_long(query, endoffset ) < 0
     || cmyth_mysql_query_param_long(query, searchtype ) < 0
     || cmyth_mysql_query_param_long(query, inactive ) < 0
-    || cmyth_mysql_query_param_str(query, escchanname ) < 0
+    || cmyth_mysql_query_param_str(query, esccallsign ) < 0
 
     || cmyth_mysql_query_param_long(query, dup_method ) < 0
     || cmyth_mysql_query_param_long(query, dup_in ) < 0
@@ -1707,7 +1718,7 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cha
   ref_release(esctitle);
   ref_release(escdescription);
   ref_release(esccategory);
-  ref_release(escchanname);
+  ref_release(esccallsign);
   ref_release(escsubtitle);
 
   ref_release(escrec_group);
@@ -1736,12 +1747,12 @@ int cmyth_timer_chanid(cmyth_timer_t timer)
 	return timer->chanid;
 }
 
-char* cmyth_timer_channame(cmyth_timer_t timer)
+char* cmyth_timer_callsign(cmyth_timer_t timer)
 {
 	if (!timer) {
 		return NULL;
 	}
-	return ref_hold(timer->channame);
+	return ref_hold(timer->callsign);
 }
 
 time_t cmyth_timer_starttime(cmyth_timer_t timer)

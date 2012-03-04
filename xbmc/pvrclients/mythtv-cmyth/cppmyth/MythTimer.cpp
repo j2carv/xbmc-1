@@ -10,7 +10,7 @@ using namespace ADDON;
 
 
 MythTimer::MythTimer()
-  : m_recordid(-1),m_chanid(-1),m_channame(""),m_starttime(0),m_endtime(0),m_title(""),m_description(""),m_type(NotRecording),m_category(""),m_subtitle(""),m_priority(0),m_startoffset(0),m_endoffset(0),m_searchtype(NoSearch),m_inactive(true),
+  : m_recordid(-1),m_chanid(-1),m_callsign(""),m_starttime(0),m_endtime(0),m_title(""),m_description(""),m_type(NotRecording),m_category(""),m_subtitle(""),m_priority(0),m_startoffset(0),m_endoffset(0),m_searchtype(NoSearch),m_inactive(true),
     m_dupmethod(CheckSubDesc), m_dupin(InAll), m_recgroup("Default"), m_storegroup("Default"), m_playgroup("Default"), m_autotranscode(false), m_userjobs(0), m_autocommflag(false), m_autoexpire(false), m_maxepisodes(0), m_maxnewest(0), m_transcoder(0)
 {}
 
@@ -18,7 +18,7 @@ MythTimer::MythTimer()
   MythTimer::MythTimer(cmyth_timer_t cmyth_timer,bool release)
     : m_recordid(CMYTH->TimerRecordid(cmyth_timer)),
     m_chanid(CMYTH->TimerChanid(cmyth_timer)),
-    m_channame(""),
+    m_callsign(""),
     m_starttime(CMYTH->TimerStarttime(cmyth_timer)),
     m_endtime(CMYTH->TimerEndtime(cmyth_timer)),
     m_title(""),
@@ -48,7 +48,7 @@ MythTimer::MythTimer()
     char *description = CMYTH->TimerDescription(cmyth_timer);
     char *category = CMYTH->TimerCategory(cmyth_timer);
     char *subtitle = CMYTH->TimerSubtitle(cmyth_timer);
-    char *channame = CMYTH->TimerChanname(cmyth_timer);
+    char *callsign = CMYTH->TimerCallsign(cmyth_timer);
     char *recgroup = CMYTH->TimerRecGroup(cmyth_timer);
     char *storegroup = CMYTH->TimerStoreGroup(cmyth_timer);
     char *playgroup = CMYTH->TimerPlayGroup(cmyth_timer);
@@ -57,7 +57,7 @@ MythTimer::MythTimer()
     m_description = description;
     m_category = category;
     m_subtitle = subtitle;
-    m_channame = channame;
+    m_callsign = callsign;
     m_recgroup = recgroup;
     m_storegroup = storegroup;
     m_playgroup = playgroup;
@@ -66,7 +66,7 @@ MythTimer::MythTimer()
     CMYTH->RefRelease(description);
     CMYTH->RefRelease(category);
     CMYTH->RefRelease(subtitle);
-    CMYTH->RefRelease(channame);
+    CMYTH->RefRelease(callsign);
     CMYTH->RefRelease(recgroup);
     CMYTH->RefRelease(storegroup);
     CMYTH->RefRelease(playgroup);
@@ -94,14 +94,14 @@ MythTimer::MythTimer()
     m_chanid = chanid;
   }
 
-  CStdString MythTimer::ChanName() const
+  CStdString MythTimer::Callsign() const
   {
-    return m_channame;
+    return m_callsign;
   }
 
-  void MythTimer::ChanName(const CStdString& channame)
+  void MythTimer::Callsign(const CStdString& channame)
   {
-    m_channame = channame;
+    m_callsign = channame;
   }
 
   time_t MythTimer::StartTime() const
@@ -124,13 +124,29 @@ MythTimer::MythTimer()
     m_endtime=endtime;
   }
 
-  CStdString MythTimer::Title() const
+  CStdString MythTimer::Title(bool subtitleEncoded) const
   {
+    if(subtitleEncoded && !m_subtitle.empty())
+    {
+      CStdString retval;
+      retval.Format("%s::%s",m_title,m_subtitle);
+      return retval;
+    }
     return m_title;
   }
 
-  void MythTimer::Title(const CStdString& title)
+  void MythTimer::Title(const CStdString& title,bool subtitleEncoded)
   {
+    if(subtitleEncoded)
+    {
+      size_t seppos = title.find("::");
+      if(seppos != CStdString::npos)
+      {
+        m_title = title.substr(0,seppos);
+        m_subtitle = title.substr(seppos+2);
+        return;
+      }
+    }
     m_title=title;
   }
 
