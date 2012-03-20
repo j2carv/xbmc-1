@@ -1550,13 +1550,13 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* callsign, char* desc
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
-    || cmyth_mysql_query_param_str(query, esctitle ) < 0
-    || cmyth_mysql_query_param_str(query, escdescription ) < 0
-    || cmyth_mysql_query_param_str(query, esccategory ) < 0
+    || cmyth_mysql_query_param_str(query, title ) < 0
+    || cmyth_mysql_query_param_str(query, description ) < 0
+    || cmyth_mysql_query_param_str(query, category ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, starttime ) < 0
-    || cmyth_mysql_query_param_str(query, esccallsign ) < 0
-    || cmyth_mysql_query_param_str(query, escsubtitle ) < 0
+    || cmyth_mysql_query_param_str(query, callsign ) < 0
+    || cmyth_mysql_query_param_str(query, subtitle ) < 0
     || cmyth_mysql_query_param_long(query, priority ) < 0
     || cmyth_mysql_query_param_long(query, startoffset ) < 0
     || cmyth_mysql_query_param_long(query, endoffset ) < 0
@@ -1565,9 +1565,9 @@ cmyth_mysql_add_timer(cmyth_database_t db, int chanid,char* callsign, char* desc
 
     || cmyth_mysql_query_param_long(query, dup_method ) < 0
     || cmyth_mysql_query_param_long(query, dup_in ) < 0
-    || cmyth_mysql_query_param_str(query, escrec_group ) < 0
-    || cmyth_mysql_query_param_str(query, escstore_group ) < 0
-    || cmyth_mysql_query_param_str(query, escplay_group ) < 0
+    || cmyth_mysql_query_param_str(query, rec_group ) < 0
+    || cmyth_mysql_query_param_str(query, store_group ) < 0
+    || cmyth_mysql_query_param_str(query, play_group ) < 0
     || cmyth_mysql_query_param_long(query, autotranscode ) < 0
     || cmyth_mysql_query_param_long(query, userjobs & 1) < 0
     || cmyth_mysql_query_param_long(query, userjobs & 2) < 0
@@ -1673,22 +1673,22 @@ cmyth_mysql_update_timer(cmyth_database_t db, int recordid, int chanid,char* cal
     || cmyth_mysql_query_param_long(query, starttime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
     || cmyth_mysql_query_param_long(query, endtime ) < 0
-    || cmyth_mysql_query_param_str(query, esctitle ) < 0
-    || cmyth_mysql_query_param_str(query, escdescription ) < 0
-    || cmyth_mysql_query_param_str(query, esccategory ) < 0
-    || cmyth_mysql_query_param_str(query, escsubtitle ) < 0
+    || cmyth_mysql_query_param_str(query, title ) < 0
+    || cmyth_mysql_query_param_str(query, description ) < 0
+    || cmyth_mysql_query_param_str(query, category ) < 0
+    || cmyth_mysql_query_param_str(query, subtitle ) < 0
     || cmyth_mysql_query_param_long(query, priority ) < 0
     || cmyth_mysql_query_param_long(query, startoffset ) < 0
     || cmyth_mysql_query_param_long(query, endoffset ) < 0
     || cmyth_mysql_query_param_long(query, searchtype ) < 0
     || cmyth_mysql_query_param_long(query, inactive ) < 0
-    || cmyth_mysql_query_param_str(query, esccallsign ) < 0
+    || cmyth_mysql_query_param_str(query, callsign ) < 0
 
     || cmyth_mysql_query_param_long(query, dup_method ) < 0
     || cmyth_mysql_query_param_long(query, dup_in ) < 0
-    || cmyth_mysql_query_param_str(query, escrec_group ) < 0
-    || cmyth_mysql_query_param_str(query, escstore_group ) < 0
-    || cmyth_mysql_query_param_str(query, escplay_group ) < 0
+    || cmyth_mysql_query_param_str(query, rec_group ) < 0
+    || cmyth_mysql_query_param_str(query, store_group ) < 0
+    || cmyth_mysql_query_param_str(query, play_group ) < 0
     || cmyth_mysql_query_param_long(query, autotranscode ) < 0
     || cmyth_mysql_query_param_long(query, userjobs & 1) < 0
     || cmyth_mysql_query_param_long(query, userjobs & 2) < 0
@@ -2131,7 +2131,7 @@ int cmyth_mysql_get_prog_finder_time_title_chan(cmyth_database_t db,cmyth_progra
 	query = cmyth_mysql_query_create(db,query_str);
 
 	if ( cmyth_mysql_query_param_long(query, chanid) < 0
-    || cmyth_mysql_query_param_str(query, esctitle ) < 0
+    || cmyth_mysql_query_param_str(query, title ) < 0
 		|| cmyth_mysql_query_param_long(query, starttime ) < 0
 		) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
