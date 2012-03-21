@@ -186,6 +186,8 @@ inline void PVRWriteClientRecordingInfo(const CPVRRecording &xbmcRecording, PVR_
   addonRecording.iLifetime      = xbmcRecording.m_iLifetime;
   addonRecording.strDirectory   = xbmcRecording.m_strDirectory.c_str();
   addonRecording.strStreamURL   = xbmcRecording.m_strStreamURL.c_str();
+  addonRecording.strIconPath    = xbmcRecording.m_defualt_icon.c_str();
+
 }
 
 /*!

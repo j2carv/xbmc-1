@@ -53,6 +53,8 @@ CPVRRecording::CPVRRecording(const PVR_RECORDING &recording, unsigned int iClien
   m_strStreamURL   = recording.strStreamURL;
   m_strChannelName = recording.strChannelName;
   m_strGenre       = CEpg::ConvertGenreIdToString(recording.iGenreType, recording.iGenreSubType);
+  m_defualt_icon   = recording.strIconPath;
+  m_fanart_image   = recording.strDefFanart;
 }
 
 bool CPVRRecording::operator ==(const CPVRRecording& right) const
@@ -88,6 +90,8 @@ void CPVRRecording::Reset(void)
   m_iPriority          = -1;
   m_iLifetime          = -1;
   m_strFileNameAndPath = StringUtils::EmptyString;
+  m_defualt_icon       = StringUtils::EmptyString;
+  m_fanart_image       = StringUtils::EmptyString;
 
   m_recordingTime.Reset();
   CVideoInfoTag::Reset();
@@ -155,6 +159,8 @@ void CPVRRecording::Update(const CPVRRecording &tag)
   m_strStreamURL   = tag.m_strStreamURL;
   m_strChannelName = tag.m_strChannelName;
   m_strGenre       = tag.m_strGenre;
+  m_defualt_icon   = tag.m_defualt_icon;
+  m_fanart_image   = tag.m_fanart_image;
 
   CStdString strShow;
   strShow.Format("%s - ", g_localizeStrings.Get(20364).c_str());
