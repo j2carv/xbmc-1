@@ -543,7 +543,7 @@ bool CDVDPlayer::OpenDemuxStream()
 
   try
   {
-    int attempts = 10;
+    int attempts = m_pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER) ? 1000 : 10;
     while(!m_bStop && attempts-- > 0)
     {
       m_pDemuxer = CDVDFactoryDemuxer::CreateDemuxer(m_pInputStream);
