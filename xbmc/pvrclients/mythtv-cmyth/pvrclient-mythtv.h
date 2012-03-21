@@ -3,6 +3,7 @@
 #include <map>
 #include <boost/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
+#include "fileOps.h"
 
 const int RECORDING_RULES = 30006;
 
@@ -37,6 +38,7 @@ public:
 
   /* Server handling */
   bool Connect();
+  CStdString GetArtWork(CStdString storageGroup, CStdString shwTitle);
   const char * GetBackendName();
   const char * GetBackendVersion();
   const char * GetConnectionString();
@@ -83,7 +85,8 @@ private:
     boost::bimaps::unordered_set_of< boost::bimaps::tagged< CStdString , mythcat >,boost::hash< CStdString > >,
     boost::bimaps::tagged< int , pvrcat >
     > catbimap;
-
+    
+  fileOps *fOps_client;
   int Genre(CStdString g);
   CStdString Genre(int g);
   MythConnection m_con;

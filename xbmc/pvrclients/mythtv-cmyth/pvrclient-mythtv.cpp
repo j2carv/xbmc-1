@@ -174,11 +174,27 @@ PVRClientMythTV::PVRClientMythTV()
   m_categoryMap.insert(catbimap::value_type("Black & White", 0xB1));
   m_categoryMap.insert(catbimap::value_type("\"Unpublished\" Programmes", 0xB2));
   m_categoryMap.insert(catbimap::value_type("Live Broadcast", 0xB3));
+  fOps_client = new fileOps(g_szHostname,g_iMythPort);
 }
 
 PVRClientMythTV::~PVRClientMythTV()
 {
   m_eventHandler.Stop();
+}
+
+CStdString PVRClientMythTV::GetArtWork(CStdString storageGroup, CStdString shwTitle) {
+  if (storageGroup.CompareNoCase("fanart")!=0) {
+    if (storageGroup.CompareNoCase("coverart")!=0) {
+      if (storageGroup.CompareNoCase("channels")!=0) {
+        XBMC->Log(LOG_DEBUG,"%s - ########### Not a valid storageGroup ####### - %s - %d - %d"
+                 ,__FUNCTION__,storageGroup.c_str(),storageGroup.CompareNoCase("fanart"),
+                 storageGroup.CompareNoCase("coverart"));
+        return "";
+      }
+    }
+  }
+  
+  return fOps_client->getArtworkPath(shwTitle,storageGroup);
 }
 
 int PVRClientMythTV::Genre(CStdString g)
@@ -387,9 +403,10 @@ PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
       tag.iChannelNumber=it->second.NumberInt(); //Use ID instead as mythtv channel number is a string?
       CStdString chanName= it->second.Name();
       tag.strChannelName = chanName;
-      CStdString icon = it->second.Icon();//TODO: Fix icons
+      CStdString icon = it->second.Icon();
+      
+      icon = fOps_client->getArtworkPath(icon,"channels");
       tag.strIconPath = icon;
-
       //Unimplemented
       tag.strStreamURL="";
       tag.strInputFormat="";
@@ -440,7 +457,11 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       int genre=Genre(it->second.Category());      
       tag.iGenreSubType=genre&0x0F;
       tag.iGenreType=genre&0xF0;
-
+      CStdString defIcon = GetArtWork("coverart",title);
+      CStdString fanIcon = GetArtWork("fanart",title);
+      tag.strIconPath=defIcon.c_str();
+      tag.strDefFanart=fanIcon.c_str();
+      
       //Unimplemented
       tag.iLifetime=0;
       tag.iPriority=0;
@@ -967,6 +988,7 @@ bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, ID: %s, duration: %i",__FUNCTION__,recinfo.strTitle,recinfo.strRecordingId,recinfo.iDuration);
   CStdString id=recinfo.strRecordingId;
   m_file=m_con.ConnectFile(m_recordings.at(id));
+  m_eventHandler.SetRecordingListener(&m_file,id);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,!m_file.IsNull());
   return !m_file.IsNull();

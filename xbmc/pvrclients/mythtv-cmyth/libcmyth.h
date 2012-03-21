@@ -357,6 +357,10 @@ public:
       return false;
     }
 
+    StoragegroupFilelist      = (int (*)(cmyth_conn_t control, char*** sgFilelist, char* sg2List, char*  mythostname))
+dlsym(m_libcmyth, "cmyth_storagegroup_filelist");
+if (StoragegroupFilelist == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     DbgLevel      = (void (*)(int l))
 dlsym(m_libcmyth, "cmyth_dbg_level");
 if (DbgLevel == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -389,7 +393,7 @@ if (ConnConnectEvent == NULL)      { fprintf(stderr, "Unable to assign function 
 dlsym(m_libcmyth, "cmyth_conn_connect_file");
 if (ConnConnectFile == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    ConnConnectPath      = (cmyth_file_t (*)(char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf))
+    ConnConnectPath      = (cmyth_file_t (*)(char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf, char* sgToGetFrom))
 dlsym(m_libcmyth, "cmyth_conn_connect_path");
 if (ConnConnectPath == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1321,7 +1325,8 @@ if (RefAllocShow == NULL)      { fprintf(stderr, "Unable to assign function %s\n
   }
 
 //dll functions
-
+int (*StoragegroupFilelist)(cmyth_conn_t control, char*** sgFilelist, char* sg2List, char*  mythostname);
+cmyth_file_t (*ConnConnectPath)(char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf, char* sgToGetFrom);
 void (*DbgLevel)(int l);
 void (*DbgAll)(void);
 void (*DbgNone)(void);
@@ -1330,7 +1335,6 @@ void (*SetDbgMsgcallback)(void (* msgcb)(int level,char* ));
 cmyth_conn_t (*ConnConnectCtrl)(char* server, unsigned short port, unsigned buflen, int tcp_rcvbuf);
 cmyth_conn_t (*ConnConnectEvent)(char* server,  unsigned short port,  unsigned buflen, int tcp_rcvbuf);
 cmyth_file_t (*ConnConnectFile)(cmyth_proginfo_t prog, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf);
-cmyth_file_t (*ConnConnectPath)(char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf);
 int (*ConnConnectRing)(cmyth_recorder_t rec, unsigned buflen,int tcp_rcvbuf);
 int (*ConnConnectRecorder)(cmyth_recorder_t rec, unsigned buflen, int tcp_rcvbuf);
 int (*ConnCheckBlock)(cmyth_conn_t conn, unsigned long size);
