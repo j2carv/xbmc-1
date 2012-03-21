@@ -23,6 +23,7 @@
  * Most of this code is taken from tools.c in the Video Disk Recorder ('VDR')
  */
 
+#include "client.h"
 #include "tools.h"
 #include "libPlatform/os-dependent.h"
 using namespace ADDON;

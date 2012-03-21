@@ -48,6 +48,10 @@ public:
   ImpMythEventHandler(CStdString server,unsigned short port);
   MythRecorder m_rec;
   MythSignal m_signal;
+  MythFile *m_file;
+  CStdString curRecordingId;
+  void UpdateFilesize(CStdString signal);
+  void SetRecEventListener(MythFile *mFile, CStdString recId);
   cmyth_conn_t m_conn_t;
   virtual void Action(void);	
   virtual ~ImpMythEventHandler();
@@ -107,6 +111,38 @@ void MythEventHandler::SetRecorder(MythRecorder &rec)
 MythSignal MythEventHandler::GetSignal()
 {
   return m_imp->m_signal;
+}
+
+void MythEventHandler::SetRecordingListener ( MythFile *mFile, CStdString strRecId )
+{
+  m_imp->Lock();
+  m_imp->SetRecEventListener(mFile,strRecId);
+  m_imp->Unlock();
+}
+
+void MythEventHandler::ImpMythEventHandler::SetRecEventListener ( MythFile *mFile, CStdString recId )
+{
+  m_file = mFile;
+  char b [20];
+  sscanf(recId.c_str(),"/%4s_%14s",b,b+4);
+  CStdString uniqId=b;
+  curRecordingId = uniqId;
+}
+
+void MythEventHandler::ImpMythEventHandler::UpdateFilesize(CStdString signal)
+{
+  unsigned int length;
+  char b [20];
+  sscanf(signal.c_str(),"%4s %4s-%2s-%2sT%2s:%2s:%2s %u",b,b+4,b+8,b+10,b+12,b+14,b+16,&length);
+  
+  long long lngLength = length;// Can I cast this straight to to the updateDuration Function??
+  CStdString uniqId=b;
+  
+  if (curRecordingId.compare(uniqId) == 0) {
+    XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING CURRENT RECORDING LENGTH-- EVENT msg: %s %u",
+             __FUNCTION__,uniqId.c_str(),length);
+    m_file->updateDuration(lngLength);
+  }
 }
 
 void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
@@ -177,6 +213,13 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
     {
       myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
       XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
+      if(myth_event==CMYTH_EVENT_UPDATE_FILE_SIZE)
+      {
+       CStdString signal=databuf;
+       UpdateFilesize(signal);
+       //1044 2012-03-20T20:00:00 54229688
+       XBMC->Log(LOG_NOTICE,"%s: FILE_SIZE_UPDATE: %i",__FUNCTION__,databuf);
+      }
       if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
       {
         Lock();
