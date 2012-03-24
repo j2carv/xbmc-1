@@ -38,7 +38,7 @@ public:
 
   /* Server handling */
   bool Connect();
-  CStdString GetArtWork(CStdString storageGroup, CStdString shwTitle);
+  CStdString GetArtWork(FILE_OPTIONS storageGroup, CStdString shwTitle);
   const char * GetBackendName();
   const char * GetBackendVersion();
   const char * GetConnectionString();

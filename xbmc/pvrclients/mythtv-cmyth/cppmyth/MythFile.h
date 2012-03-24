@@ -16,6 +16,7 @@ public:
   int Read(void* buffer,long long length);
   long long Seek(long long offset, int whence);
   long long Duration();
+  long long CurrentPosition();
   void updateDuration(long long length);
  private:
   long long updatedLength;

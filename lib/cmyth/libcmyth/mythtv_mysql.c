@@ -286,6 +286,70 @@ cmyth_get_offset_mysql(cmyth_database_t db, int type, char *recordid, int chanid
 	}
 }
 
+int
+cmyth_get_watched_status_mysql(cmyth_database_t db, int chanid, char* starttime)
+{
+	
+	MYSQL_RES *res= NULL;
+	MYSQL_ROW row;
+        const char *query_str = "SELECT watched FROM recorded WHERE chanid=? AND starttime=?";
+	
+	cmyth_mysql_query_t * query;
+	query = cmyth_mysql_query_create(db,query_str);
+
+	if (cmyth_mysql_query_param_long(query,chanid) < 0
+	 || cmyth_mysql_query_param_str(query,starttime) < 0) 
+	{
+	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+	    ref_release(query);
+	    return -1;
+ 	}
+	res = cmyth_mysql_query_result(query);
+	ref_release(query);
+	if(res == NULL)
+	{
+	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
+	    return -1;
+	}
+
+
+	if (row = mysql_fetch_row(res)) {
+          mysql_free_result(res);
+	  return safe_atoi(row[0]);
+        }
+        else 
+	  return NULL;
+}
+
+int
+cmyth_set_watched_status_mysql(cmyth_database_t db, int chanid, char* starttime, int watchedStat)
+{
+	if (watchedStat > 1) watchedStat = 1;
+	if (watchedStat < 0) watchedStat = 0;
+	
+	cmyth_mysql_query_t * query;        
+	query = cmyth_mysql_query_create(db,"UPDATE recorded SET watched = ? WHERE chanid = ? AND starttime = ?");
+
+	if(cmyth_mysql_query_param_long(query,watchedStat) < 0
+	 || cmyth_mysql_query_param_long(query,chanid) < 0
+	 || cmyth_mysql_query_param_str(query,starttime) < 0) 
+	{
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+
+	if(cmyth_mysql_query(query) < 0)
+	{
+		cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
+		ref_release(query);
+		return -1;
+	}
+	ref_release(query);
+        return 0;
+	
+}
+
 char *
 cmyth_get_recordid_mysql(cmyth_database_t db, int chanid, char *title, char *subtitle, char *description, char *seriesid, char *programid)
 {

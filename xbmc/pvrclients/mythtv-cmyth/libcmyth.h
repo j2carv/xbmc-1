@@ -361,6 +361,14 @@ public:
 dlsym(m_libcmyth, "cmyth_storagegroup_filelist");
 if (StoragegroupFilelist == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    GetWatchedStatusMySql      = (int (*)(cmyth_database_t db, int chanid, char* starttime))
+dlsym(m_libcmyth, "cmyth_get_watched_status_mysql");
+if (GetWatchedStatusMySql == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    SetWatchedStatusMySql      = (int (*)(cmyth_database_t db, int chanid, char* starttime, int watchedStat))
+dlsym(m_libcmyth, "cmyth_set_watched_status_mysql");
+if (SetWatchedStatusMySql == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     DbgLevel      = (void (*)(int l))
 dlsym(m_libcmyth, "cmyth_dbg_level");
 if (DbgLevel == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -957,6 +965,14 @@ if (FileStart == NULL)      { fprintf(stderr, "Unable to assign function %s\n", 
 dlsym(m_libcmyth, "cmyth_file_length");
 if (FileLength == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    UpdateFileLength      = (int (*)(cmyth_file_t file, unsigned long long newLength))
+dlsym(m_libcmyth, "cmyth_update_file_length");
+if (FileLength == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+FilePosition      = (unsigned long long (*)(cmyth_file_t file))
+dlsym(m_libcmyth, "cmyth_file_position");
+if (FilePosition == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     FileGetBlock      = (int (*)(cmyth_file_t file, char* buf,unsigned long len))
 dlsym(m_libcmyth, "cmyth_file_get_block");
 if (FileGetBlock == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1327,6 +1343,9 @@ if (RefAllocShow == NULL)      { fprintf(stderr, "Unable to assign function %s\n
 //dll functions
 int (*StoragegroupFilelist)(cmyth_conn_t control, char*** sgFilelist, char* sg2List, char*  mythostname);
 cmyth_file_t (*ConnConnectPath)(char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf, char* sgToGetFrom);
+int (*GetWatchedStatusMySql)(cmyth_database_t db, int chanid, char* starttime);
+int (*SetWatchedStatusMySql)(cmyth_database_t db, int chanid, char* starttime, int watchedStat);
+
 void (*DbgLevel)(int l);
 void (*DbgAll)(void);
 void (*DbgNone)(void);
@@ -1474,7 +1493,9 @@ int (*ProglistGetCount)(cmyth_proglist_t pl);
 int (*ProglistSort)(cmyth_proglist_t pl, int count, cmyth_proglist_sort_t sort);
 cmyth_conn_t (*FileData)(cmyth_file_t file);
 unsigned long long (*FileStart)(cmyth_file_t file);
+int (*UpdateFileLength)(cmyth_file_t file, unsigned long long newLength);
 unsigned long long (*FileLength)(cmyth_file_t file);
+unsigned long long (*FilePosition)(cmyth_file_t file);
 int (*FileGetBlock)(cmyth_file_t file, char* buf,unsigned long len);
 int (*FileRequestBlock)(cmyth_file_t file, unsigned long len);
 long long (*FileSeek)(cmyth_file_t file, long long offset, int whence);
