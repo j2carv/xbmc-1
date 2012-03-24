@@ -38,6 +38,8 @@ public:
   std::map< int, std::vector< int > > SourceList();
   bool IsNull();
   std::vector<MythRecordingProfile > GetRecordingProfiles();
+  int SetWatchedStatus(int chanid, CStdString Starttime, int intWatched);
+  int GetWatchedStatus(int chanid, CStdString Starttime);
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_database_t > > m_database_t;
 };

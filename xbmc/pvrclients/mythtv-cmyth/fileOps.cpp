@@ -23,28 +23,6 @@ fileOps::fileOps()
   isMyth = false;
   
 }
-void fileOps::checkRecordings ( PVR_HANDLE handle )
-{ 
-  // Experimenting with updating videoinfotag
-  PVR::CPVRRecordings *someRecordings = (PVR::CPVRRecordings*) handle->dataAddress;
-  
-  if ((someRecordings->size() > 0)  && (isMyth)) 
-  {
-    CFileItemList fileList;
-    someRecordings->GetRecordings(&fileList);
-    
-    for (int i=0;i<fileList.Size();i++) 
-    {
-      
-      PVR::CPVRRecording* pvrTag = fileList.Get(i)->GetPVRRecordingInfoTag();
-      CStdString iconPath = getArtworkPath(pvrTag->m_strTitle.c_str(),"coverart");      
-      if (!iconPath.IsEmpty()) 
-      {
-	someRecordings->UpdateEntry(*pvrTag);
-      }
-    }    
-  }  
-}
 
 fileOps::fileOps(CStdString mythServer,int mythPort)
 :myth_server(mythServer),myth_port(mythPort)
@@ -65,51 +43,67 @@ fileOps::fileOps(CStdString mythServer,int mythPort)
   checkDirectory(baseLocalCachepath);
 }
 
+void fileOps::checkRecordings ( PVR_HANDLE handle )
+{ 
+  // Experimenting with updating videoinfotag
+  PVR::CPVRRecordings *someRecordings = (PVR::CPVRRecordings*) handle->dataAddress;
+  
+  if ((someRecordings->size() > 0)  && (isMyth)) 
+  {
+    CFileItemList fileList;
+    someRecordings->GetRecordings(&fileList);
+    
+    for (int i=0;i<fileList.Size();i++) 
+    {
+      
+      PVR::CPVRRecording* pvrTag = fileList.Get(i)->GetPVRRecordingInfoTag();
+      CStdString iconPath = getArtworkPath(pvrTag->m_strTitle.c_str(),FILE_OPS_GET_COVERART);
+      if (!iconPath.IsEmpty()) 
+      {
+	someRecordings->UpdateEntry(*pvrTag);
+      }
+    }    
+  }  
+}
+
 /*
  * Function takes the title of a show, and a folder to search in
  * returns a path to the artwork in the form of 'special://home/cache/folder/image.jpg'
  */
-CStdString fileOps::getArtworkPath ( CStdString title, CStdString awGroup )
+CStdString fileOps::getArtworkPath ( CStdString title, FILE_OPTIONS Get_What )
 {
   CStdString retPath;
-  if ((awGroup.IsEmpty()) || (title.IsEmpty())) 
-  {
+  if (title.IsEmpty()) 
     return retPath;
-  }
-  if (awGroup.CompareNoCase("channels") == 0) {
-    int aPos = title.find_last_of("/");
-    if (aPos <= 0) {
-      aPos = title.find_last_of("\\");
-    }
-    if (aPos <= 0) {
-      aPos = 0;
-    }
-    else {
-      aPos++;
-    }
-    title = title.Right(title.length()-aPos);
+  
+  CStdString awGroup;
+  if (Get_What == FILE_OPS_GET_CHAN_ICONS)
+    awGroup = "channels";
+  else if (Get_What == FILE_OPS_GET_COVERART)
+    awGroup = "coverart";
+  else if (Get_What == FILE_OPS_GET_FANART)
+    awGroup = "fanart";
+  else
+    return retPath;
+  
+  if (Get_What == FILE_OPS_GET_CHAN_ICONS) 
+  {
+    CURL someUrl(title);
+    title = someUrl.GetFileNameWithoutPath();
   }
   else {
     int mrkrPos = title.find_first_of("::");
-    if (mrkrPos<=0) {
+    if (mrkrPos<=0)
       mrkrPos=title.length();
-    }
+    
     title = title.Left(mrkrPos);
   }
   
   XBMC->Log(LOG_DEBUG,"%s - ## - Checking for Artwork File - %s - in - %s - ##",
 	    __FUNCTION__, title.c_str(), awGroup.c_str());
   
-  awGroup = awGroup.ToLower();
-  
   retPath = checkFolderForTitle(title,awGroup);
   
-  if (retPath.IsEmpty()) 
-  {
-    // Update directory listing and try again
-    updateLocalFilesList(awGroup);
-    retPath = checkFolderForTitle(title,awGroup);
-  }
   if (retPath.IsEmpty() && isMyth)
   {
     // If still no result check if we can sync with mythbackends storage group and try again
@@ -119,29 +113,18 @@ CStdString fileOps::getArtworkPath ( CStdString title, CStdString awGroup )
       return retPath;
     }
     
-    if (awGroup.CompareNoCase("channels") != 0) 
+    if (Get_What == FILE_OPS_GET_CHAN_ICONS) 
     {
-      syncSGCache(awGroup);
+      GetFileFromBackend(title,"channels");
     }
     else
     {
-      GetFileFromBackend(title,"channels");
-      updateLocalFilesList(awGroup);
+      syncSGCache(awGroup); //Thread this function, so xbmc doesnt hang when getting recordings.
     } 
     retPath = checkFolderForTitle(title,awGroup);
   }
   
   return retPath;
-}
-
-bool fileOps::getFileFromMyth(CStdString thePath, CStdString theGroup)
-{
-
-}
-
-CStdString fileOps::getOnlyFilename (CStdString thePath) {
-  
-  
 }
 
 CStdString fileOps::convSpecialPath (CStdString thePath, bool toRegular/*=true*/) {
@@ -276,6 +259,21 @@ CStdString fileOps::checkFolderForTitle ( CStdString title, CStdString awGroup )
       break;
     }
   }
+  if (retPath.IsEmpty())
+  {
+    updateLocalFilesList(awGroup);
+    std::vector<CStdString> fileList = LocalFilelist[awGroup];
+    for (unsigned int curFl=0;curFl<fileList.size();curFl++) 
+    {
+      if (title.CompareNoCase(fileList[curFl].Left(title.length()).c_str()) == 0) 
+      {
+        //Found a Title match
+        retPath = baseLocalCachepath + awGroup + "/" + fileList[curFl];
+        break;
+      }
+    }
+  }
+  
   return retPath;
 }
 
@@ -344,17 +342,17 @@ std::vector<CStdString> fileOps::missingSGFiles ( std::vector<CStdString> haySta
   for (unsigned int i = 0; i < hayStack.size();i++) 
   {
     CStdString remoteFile = hayStack[i].c_str();
-    int flMissing = 0;
+    bool flMissing = true;
     for (unsigned int k = 0; k < needle.size();k++) 
     {
       CStdString localFile = needle[k].c_str();
       if (remoteFile.CompareNoCase(localFile.c_str()) == 0) 
       {
-	flMissing++;
+	flMissing = false;
 	break;
       }
     }
-    if (flMissing == 0) 
+    if (flMissing) 
     {
       missingFiles.push_back(remoteFile.c_str());
     }

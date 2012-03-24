@@ -25,9 +25,9 @@ using namespace ADDON;
  
 void MythFile::updateDuration ( long long length )
  {
-   updatedLength=length;
-   XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING RECORDING LENGTH-- EVENT length: %u",
-             __FUNCTION__,length);
+    m_conn.Lock();
+    CMYTH->UpdateFileLength(*m_file_t,length);
+    m_conn.Unlock();
   }
   
   bool  MythFile::IsNull()
@@ -53,14 +53,18 @@ void MythFile::updateDuration ( long long length )
     return retval;
   }
   
+  long long MythFile::CurrentPosition()
+  {
+    m_conn.Lock();
+    long long retval = CMYTH->FilePosition(*m_file_t);
+    m_conn.Unlock();
+    return retval;
+  }
+  
   long long MythFile::Duration()
   {
     m_conn.Lock();
     long long retval = CMYTH->FileLength(*m_file_t);
-    if (updatedLength > retval) {
-      XBMC->Log(LOG_DEBUG,"EVENT: %s -- SENDING UPDATED LENGTH -- ",__FUNCTION__);
-      retval = updatedLength;
-    }
     m_conn.Unlock();
     return retval;
   }

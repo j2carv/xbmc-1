@@ -55,6 +55,7 @@ CPVRRecording::CPVRRecording(const PVR_RECORDING &recording, unsigned int iClien
   m_strGenre       = CEpg::ConvertGenreIdToString(recording.iGenreType, recording.iGenreSubType);
   m_defualt_icon   = recording.strIconPath;
   m_fanart_image   = recording.strDefFanart;
+  
 }
 
 bool CPVRRecording::operator ==(const CPVRRecording& right) const

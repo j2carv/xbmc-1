@@ -599,6 +599,9 @@ extern int cmyth_database_set_user(cmyth_database_t db, char *user);
 extern int cmyth_database_set_pass(cmyth_database_t db, char *pass);
 extern int cmyth_database_set_name(cmyth_database_t db, char *name);
 
+extern int cmyth_get_watched_status_mysql(cmyth_database_t db, int chanid, char* starttime);
+extern int cmyth_set_watched_status_mysql(cmyth_database_t db, int chanid, char* starttime, int watchedStat);
+
 /*
  * -----------------------------------------------------------------
  * Ring Buffer Operations
@@ -1001,6 +1004,10 @@ extern cmyth_conn_t cmyth_file_data(cmyth_file_t file);
 extern unsigned long long cmyth_file_start(cmyth_file_t file);
 
 extern unsigned long long cmyth_file_length(cmyth_file_t file);
+
+extern unsigned long long cmyth_file_position(cmyth_file_t file);
+
+extern int cmyth_update_file_length(cmyth_file_t file, unsigned long long newLength);
 
 extern int cmyth_file_get_block(cmyth_file_t file, char *buf,
 				unsigned long len);
