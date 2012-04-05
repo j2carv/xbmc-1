@@ -41,7 +41,7 @@ void tokenize(const std::string& str, ContainerT& tokens,
 *								MythEventHandler
 */
 
-class MythEventHandler::ImpMythEventHandler : public cThread
+class MythEventHandler::ImpMythEventHandler : public CThread, public CMutex
 {
   friend class MythEventHandler;
 public:
@@ -49,13 +49,13 @@ public:
   MythRecorder m_rec;
   MythSignal m_signal;
   cmyth_conn_t m_conn_t;
-  virtual void Action(void);	
+  virtual void* Process(void);	
   virtual ~ImpMythEventHandler();
   void UpdateSignal(CStdString &signal);
   };
 
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
-:m_rec(MythRecorder()),m_conn_t(0),cThread("MythEventHandler"),m_signal()
+:m_rec(MythRecorder()),m_conn_t(0),CThread(),m_signal(),CMutex()
   {
     char *cserver=strdup(server.c_str());
     cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);
@@ -66,7 +66,7 @@ MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,uns
 
   MythEventHandler::ImpMythEventHandler::~ImpMythEventHandler()
   {
-    Cancel(30);
+    StopThread(30);
     CMYTH->RefRelease(m_conn_t);
     m_conn_t=0;
   }
@@ -74,7 +74,7 @@ MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,uns
 MythEventHandler::MythEventHandler(CStdString server,unsigned short port)
   :m_imp(new ImpMythEventHandler(server,port))
 {
-  m_imp->Start();
+  m_imp->CreateThread();
 }
 
 MythEventHandler::MythEventHandler()
@@ -144,7 +144,7 @@ void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
   }
 }
 
-void MythEventHandler::ImpMythEventHandler::Action(void)
+void* MythEventHandler::ImpMythEventHandler::Process(void)
 {
   const char* events[]={	"CMYTH_EVENT_UNKNOWN",\
     "CMYTH_EVENT_CLOSE",\
@@ -170,7 +170,7 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
   timeout.tv_sec=0;
   timeout.tv_usec=100000;
 
-  while(Running())
+  while(IsRunning())
   {
 
     if(CMYTH->EventSelect(m_conn_t,&timeout)>0)
@@ -212,4 +212,5 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
     timeout.tv_sec=0;
     timeout.tv_usec=100000;
   }
+  return NULL;
 }

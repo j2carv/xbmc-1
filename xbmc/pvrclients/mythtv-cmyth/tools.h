@@ -21,7 +21,7 @@
 
 #ifndef __TOOLS_H
 #define __TOOLS_H
-
+/*
 #if defined(_WIN32) || defined(_WIN64)
 #ifndef __WINDOWS__
 #define __WINDOWS__
@@ -35,11 +35,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>*/
 #ifndef __WINDOWS__
 #include <time.h>
 #endif
-
+/*
 #define ERRNUL(e) {errno=e;return 0;}
 #define ERRSYS(e) {errno=e;return -1;}
 
@@ -81,7 +81,7 @@ void inline cSleep(const int ms)
     timeOut=remains;
   }
 #endif
-}
+}*/
 
 int inline daytime(time_t *time)
 {

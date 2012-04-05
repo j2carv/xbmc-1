@@ -41,10 +41,12 @@ struct TVShowRegexp
 {
   bool byDate;
   CStdString regexp;
-  TVShowRegexp(bool d, const CStdString& r)
+  int defaultSeason;
+  TVShowRegexp(bool d, const CStdString& r, int s = 1)
   {
     byDate = d;
     regexp = r;
+    defaultSeason = s;
   }
 };
 
@@ -254,6 +256,8 @@ class CAdvancedSettings
     int m_iEpgCleanupInterval;      // seconds
     int m_iEpgActiveTagCheckInterval; // seconds
     int m_iEpgRetryInterruptedUpdateInterval; // seconds
+    bool m_bEpgDisplayUpdatePopup;
+    bool m_bEpgDisplayIncrementalUpdatePopup;
 
     // EDL Commercial Break
     bool m_bEdlMergeShortCommBreaks;

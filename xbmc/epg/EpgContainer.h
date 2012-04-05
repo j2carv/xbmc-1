@@ -211,6 +211,8 @@ namespace EPG
      */
     bool PersistAll(void);
 
+    bool PersistTables(void);
+
   protected:
     /*!
      * @brief Load the EPG settings.
@@ -226,10 +228,9 @@ namespace EPG
 
     /*!
      * @brief Load and update the EPG data.
-     * @param bShowProgress Show a progress bar if true.
      * @return True if the update has not been interrupted, false otherwise.
      */
-    virtual bool UpdateEPG(bool bShowProgress = false);
+    virtual bool UpdateEPG();
 
     /*!
      * @return True if a running update should be interrupted, false otherwise.

@@ -2,6 +2,7 @@
 #include "client.h"
 #include <time.h>
 #include "recordingRules.h"
+#include "tools.h"
 using namespace ADDON;
 
 

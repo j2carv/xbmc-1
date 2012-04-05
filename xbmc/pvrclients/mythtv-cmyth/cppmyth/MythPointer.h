@@ -1,7 +1,9 @@
 #pragma once
 
 #include "libcmyth.h"
-#include "thread.h"
+#include "../../../../lib/platform/threads/threads.h"
+
+using namespace PLATFORM;
 
 template <class T> class MythPointer
 {
@@ -28,7 +30,7 @@ protected:
   T m_mythpointer;
 };
 
-template <class T> class MythPointerThreadSafe : public MythPointer<T>, public cMutex
+template <class T> class MythPointerThreadSafe : public MythPointer<T>, public CMutex
 {
 public:
   operator T()

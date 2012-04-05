@@ -5,7 +5,9 @@
 #include <boost/shared_ptr.hpp>
 #include "MythPointer.h"
 #include "MythConnection.h"
-#include "thread.h"
+#include "../../../../lib/platform/threads/threads.h"
+
+using namespace PLATFORM;
 
 class MythProgramInfo;
 class MythChannel;
