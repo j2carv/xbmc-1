@@ -199,7 +199,7 @@ CStdString fileOps::GetFileFromBackend ( CStdString filenameToGet, CStdString fr
     long long  totalRead = 0;
     unsigned int buffersize = 4096;
     char* theFileTmpBuff = new char[buffersize];
-    long long  readsize = min(1024,theFilesLength);
+    long long  readsize = 1024;
     while (totalRead < theFilesLength)
     {
 
