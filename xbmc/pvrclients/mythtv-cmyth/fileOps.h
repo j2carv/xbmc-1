@@ -5,6 +5,7 @@
 #include "utils/StdString.h"
 #include <vector>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
+#define BOOST_FILESYSTEM_VERSION 3
 #include <boost/filesystem.hpp>
 
 #include <map>
