@@ -1127,7 +1127,7 @@ cmyth_channel_destroy(cmyth_channel_t pl)
 	if(pl->callsign)
 		ref_release(pl->callsign);
 	if(pl->icon)
-		ref_release(pl->callsign);
+		ref_release(pl->icon);
 }
 
 long
