@@ -92,7 +92,7 @@ using namespace ADDON;
   
 
 PVRClientMythTV::PVRClientMythTV()
-  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap()
+  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap(),m_fOps_client(0)
 {
   m_categoryMap.insert(catbimap::value_type("Movie",0x10));
   m_categoryMap.insert(catbimap::value_type("Movie", 0x10));
@@ -175,22 +175,125 @@ PVRClientMythTV::PVRClientMythTV()
   m_categoryMap.insert(catbimap::value_type("Black & White", 0xB1));
   m_categoryMap.insert(catbimap::value_type("\"Unpublished\" Programmes", 0xB2));
   m_categoryMap.insert(catbimap::value_type("Live Broadcast", 0xB3));
+  
+  m_categoryMap.insert(catbimap::value_type("Community", 0));
+  m_categoryMap.insert(catbimap::value_type("Fundraiser", 0));
+  m_categoryMap.insert(catbimap::value_type("Bus./financial", 0));
+  m_categoryMap.insert(catbimap::value_type("Variety", 0));
+  m_categoryMap.insert(catbimap::value_type("Romance-comedy", 0xC6));
+  m_categoryMap.insert(catbimap::value_type("Sports event", 0x40));
+  m_categoryMap.insert(catbimap::value_type("Sports talk", 0x40));
+  m_categoryMap.insert(catbimap::value_type("Computers", 0x92));
+  m_categoryMap.insert(catbimap::value_type("How-to", 0xA2));
+  m_categoryMap.insert(catbimap::value_type("Religious", 0x73));
+  m_categoryMap.insert(catbimap::value_type("Parenting", 0));
+  m_categoryMap.insert(catbimap::value_type("Art", 0x70));
+  m_categoryMap.insert(catbimap::value_type("Musical comedy", 0x64));
+  m_categoryMap.insert(catbimap::value_type("Environment", 0x91));
+  m_categoryMap.insert(catbimap::value_type("Politics", 0x80));
+  m_categoryMap.insert(catbimap::value_type("Animated", 0x55));
+  m_categoryMap.insert(catbimap::value_type("Gaming", 0));
+  m_categoryMap.insert(catbimap::value_type("Interview", 0x24));
+  m_categoryMap.insert(catbimap::value_type("Historical drama", 0xC7));
+  m_categoryMap.insert(catbimap::value_type("Biography", 0));
+  m_categoryMap.insert(catbimap::value_type("Home improvement", 0));
+  m_categoryMap.insert(catbimap::value_type("Hunting", 0xA0));
+  m_categoryMap.insert(catbimap::value_type("Outdoors", 0xA0));
+  m_categoryMap.insert(catbimap::value_type("Auto", 0x47));
+  m_categoryMap.insert(catbimap::value_type("Auto racing", 0x47));
+  m_categoryMap.insert(catbimap::value_type("Horror", 0xC4));
+  m_categoryMap.insert(catbimap::value_type("Medical", 0x93));
+  m_categoryMap.insert(catbimap::value_type("Romance", 0xC6));
+  m_categoryMap.insert(catbimap::value_type("Spanish", 0x97));
+  m_categoryMap.insert(catbimap::value_type("Adults only", 0xC8));
+  m_categoryMap.insert(catbimap::value_type("Musical", 0x64));
+  m_categoryMap.insert(catbimap::value_type("Self improvement", 0xA0));
+  m_categoryMap.insert(catbimap::value_type("Pro wrestling", 0x40));
+  m_categoryMap.insert(catbimap::value_type("Wrestling", 0x40));
+  m_categoryMap.insert(catbimap::value_type("Fishing", 0));
+  m_categoryMap.insert(catbimap::value_type("Agriculture", 0));
+  m_categoryMap.insert(catbimap::value_type("Arts/crafts", 0x70));
+  m_categoryMap.insert(catbimap::value_type("Technology", 0x92));
+  m_categoryMap.insert(catbimap::value_type("Docudrama", 0xC0));
+  m_categoryMap.insert(catbimap::value_type("Science fiction", 0xC3));
+  m_categoryMap.insert(catbimap::value_type("Paranormal", 0));
+  m_categoryMap.insert(catbimap::value_type("Comedy", 0xC4));
+  m_categoryMap.insert(catbimap::value_type("Science", 0));
+  m_categoryMap.insert(catbimap::value_type("Travel", 0));
+  m_categoryMap.insert(catbimap::value_type("Adventure", 0));
+  m_categoryMap.insert(catbimap::value_type("Suspense", 0xC1));
+  m_categoryMap.insert(catbimap::value_type("History", 0));
+  m_categoryMap.insert(catbimap::value_type("Collectibles", 0));
+  m_categoryMap.insert(catbimap::value_type("Crime", 0));
+  m_categoryMap.insert(catbimap::value_type("French", 0));
+  m_categoryMap.insert(catbimap::value_type("House/garden", 0));
+  m_categoryMap.insert(catbimap::value_type("Action", 0));
+  m_categoryMap.insert(catbimap::value_type("Fantasy", 0));
+  m_categoryMap.insert(catbimap::value_type("Mystery", 0));
+  m_categoryMap.insert(catbimap::value_type("Health", 0));
+  m_categoryMap.insert(catbimap::value_type("Comedy-drama", 0));
+  m_categoryMap.insert(catbimap::value_type("Special", 0));
+  m_categoryMap.insert(catbimap::value_type("Holiday", 0));
+  m_categoryMap.insert(catbimap::value_type("Weather", 0));
+  m_categoryMap.insert(catbimap::value_type("Western", 0));
+  m_categoryMap.insert(catbimap::value_type("Children", 0));
+  m_categoryMap.insert(catbimap::value_type("Nature", 0));
+  m_categoryMap.insert(catbimap::value_type("Animals", 0));
+  m_categoryMap.insert(catbimap::value_type("Public affairs", 0));
+  m_categoryMap.insert(catbimap::value_type("Educational", 0));
+  m_categoryMap.insert(catbimap::value_type("Shopping", 0xA6));
+  m_categoryMap.insert(catbimap::value_type("Consumer", 0));
+  m_categoryMap.insert(catbimap::value_type("Soap", 0));
+  m_categoryMap.insert(catbimap::value_type("Newsmagazine", 0));
+  m_categoryMap.insert(catbimap::value_type("Exercise", 0));
+  m_categoryMap.insert(catbimap::value_type("Music", 0x60));
+  m_categoryMap.insert(catbimap::value_type("Game show", 0));
+  m_categoryMap.insert(catbimap::value_type("Sitcom", 0));
+  m_categoryMap.insert(catbimap::value_type("Talk", 0));
+  m_categoryMap.insert(catbimap::value_type("Crime drama", 0));
+  m_categoryMap.insert(catbimap::value_type("Sports non-event", 0x40));
+  m_categoryMap.insert(catbimap::value_type("Reality", 0));
+  
+  
 }
 
 PVRClientMythTV::~PVRClientMythTV()
 {
+  if(m_fOps_client)
+  {
+    delete m_fOps_client;
+    m_fOps_client = 0;
+  }
   m_eventHandler.Stop();
+}
+
+CStdString PVRClientMythTV::GetArtWork(FILE_OPTIONS storageGroup, CStdString shwTitle) {
+  if ((storageGroup == FILE_OPS_GET_COVERART) || 
+    (storageGroup == FILE_OPS_GET_FANART) || 
+    (storageGroup == FILE_OPS_GET_CHAN_ICONS))
+  {
+    return m_fOps_client->getArtworkPath(shwTitle,storageGroup);
+    
+  }
+  else 
+  {
+        XBMC->Log(LOG_DEBUG,"%s - ## Not a valid storageGroup ##",__FUNCTION__);
+        return "";
+  }
+  
 }
 
 int PVRClientMythTV::Genre(CStdString g)
 {
   int retval=0;
+  //XBMC->Log(LOG_DEBUG,"- %s - ## Genre ## - %s -",__FUNCTION__,g.c_str());
   try{
     if(m_categoryMap.by< mythcat >().count(g))
       retval=m_categoryMap.by< mythcat >().at(g);
     
   }
   catch(std::out_of_range){}
+  //XBMC->Log(LOG_DEBUG,"- %s - ## Genre ## - ret: %d -",__FUNCTION__,retval);
   return retval;
 }
 CStdString PVRClientMythTV::Genre(int g)
@@ -250,6 +353,8 @@ bool PVRClientMythTV::Connect()
   m_eventHandler=m_con.CreateEventHandler();
   m_protocolVersion.Format("%i",m_con.GetProtocolVersion());
   m_connectionString.Format("%s:%i",g_szHostname,g_iMythPort);
+  //m_fOps_client = new fileOps(g_szHostname,g_iMythPort);
+  m_fOps_client = new fileOps(m_con);
   m_db=MythDatabase(g_szHostname,g_szMythDBname,g_szMythDBuser,g_szMythDBpassword);
   if(m_db.IsNull())
   {
@@ -388,9 +493,11 @@ PVR_ERROR PVRClientMythTV::GetChannels(PVR_HANDLE handle, bool bRadio)
       tag.iChannelNumber=it->second.NumberInt(); //Use ID instead as mythtv channel number is a string?
       CStdString chanName= it->second.Name();
       tag.strChannelName = chanName;
-      CStdString icon = it->second.Icon();//TODO: Fix icons
+      CStdString icon = it->second.Icon();
+      
+      icon = GetArtWork(FILE_OPS_GET_CHAN_ICONS,icon);
+      
       tag.strIconPath = icon;
-
       //Unimplemented
       tag.strStreamURL="";
       tag.strInputFormat="";
@@ -430,7 +537,7 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       CStdString plot=it->second.Description();
       CStdString path=it->second.Path();
       CStdString title=it->second.Title(true);
-      
+
       tag.strChannelName=chanName;
       tag.strPlot=plot;
       CStdString id=it->second.Path();
@@ -441,7 +548,17 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       int genre=Genre(it->second.Category());      
       tag.iGenreSubType=genre&0x0F;
       tag.iGenreType=genre&0xF0;
-
+      time_t startTime = it->second.StartTime();
+            
+      XBMC->Log(LOG_DEBUG,"%s - BLLLAAAHHHH - %s - %s - %d - Watched: %d",
+		__FUNCTION__, title.c_str(),
+		m_db.GetWatchedStatus(it->second.RecordID()));
+      
+      CStdString defIcon = GetArtWork(FILE_OPS_GET_COVERART,title);
+      CStdString fanIcon = GetArtWork(FILE_OPS_GET_FANART,title);
+      tag.strIconPath=defIcon.c_str();
+      tag.strDefFanart=fanIcon.c_str();
+      
       //Unimplemented
       tag.iLifetime=0;
       tag.iPriority=0;
@@ -527,6 +644,7 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
     tag.strTitle=title;
     CStdString summary=proginfo.Description(); 
     tag.strSummary=summary;
+    XBMC->Log(LOG_DEBUG,"%s ## - State: %d - ##",__FUNCTION__,proginfo.Status());
     switch(proginfo.Status())
     {
     case RS_RECORDING:
@@ -968,6 +1086,7 @@ bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, ID: %s, duration: %i",__FUNCTION__,recinfo.strTitle,recinfo.strRecordingId,recinfo.iDuration);
   CStdString id=recinfo.strRecordingId;
   m_file=m_con.ConnectFile(m_recordings.at(id));
+  m_eventHandler.SetRecordingListener(m_file,id);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,!m_file.IsNull());
   return !m_file.IsNull();
@@ -984,6 +1103,9 @@ void PVRClientMythTV::CloseRecordedStream()
 
 int PVRClientMythTV::ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
+  
+  XBMC->Log(LOG_DEBUG,"%s - curPos: %i TotalLength: %i",__FUNCTION__,(int)m_file.CurrentPosition(),(int)m_file.Duration());
+  
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - size: %i",__FUNCTION__,iBufferSize);
   int dataread=m_file.Read(pBuffer,iBufferSize);

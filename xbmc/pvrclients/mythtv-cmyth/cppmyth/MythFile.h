@@ -15,8 +15,10 @@ public:
   bool IsNull();
   int Read(void* buffer,long long length);
   long long Seek(long long offset, int whence);
-  long long Duration();
-private:
+  unsigned long long Duration();
+  unsigned long long CurrentPosition();
+  void UpdateDuration(unsigned long long length);
+ private:
   boost::shared_ptr< MythPointer< cmyth_file_t > > m_file_t; 
   MythConnection m_conn;
 };

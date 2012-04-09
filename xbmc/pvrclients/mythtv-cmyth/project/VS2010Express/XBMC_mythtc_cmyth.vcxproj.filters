@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\..\..\..\lib\platform\windows\os-threads.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fileOps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client.h">
@@ -120,6 +123,9 @@
       <Filter>Header Files\cppmyth</Filter>
     </ClInclude>
     <ClInclude Include="..\..\recordingrules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fileOps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

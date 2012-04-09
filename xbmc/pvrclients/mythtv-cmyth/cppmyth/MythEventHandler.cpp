@@ -48,6 +48,10 @@ public:
   ImpMythEventHandler(CStdString server,unsigned short port);
   MythRecorder m_rec;
   MythSignal m_signal;
+  MythFile m_file;
+  CStdString curRecordingId;
+  void UpdateFilesize(CStdString signal);
+  void SetRecEventListener(MythFile &file, CStdString recId);
   cmyth_conn_t m_conn_t;
   virtual void* Process(void);	
   virtual ~ImpMythEventHandler();
@@ -107,6 +111,37 @@ void MythEventHandler::SetRecorder(MythRecorder &rec)
 MythSignal MythEventHandler::GetSignal()
 {
   return m_imp->m_signal;
+}
+
+void MythEventHandler::SetRecordingListener ( MythFile &file, CStdString recId )
+{
+  m_imp->Lock();
+  m_imp->SetRecEventListener(file,recId);
+  m_imp->Unlock();
+}
+
+void MythEventHandler::ImpMythEventHandler::SetRecEventListener ( MythFile &file, CStdString recId )
+{
+  m_file = file;
+  char b [20];
+  sscanf(recId.c_str(),"/%4s_%14s",b,b+4);
+  CStdString uniqId=b;
+  curRecordingId = uniqId;
+}
+
+void MythEventHandler::ImpMythEventHandler::UpdateFilesize(CStdString signal)
+{
+  long long length;
+  char b [20];
+  sscanf(signal.c_str(),"%4s %4s-%2s-%2sT%2s:%2s:%2s %lli",b,b+4,b+8,b+10,b+12,b+14,b+16,&length);
+  
+  CStdString uniqId=b;
+  
+  if (curRecordingId.compare(uniqId) == 0) {
+    XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING CURRENT RECORDING LENGTH-- EVENT msg: %s %ll",
+             __FUNCTION__,uniqId.c_str(),length);
+    m_file.UpdateDuration(length);
+  }
 }
 
 void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
@@ -177,6 +212,13 @@ void* MythEventHandler::ImpMythEventHandler::Process(void)
     {
       myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
       XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
+      if(myth_event==CMYTH_EVENT_UPDATE_FILE_SIZE)
+      {
+       CStdString signal=databuf;
+       UpdateFilesize(signal);
+       //1044 2012-03-20T20:00:00 54229688
+       XBMC->Log(LOG_NOTICE,"%s: FILE_SIZE_UPDATE: %i",__FUNCTION__,databuf);
+      }
       if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
       {
         Lock();

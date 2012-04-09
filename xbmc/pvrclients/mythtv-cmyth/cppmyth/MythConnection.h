@@ -39,6 +39,9 @@ public:
   CStdString GetHostname();
   CStdString GetBackendHostname();
   void DefaultTimer(MythTimer &timer);
+  MythFile ConnectPath(CStdString filename, CStdString storageGroup);
+  std::vector< CStdString > GetStorageGroupFileList(CStdString sgGetList);
+  
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
   CStdString m_server;

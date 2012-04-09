@@ -269,3 +269,9 @@ EXPORTS
 	cmyth_mysql_get_recprofiles
 	cmyth_mysql_get_cardtype
 	cmyth_channel_callsign
+	cmyth_get_watched_status_mysql
+	cmyth_set_watched_status_mysql
+	cmyth_file_position
+	cmyth_update_file_length
+	cmyth_storagegroup_filelist
+

@@ -255,7 +255,7 @@ extern cmyth_file_t cmyth_conn_connect_file(cmyth_proginfo_t prog,
  * \return file handle
  */
 extern cmyth_file_t cmyth_conn_connect_path(char* path, cmyth_conn_t control,
-					    unsigned buflen, int tcp_rcvbuf);
+					    unsigned buflen, int tcp_rcvbuf,char* sgToGetFrom);
 
 /**
  * Create a ring buffer connection to a recorder.
@@ -598,6 +598,9 @@ extern int cmyth_database_set_host(cmyth_database_t db, char *host);
 extern int cmyth_database_set_user(cmyth_database_t db, char *user);
 extern int cmyth_database_set_pass(cmyth_database_t db, char *pass);
 extern int cmyth_database_set_name(cmyth_database_t db, char *name);
+
+extern int cmyth_get_watched_status_mysql(cmyth_database_t db, int recordid);
+extern int cmyth_set_watched_status_mysql(cmyth_database_t db, int recordid, int watchedStat);
 
 /*
  * -----------------------------------------------------------------
@@ -1002,6 +1005,10 @@ extern unsigned long long cmyth_file_start(cmyth_file_t file);
 
 extern unsigned long long cmyth_file_length(cmyth_file_t file);
 
+extern unsigned long long cmyth_file_position(cmyth_file_t file);
+
+extern int cmyth_update_file_length(cmyth_file_t file, unsigned long long newLength);
+
 extern int cmyth_file_get_block(cmyth_file_t file, char *buf,
 				unsigned long len);
 
@@ -1205,6 +1212,8 @@ extern int cmyth_mysql_get_recprofiles(cmyth_database_t db, cmyth_recprofile_t**
 
 extern char* cmyth_mysql_get_cardtype(cmyth_database_t db, int chanid);
 
+// Get a storage group file list
+extern int cmyth_storagegroup_filelist(cmyth_conn_t control, char** *sgFilelist, char* sg2List, char*  mythostname);
 
 
 #endif /* __CMYTH_H */

@@ -29,7 +29,37 @@ m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>),m_server(server),m_port(port)
   
 }
 
-bool MythConnection::IsConnected()
+std::vector< CStdString > MythConnection::GetStorageGroupFileList(CStdString sgGetList)
+  {
+    std::vector< CStdString > retval;
+    Lock();
+    char **sg;
+    CStdString bckHostNme = GetBackendHostname();
+    int len = CMYTH->StoragegroupFilelist(*m_conn_t,&sg,sgGetList.Buffer(),bckHostNme.Buffer());
+    if(!sg)
+      return retval;
+    for(int i=0;i<len;i++)
+    {
+      char *tmp=sg[i];
+      CStdString tmpSG(tmp);
+      XBMC->Log(LOG_DEBUG,"%s - ############################# - %s",__FUNCTION__,tmpSG.c_str());
+      retval.push_back(tmpSG/*.c_str()*/);
+    }
+    
+    CMYTH->RefRelease(sg);
+    Unlock();
+    return retval;
+  }
+
+MythFile MythConnection::ConnectPath(CStdString filename, CStdString storageGroup)
+{
+  Lock();
+  MythFile retval = MythFile(CMYTH->ConnConnectPath(filename.Buffer(),*m_conn_t,64*1024, 16*1024,storageGroup.Buffer()),*this);
+  Unlock();
+  return retval;
+}
+
+  bool MythConnection::IsConnected()
 {
   return *m_conn_t!=0;
 }

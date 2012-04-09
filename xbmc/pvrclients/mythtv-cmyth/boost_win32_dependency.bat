@@ -36,6 +36,8 @@ FOR /F "tokens=*" %%f IN ('dir /B "*.tar"') DO (
 )
 
 xcopy boost_1_46_1-headers-win32\* "%LOC_PATH%\" /E /Q /I /Y
+xcopy boost_1_46_1-debug-libs-win32\* "%LOC_PATH%\" /E /Q /I /Y
+xcopy boost_1_46_1-libs-win32\* "%LOC_PATH%\" /E /Q /I /Y
 
 cd %LOC_PATH%
 

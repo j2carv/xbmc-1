@@ -250,7 +250,7 @@ bool CPVRRecordings::RenameRecording(CFileItem &item, CStdString &strNewName)
 
 bool CPVRRecordings::GetDirectory(const CStdString& strPath, CFileItemList &items)
 {
-  CSingleLock lock(m_critSection);
+ // CSingleLock lock(m_critSection);
 
   CStdString strBase(strPath);
   URIUtils::RemoveSlashAtEnd(strBase);

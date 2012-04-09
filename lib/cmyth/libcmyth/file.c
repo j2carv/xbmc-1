@@ -254,6 +254,56 @@ cmyth_file_length(cmyth_file_t file)
 }
 
 /*
+ * cmyth_update_file_length(cmyth_file_t file, unsigned long long newLength)
+ * 
+ * Scope: PUBLIC
+ *
+ * Description
+ *
+ * Updates a files length, with a value returned from a UPDATE_FILE_SIZE event
+ *
+ * Return Value:
+ *
+ * Sucess: a int value >= 0
+ *
+ * Failure: a int containing -errno
+ */
+int
+cmyth_update_file_length(cmyth_file_t file, unsigned long long newLength)
+{
+	if (!file) {
+		return -EINVAL;
+	}
+	file->file_length = newLength;
+	return 0;
+}
+
+/*
+ * cmyth_file_position(cmyth_file_t p)
+ * 
+ * Scope: PUBLIC
+ *
+ * Description
+ *
+ * Obtain the position in the data of a file.
+ *
+ * Return Value:
+ *
+ * Sucess: a long long value >= 0
+ *
+ * Failure: a long long containing -errno
+ */
+unsigned long long
+cmyth_file_position(cmyth_file_t file)
+{
+	if (!file) {
+		return -EINVAL;
+	}
+	return file->file_pos;
+}
+
+
+/*
  * cmyth_file_get_block(cmyth_file_t file, char *buf, unsigned long len)
  * 
  * Scope: PUBLIC

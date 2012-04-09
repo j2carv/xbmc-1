@@ -33,6 +33,85 @@
 #include <string.h>
 #include <cmyth_local.h>
 
+extern void destroy_char_array2(void* p)
+{
+  char** ptr = (char**)p;
+  if(!ptr)
+    return;
+  while (*ptr)
+  {
+    ref_release(*ptr);
+    ptr++;
+  }
+}
+
+int cmyth_storagegroup_filelist(cmyth_conn_t control, char** *sgFilelist, char* sg2List, char*  mythostname)
+{
+  
+  char msg[256];
+  int res=0;
+  int count;
+  int err = 0;
+  int i = 0;
+  char **ret;
+  int consumed; /* = profiles;*/
+  char tmp_str[32768];
+
+  if (!control) {
+    cmyth_dbg(CMYTH_DBG_ERROR, "%s: no connection\n", __FUNCTION__);
+    return 0;
+  }
+  
+  pthread_mutex_lock(&mutex);
+
+  snprintf(msg, sizeof(msg), "QUERY_SG_GETFILELIST[]:[]%s[]:[]%s[]:[][]:[]1", mythostname, sg2List);
+  
+  err = cmyth_send_message(control, msg);
+  if (err < 0) {
+    cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_send_message() failed (%d)\n", __FUNCTION__, err);
+    res = 0;
+    goto out;
+  }
+
+  count = cmyth_rcv_length(control);
+  if (count < 0) {
+    cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_length() failed (%d)\n", __FUNCTION__, count);
+    res = 0;
+    goto out;
+  }
+
+  ret = (char**)ref_alloc( sizeof( char*) * (count + 1 ) );/*count + 1 ??*/
+  if (!ret) {
+    cmyth_dbg(CMYTH_DBG_ERROR, "%s: alloc() failed for list\n", __FUNCTION__);
+    res = 0;
+    goto out;
+  }
+  
+  ref_set_destroy((void*)ret,destroy_char_array2);
+
+  while (i < count) {
+    consumed = cmyth_rcv_string(control, &err, tmp_str, sizeof(tmp_str) - 1, count);
+    count -= consumed;
+    if (err) {
+      cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_string() failed (%d)\n", __FUNCTION__, count);
+      res = 0;
+      goto out;
+    }
+    ret[res] = ref_strdup(tmp_str);
+    res++;
+  }
+
+  ret[res] = NULL;
+
+  cmyth_dbg(CMYTH_DBG_ERROR, "%s: results= %d\n", __FUNCTION__, res);
+  *sgFilelist=ret;
+
+  out:
+  pthread_mutex_unlock(&mutex);
+  return res;
+
+}
+
 /*
  * cmyth_proglist_destroy(void)
  * 

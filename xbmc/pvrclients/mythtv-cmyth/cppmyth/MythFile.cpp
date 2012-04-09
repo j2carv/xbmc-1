@@ -13,7 +13,6 @@ using namespace ADDON;
  MythFile::MythFile()
    :m_file_t(new MythPointer<cmyth_file_t>()),m_conn(MythConnection())
  {
-
  }
 
   MythFile::MythFile(cmyth_file_t myth_file,MythConnection conn)
@@ -21,7 +20,14 @@ using namespace ADDON;
  {
    *m_file_t=myth_file;
  }
-
+ 
+void MythFile::UpdateDuration (unsigned long long length )
+ {
+    m_conn.Lock();
+    CMYTH->UpdateFileLength(*m_file_t,length);
+    m_conn.Unlock();
+  }
+  
   bool  MythFile::IsNull()
   {
     if(m_file_t==NULL)
@@ -45,10 +51,18 @@ using namespace ADDON;
     return retval;
   }
   
-  long long MythFile::Duration()
+  unsigned long long MythFile::CurrentPosition()
   {
     m_conn.Lock();
-    long long retval = CMYTH->FileLength(*m_file_t);
+    unsigned long long retval = CMYTH->FilePosition(*m_file_t);
+    m_conn.Unlock();
+    return retval;
+  }
+  
+  unsigned long long MythFile::Duration()
+  {
+    m_conn.Lock();
+    unsigned long long retval = CMYTH->FileLength(*m_file_t);
     m_conn.Unlock();
     return retval;
   }

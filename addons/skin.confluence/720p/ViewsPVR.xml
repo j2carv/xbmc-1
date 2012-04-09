@@ -664,11 +664,11 @@
 						<label>$INFO[ListItem.Date]</label>
 					</control>
 					<control type="image">
-						<posx>730</posx>
-						<posy>14</posy>
-						<width>20</width>
-						<height>16</height>
-						<texture>$INFO[ListItem.Overlay]</texture>
+					  <posx>730</posx>
+					  <posy>14</posy>
+					  <width>20</width>
+					  <height>16</height>
+					  <texture>$INFO[ListItem.Overlay]</texture>
 					</control>
 				</itemlayout>
 				<focusedlayout height="40" width="760">
@@ -730,12 +730,12 @@
 						<label>$INFO[ListItem.Date]</label>
 					</control>
 					<control type="image">
-						<posx>730</posx>
-						<posy>14</posy>
-						<width>20</width>
-						<height>16</height>
-						<texture>$INFO[ListItem.Overlay]</texture>
-					</control>
+					  <posx>730</posx>
+					  <posy>14</posy>
+					  <width>20</width>
+					  <height>16</height>
+					  <texture>$INFO[ListItem.Overlay]</texture>
+					  </control>
 				</focusedlayout>
 			</control>
 			<control type="scrollbar" id="72">

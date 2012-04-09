@@ -245,6 +245,15 @@ CFileItem::CFileItem(const CPVRRecording& record)
   *GetPVRRecordingInfoTag() = record;
   SetLabel(record.m_strTitle);
   m_strLabel2 = record.m_strPlot;
+  if (!record.m_defualt_icon.IsEmpty())
+  {
+    SetIconImage(record.m_defualt_icon.c_str());
+  }
+  if (!record.m_fanart_image.IsEmpty())
+  {
+    SetProperty("Fanart_Image",record.m_fanart_image.c_str());
+  }
+  
 }
 
 CFileItem::CFileItem(const CPVRTimerInfoTag& timer)
