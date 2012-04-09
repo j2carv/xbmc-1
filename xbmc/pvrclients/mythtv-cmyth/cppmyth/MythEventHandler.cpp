@@ -206,7 +206,7 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
   timeout.tv_sec=0;
   timeout.tv_usec=100000;
 
-  while(Running())
+  while(!IsStopped())
   {
 
     if(CMYTH->EventSelect(m_conn_t,&timeout)>0)

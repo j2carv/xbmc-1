@@ -2,6 +2,11 @@
 #include "client.h"
 #include <time.h>
 #include "recordingRules.h"
+<<<<<<< HEAD
+=======
+#include "tools.h"
+#include <boost/regex.hpp>
+>>>>>>> ADDED: Place recordings in series/movie folders
 using namespace ADDON;
 
 
@@ -541,6 +546,29 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       int genre=Genre(it->second.Category());      
       tag.iGenreSubType=genre&0x0F;
       tag.iGenreType=genre&0xF0;
+
+      if((tag.iGenreType==0x10||genre==0x00)&&tag.iDuration>(g_iMinMovieLength*60))
+      {
+        group.Format("%s/Movies",tag.strDirectory);
+        tag.strDirectory=group;
+      }
+      else
+      {
+        CStdString foldertitle = it->second.Title(true);
+        try {
+        boost::regex re(g_szSeriesRegEx);
+        boost::smatch result;
+        if(boost::regex_search(foldertitle,result,re))
+          foldertitle = result["title"];
+        }
+        catch(...)
+        {
+          XBMC->Log(LOG_ERROR,"%s: Malformed regulare expression : \"%s\" ",__FUNCTION__,g_szSeriesRegEx.c_str());
+        }
+        group.Format("%s/%s",tag.strDirectory,foldertitle);
+        tag.strDirectory=group;
+      }
+
       time_t startTime = it->second.StartTime();
       MythTimestamp tmeStamp(startTime);
       
