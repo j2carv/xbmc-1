@@ -1,10 +1,13 @@
 #ifndef __FILEOPS_H
 #define __FILEOPS_H
+//TODO merge into MythConnection ??
 //#include "client.h"
 
 #include "utils/StdString.h"
 #include <vector>
-#include "cppmyth/MythConnection.h"
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+#define BOOST_FILESYSTEM_VERSION 3
+#include <boost/filesystem.hpp>
 
 #include <map>
 #include "addons/include/xbmc_pvr_types.h"
