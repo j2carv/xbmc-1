@@ -49,7 +49,7 @@ fileOps::fileOps(CStdString mythServer,int mythPort)
   }
   else {
     isMyth = true;
-    XBMC->QueueNotification(QUEUE_ERROR,"%s: mythConnection - Connection created!",__FUNCTION__);
+    XBMC->Log(LOG_DEBUG,"%s: mythConnection - Connection created!",__FUNCTION__);
   }
 
   baseLocalCachepath /= "cache";
