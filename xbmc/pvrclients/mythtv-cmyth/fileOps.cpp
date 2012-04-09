@@ -37,6 +37,7 @@ fileOps::fileOps(CStdString mythServer,int mythPort)
   }
   else {
     isMyth = true;
+    XBMC->Log(LOG_DEBUG,"%s: mythConnection - Connection created!",__FUNCTION__);
   }
   
   baseLocalCachepath = "special://home/cache/";
