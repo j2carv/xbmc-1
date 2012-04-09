@@ -23,8 +23,6 @@ SRCS=client.cpp \
      fileOps.cpp \
      pvrclient-mythtv.cpp \
      recordingRules.cpp \
-     thread.cpp \
-     tools.cpp
 
 include ../Makefile.include
 

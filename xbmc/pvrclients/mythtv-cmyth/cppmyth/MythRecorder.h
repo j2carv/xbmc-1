@@ -7,8 +7,6 @@
 #include "MythConnection.h"
 #include "../../../../lib/platform/threads/threads.h"
 
-using namespace PLATFORM;
-
 class MythProgramInfo;
 class MythChannel;
   

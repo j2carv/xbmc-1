@@ -3,6 +3,8 @@
 #include "libcmyth.h"
 #include "../../../../lib/platform/threads/threads.h"
 
+extern CHelper_libcmyth *CMYTH;
+
 using namespace PLATFORM;
 
 template <class T> class MythPointer
