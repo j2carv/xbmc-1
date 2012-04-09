@@ -28,8 +28,6 @@ include ../Makefile.include
 
 clean:
 	-rm -f $(OBJS) $(LIB) *.P *~
-	$(MAKE) -C @abs_top_srcdir@/lib/libTcpSocket clean
 
 $(LIB): $(OBJS)
-	${MAKE} -C @abs_top_srcdir@/lib/libTcpSocket
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -g $(OBJS) $(LIBS) $(LIBDIRS) $(SILIB) -o $(LIB)
