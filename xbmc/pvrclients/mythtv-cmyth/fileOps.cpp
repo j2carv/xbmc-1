@@ -24,6 +24,15 @@ fileOps::fileOps()
   
 }
 
+fileOps::fileOps(MythConnection &mythConnection)
+  :myth_server(""),myth_port(0),baseLocalCachepath(g_szUserPath.c_str()),mythConP(mythConnection),isMyth(true)
+{
+  baseLocalCachepath /= "cache";
+  checkDirectory(baseLocalCachepath);
+  XBMC->Log(LOG_DEBUG,"%s: mythConnection - Connection created!",__FUNCTION__);
+}
+ 
+
 fileOps::fileOps(CStdString mythServer,int mythPort)
 :myth_server(mythServer),myth_port(mythPort)
 {
@@ -68,9 +77,9 @@ void fileOps::checkRecordings ( PVR_HANDLE handle )
 }
 
 /*
- * Function takes the title of a show, and a folder to search in
- * returns a path to the artwork in the form of 'special://home/cache/folder/image.jpg'
- */
+* Function takes the title of a show, and a folder to search in
+* returns a path to the artwork
+*/
 CStdString fileOps::getArtworkPath ( CStdString title, FILE_OPTIONS Get_What )
 {
   CStdString retPath;
@@ -89,8 +98,8 @@ CStdString fileOps::getArtworkPath ( CStdString title, FILE_OPTIONS Get_What )
   
   if (Get_What == FILE_OPS_GET_CHAN_ICONS) 
   {
-    CURL someUrl(title);
-    title = someUrl.GetFileNameWithoutPath();
+    boost::filesystem::path someUrl(title.c_str());
+    title = someUrl.filename().c_str();
   }
   else {
     int mrkrPos = title.find_first_of("::");
