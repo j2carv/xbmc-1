@@ -5,7 +5,7 @@
 # how to reach the author.
 #
 
-LIBS   = @abs_top_srcdir@/lib/libTcpSocket/libTcpSocket.a -ldl
+LIBS   = -ldl
 LIBDIR = @abs_top_srcdir@/addons/pvr.mythtv.cmyth
 LIB    = @abs_top_srcdir@/addons/pvr.mythtv.cmyth/XBMC_MythTV_cmyth.pvr
 

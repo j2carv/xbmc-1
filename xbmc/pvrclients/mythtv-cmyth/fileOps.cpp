@@ -179,7 +179,10 @@ CStdString fileOps::GetFileFromBackend ( CStdString filenameToGet, CStdString fr
   if (writeFile.OpenForWrite(writeFilePath))
   {
     //char* theFileBuff = new char[theFilesLength];
-    int totalRead = 0;
+    long long  totalRead = 0;
+    unsigned int buffersize = 4096;
+    char* theFileTmpBuff = new char[buffersize];
+    long long  readsize = 1024;
     while (totalRead < theFilesLength)
     {
       char* theFileTmpBuff = new char[theFilesLength];
