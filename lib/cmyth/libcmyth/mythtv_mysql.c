@@ -287,69 +287,33 @@ cmyth_get_offset_mysql(cmyth_database_t db, int type, char *recordid, int chanid
 }
 
 int
-cmyth_get_watched_status_mysql(cmyth_database_t db, int recordid)
+cmyth_set_watched_status_mysql(cmyth_database_t db, cmyth_proginfo_t prog, int watchedStat)
 {
-	
-	MYSQL_RES *res= NULL;
-	MYSQL_ROW row;
-  const char *query_str = "SELECT watched FROM recorded WHERE recordid=?";
-	int retval = 0;
+	MYSQL_RES *res = NULL;
+	const char *query_str = "UPDATE recorded SET watched = ? WHERE chanid = ? AND starttime = ?";
 	cmyth_mysql_query_t * query;
+	char starttime[CMYTH_TIMESTAMP_LEN + 1];
 
-	query = cmyth_mysql_query_create(db,query_str);
-
-	if (cmyth_mysql_query_param_long(query,recordid) < 0) 
-	{
-	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
-	    ref_release(query);
-	    return -1;
- 	}
-	res = cmyth_mysql_query_result(query);
-	ref_release(query);
-	if(res == NULL)
-	{
-	    cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
-	    return -1;
-	}
-
-
-	if (row = mysql_fetch_row(res)) {
-          retval = safe_atoi(row[0]);
-          mysql_free_result(res);
-	        return retval;
-        }
-        else 
-	  return 0;
-}
-
-int
-cmyth_set_watched_status_mysql(cmyth_database_t db, int recordid, int watchedStat)
-{
-	cmyth_mysql_query_t * query;   
-
-  if (watchedStat > 1) watchedStat = 1;
+	if (watchedStat > 1) watchedStat = 1;
 	if (watchedStat < 0) watchedStat = 0;
-		     
-	query = cmyth_mysql_query_create(db,"UPDATE recorded SET watched = ? WHERE recordid = ?");
+	cmyth_timestamp_to_string(starttime, prog->proginfo_rec_start_ts);
+	query = cmyth_mysql_query_create(db, query_str);
 
-	if(cmyth_mysql_query_param_long(query,watchedStat) < 0
-	 || cmyth_mysql_query_param_long(query,recordid) < 0
-   ) 
-	{
+	if (cmyth_mysql_query_param_long(query, watchedStat) < 0
+	 || cmyth_mysql_query_param_long(query, prog->proginfo_chanId) < 0
+	 || cmyth_mysql_query_param_str(query, starttime) < 0 ) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, binding of query parameters failed! Maybe we're out of memory?\n", __FUNCTION__);
 		ref_release(query);
 		return -1;
 	}
-
-	if(cmyth_mysql_query(query) < 0)
-	{
+	res = cmyth_mysql_query_result(query);
+	ref_release(query);
+	if (res == NULL) {
 		cmyth_dbg(CMYTH_DBG_ERROR,"%s, finalisation/execution of query failed!\n", __FUNCTION__);
-		ref_release(query);
 		return -1;
 	}
-	ref_release(query);
-        return 0;
-	
+	mysql_free_result(res);
+	return (1);
 }
 
 char *
