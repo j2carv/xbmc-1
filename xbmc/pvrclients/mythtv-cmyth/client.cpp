@@ -408,6 +408,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = false;
   pCapabilities->bSupportsChannelScan        = false;
+  pCapabilities->bSupportsRecordingPlayCount = true;
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -536,6 +537,14 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 {
   return PVR_ERROR_NOT_IMPLEMENTED;
+}
+
+PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
+{
+   if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+      return g_client->SetRecordingPlayCount(recording, count);
 }
 
 /*******************************************/

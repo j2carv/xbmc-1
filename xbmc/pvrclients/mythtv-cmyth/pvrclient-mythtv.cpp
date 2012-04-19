@@ -593,12 +593,18 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       }
       time_t startTime = it->second.StartTime();
 
+      tag.iPlayCount=it->second.IsWatched() ? 1 : 0;
+
       CStdString defIcon = GetArtWork(FILE_OPS_GET_COVERART,title);
       if(defIcon == "")
         defIcon = m_fOps2_client->getPreviewIconPath(id+".png");
       CStdString fanIcon = GetArtWork(FILE_OPS_GET_FANART,title);
-      tag.strIconPath=defIcon.c_str();
-      tag.strDefFanart=fanIcon.c_str();
+      CStdString iconPath = GetArtWork(FILE_OPS_GET_COVERART,title);
+      if(iconPath == "")
+        iconPath = m_fOps2_client->getPreviewIconPath(id+".png");
+      CStdString fanartPath = GetArtWork(FILE_OPS_GET_FANART,title);
+      tag.strIconPath = iconPath.c_str();
+      tag.strFanartPath = fanartPath.c_str();
 
       //Unimplemented
       tag.iLifetime=0;
@@ -653,6 +659,30 @@ PVR_ERROR PVRClientMythTV::DeleteRecording(const PVR_RECORDING &recording)
     if(g_bExtraDebug)
       XBMC->Log(LOG_DEBUG,"%s - Not Deleted",__FUNCTION__);
     return PVR_ERROR_NOT_DELETED;
+  }
+}
+
+PVR_ERROR PVRClientMythTV::SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
+{
+  XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+
+  CStdString id=recording.strRecordingId;
+
+  if (count > 1) count = 1;
+  if (count < 0) count = 0;
+  bool ret = m_db.SetWatchedStatus(m_recordings.at(id), count > 0);
+
+  if (ret == 1)
+  {
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s - Set watched state",__FUNCTION__);
+    return PVR_ERROR_NO_ERROR;
+  }
+  else
+  {
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s - Setting watched state failed: %d)",__FUNCTION__, ret);
+    return PVR_ERROR_NOT_POSSIBLE;
   }
 }
 

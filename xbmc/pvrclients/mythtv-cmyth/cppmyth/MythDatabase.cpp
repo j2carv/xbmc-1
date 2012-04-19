@@ -1,5 +1,6 @@
 #include "MythDatabase.h"
 #include "MythChannel.h"
+#include "MythProgramInfo.h"
 #include "MythTimer.h"
 #include "client.h"
 
@@ -112,18 +113,10 @@ std::vector<MythRecordingProfile > MythDatabase::GetRecordingProfiles()
   return retval;
 }
 
-bool MythDatabase::GetWatchedStatus(int recordid)
+int MythDatabase::SetWatchedStatus(MythProgramInfo &recording, bool watched)
 {
   m_database_t->Lock();
-  bool watched = CMYTH->GetWatchedStatusMysql(*m_database_t,recordid)==1;
-  m_database_t->Unlock();
-  return watched;
-}
-
-int MythDatabase::SetWatchedStatus(int recordid,bool watched)
-{
-  m_database_t->Lock();
-  int retval = CMYTH->SetWatchedStatusMysql(*m_database_t,recordid, watched?1:0);
+  int retval = CMYTH->SetWatchedStatusMysql(*m_database_t, *recording.m_proginfo_t, watched?1:0);
   m_database_t->Unlock();
   return retval;
 }
