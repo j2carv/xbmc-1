@@ -152,6 +152,12 @@ MythProgramInfo::MythProgramInfo(cmyth_proginfo_t cmyth_proginfo)
     return retval;
   }
 
+  bool MythProgramInfo::IsWatched()
+  {
+    unsigned long recording_flags = CMYTH->ProginfoFlags(*m_proginfo_t);
+    return recording_flags & 0x00000200; // FL_WATCHED
+  }
+
   long long MythProgramInfo::uid()
      {
        long long retval=RecStart();

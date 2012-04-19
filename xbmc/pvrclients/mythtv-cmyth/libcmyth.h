@@ -688,11 +688,7 @@ if (DatabaseSetPass == NULL)      { fprintf(stderr, "Unable to assign function %
 dlsym(m_libcmyth, "cmyth_database_set_name");
 if (DatabaseSetName == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-    GetWatchedStatusMysql      = (int (*)(cmyth_database_t db, int recordid))
-dlsym(m_libcmyth, "cmyth_get_watched_status_mysql");
-if (GetWatchedStatusMysql == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
-
-    SetWatchedStatusMysql      = (int (*)(cmyth_database_t db, int recordid, int watchedStat))
+    SetWatchedStatusMysql      = (int (*)(cmyth_database_t db, cmyth_proginfo_t prog, int watchedStat))
 dlsym(m_libcmyth, "cmyth_set_watched_status_mysql");
 if (SetWatchedStatusMysql == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -1482,8 +1478,7 @@ int (*DatabaseSetHost)(cmyth_database_t db, char* host);
 int (*DatabaseSetUser)(cmyth_database_t db, char* user);
 int (*DatabaseSetPass)(cmyth_database_t db, char* pass);
 int (*DatabaseSetName)(cmyth_database_t db, char* name);
-int (*GetWatchedStatusMysql)(cmyth_database_t db, int recordid);
-int (*SetWatchedStatusMysql)(cmyth_database_t db, int recordid, int watchedStat);
+int (*SetWatchedStatusMysql)(cmyth_database_t db, cmyth_proginfo_t prog, int watchedStat);
 char* (*RingbufPathname)(cmyth_recorder_t rec);
 cmyth_ringbuf_t (*RingbufCreate)(void);
 cmyth_recorder_t (*RingbufSetup)(cmyth_recorder_t old_rec);

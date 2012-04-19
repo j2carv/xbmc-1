@@ -49,6 +49,7 @@ public:
   int GetRecordingsAmount(void);
   PVR_ERROR GetRecordings(PVR_HANDLE handle);
   PVR_ERROR DeleteRecording(const PVR_RECORDING &recording);
+  PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count);
   int GetTimersAmount();
   PVR_ERROR GetTimers(PVR_HANDLE handle);
   PVR_ERROR AddTimer(const PVR_TIMER &timer);
