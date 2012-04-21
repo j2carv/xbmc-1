@@ -45,9 +45,31 @@
 
 static char * cmyth_conn_get_setting_unlocked(cmyth_conn_t conn, const char* hostname, const char* setting);
 static int cmyth_conn_set_setting_unlocked(cmyth_conn_t conn, const char* hostname, const char* setting, const char* value);
+#ifdef _MSC_VER
+CRITICAL_SECTION mutex;
 
+BOOL APIENTRY DllMain(HANDLE hModule, 
+                      DWORD  ul_reason_for_call, 
+                      LPVOID lpReserved)
+{
+    switch( ul_reason_for_call ) {
+    case DLL_PROCESS_ATTACH:
+    InitializeCriticalSection(&mutex);
+    break;
+    /*case DLL_THREAD_ATTACH:
+    ...
+    case DLL_THREAD_DETACH:
+    ...*/
+    case DLL_PROCESS_DETACH:
+    DeleteCriticalSection(&mutex);
+    break;
+    }
+    return TRUE;
+}
+
+#else
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
+#endif
 typedef struct {
 	int version;
 	char token[9]; // 8 characters + the terminating NULL character

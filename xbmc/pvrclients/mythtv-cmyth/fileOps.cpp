@@ -33,6 +33,9 @@ fileOps2::fileOps2(MythConnection &mythConnection)
 CStdString fileOps2::getChannelIconPath(CStdString remotePath)
 {
   //Check local directory
+  if(remotePath == "")
+    return "";
+  XBMC->Log(LOG_DEBUG,"%s: channelicon: %s",__FUNCTION__,remotePath.c_str());
   if(m_icons.count(remotePath)>0)
     return m_icons.at(remotePath);
   CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();
@@ -53,6 +56,7 @@ CStdString fileOps2::getChannelIconPath(CStdString remotePath)
 CStdString fileOps2::getPreviewIconPath(CStdString remotePath)
 {
   //Check local directory
+  XBMC->Log(LOG_DEBUG,"%s: preview icon: %s",__FUNCTION__,remotePath.c_str());
   if(m_preview.count(remotePath)>0)
     return m_preview.at(remotePath);
   CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();
@@ -77,12 +81,13 @@ CStdString fileOps2::getArtworkPath(CStdString title,FILE_OPTIONS Get_What)
   time(&curTime);
   if (m_SGFilelist.count(Get_What)==0||((int)curTime - m_lastSGupdate.at(Get_What)) > 30) { // Limit storage group updates to once every 30 seconds
     m_SGFilelist[Get_What] = m_con.GetStorageGroupFileList(m_sg_strings.at(Get_What));//=GetStorageGroupFiles(Get_What)
-    for(auto it=m_SGFilelist.at(Get_What).begin();it!=m_SGFilelist.at(Get_What).end();it++)XBMC->Log(LOG_DEBUG,"%s: Storagegroup %s, filename: %s",__FUNCTION__,m_sg_strings.at(Get_What).c_str(),it->Filename().c_str());
+    //for(auto it=m_SGFilelist.at(Get_What).begin();it!=m_SGFilelist.at(Get_What).end();it++)XBMC->Log(LOG_DEBUG,"%s: Storagegroup %s, filename: %s",__FUNCTION__,m_sg_strings.at(Get_What).c_str(),it->Filename().c_str());
     m_lastSGupdate[Get_What] = curTime;
   }
   //check title against remote regex_match(title .*_storagegroup) 
   CStdString re_string;
-  re_string.Format("%s.*_%s\\.(?:jpg|png|bmp)",title,m_sg_strings.at(Get_What));    
+  CStdString esctitle = boost::regex_replace(title,boost::regex("[\\.\\[\\{\\}\\(\\)\\\\\\*\\+\\?\\|\\^\\$]"),"\\\\$&");
+  re_string.Format("%s.*_%s\\.(?:jpg|png|bmp)",esctitle,m_sg_strings.at(Get_What));    
   if(Get_What==FILE_OPS_GET_CHAN_ICONS)
   {
     boost::filesystem::path chanicon(title.c_str());
@@ -143,7 +148,8 @@ void fileOps2::cleanCache()
           unsigned int mlm = mit->LastModified();
           if(!mit->Filename().CompareNoCase(title.c_str())&&mit->LastModified()==atoi(lastmodified.c_str()))
           {
-            deletefile = false;
+            if(boost::filesystem::file_size(dit->path())>0)
+              deletefile = false;
             break;
           }
         }
@@ -158,7 +164,8 @@ void fileOps2::cleanCache()
     for(std::map< CStdString, CStdString >::iterator it = m_icons.begin(); it != m_icons.end(); it++ )
       if( !it->second.CompareNoCase(dit->path().string().c_str()))
       {
-        deletefile = false;
+        if(boost::filesystem::file_size(dit->path())>0)
+          deletefile = false;
         break;
       }
       if(deletefile)
@@ -170,7 +177,8 @@ void fileOps2::cleanCache()
     for(std::map< CStdString, CStdString >::iterator it = m_preview.begin(); it != m_preview.end(); it++ )
       if( !it->second.CompareNoCase(dit->path().string().c_str()))
       {
-        deletefile = false;
+        if(boost::filesystem::file_size(dit->path())>0)
+          deletefile = false;
         break;
       }
       if(deletefile)
@@ -186,14 +194,27 @@ void* fileOps2::Process()
   while(!IsStopped())
   {
     m_queue_content.Wait(60*1000);
-    while(!m_jobqueue.empty())
+    while(!m_jobqueue.empty()&&!IsStopped())
     {
       Lock();
       fileOps2::jobItem job = m_jobqueue.front();
       m_jobqueue.pop();
       Unlock();
-      MythFile file = m_con.ConnectPath(job.remoteFilename,job.storageGroup);
-      writeFile(job.localFilename,file);
+      try
+      {
+        XBMC->Log(LOG_DEBUG,"%s Job fetched: local: %s, remote: %s, storagegroup: %s",__FUNCTION__,job.localFilename.string().c_str(),job.remoteFilename.c_str(),job.storageGroup.c_str());
+        m_con.Lock();
+        MythFile file = m_con.ConnectPath(job.remoteFilename,job.storageGroup);
+        if(!writeFile(job.localFilename,file))
+          if(boost::filesystem::exists(job.localFilename))
+            boost::filesystem::remove(job.localFilename);
+        m_con.Unlock();
+      }
+      catch(...)
+      {
+        XBMC->Log(LOG_ERROR,"%s Error executing job: local: %s, remote: %s, storagegroup: %s",__FUNCTION__,job.localFilename.string().c_str(),job.remoteFilename.c_str(),job.storageGroup.c_str());
+        m_con.Unlock();
+      }
     }
     time(&curTime);
     if(curTime>lastCacheClean+60*60*24)

@@ -518,7 +518,8 @@ CPVRTimerInfoTag *CPVRTimers::InstantTimer(CPVRChannel *channel, bool bStartTime
   }
 
   CDateTime startTime = CDateTime::GetCurrentDateTime().GetAsUTCDateTime();
-  newTimer->SetStartFromUTC(startTime);
+  if(!bHasEpgNow)
+    newTimer->SetStartFromUTC(startTime);
   newTimer->m_iMarginStart = 0; /* set the start margin to 0 for instant timers */
 
   int iDuration = g_guiSettings.GetInt("pvrrecord.instantrecordtime");

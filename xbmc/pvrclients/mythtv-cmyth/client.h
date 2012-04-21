@@ -37,7 +37,8 @@
 #define DEFAULT_DB_PASSWORD "mythtv"
 #define DEFAULT_DB_NAME "mythconverg"
 #define DEFAULT_MIN_MOVIE_LENGTH 65
-#define DEFAULT_SERIES_REGEX "^(?<title>.+?)\\("
+#define DEFAULT_SERIES_REGEX "^(?<folder>.+?)::(?<title>.+)"
+#define DEFAULT_SERIES_IDENTIFIER ""
 
 extern bool         g_bCreated;           ///< Shows that the Create function was successfully called
 extern int          g_iClientID;          ///< The PVR client ID used by XBMC for this driver
@@ -55,6 +56,7 @@ extern bool         g_bLiveTVPriority;    ///< MythTV Backend setting to allow l
 
 extern int          g_iMinMovieLength;  ///< Minimum length (in minutes) of a recording to be considered to be a movie
 extern CStdString   g_szSeriesRegEx;       ///< The Regular expression to use to extract the series name (and maybe also episode number)
+extern CStdString   g_szSeriesIdentifier;  ///< The optional regular expression to use to detect series
 
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
