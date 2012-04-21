@@ -209,6 +209,25 @@ struct cmyth_recorder {
 };
 
 /**
+ * MythTV proglist
+ */
+
+struct cmyth_storagegroup_filelist {
+  cmyth_storagegroup_file_t *storagegroup_filelist_list;
+  int storagegroup_filelist_count;
+};
+
+
+struct cmyth_storagegroup_file {
+  char* filename;
+  char* storagegroup;
+  char* hostname;
+  unsigned long modified;
+  unsigned long size;
+};
+
+
+/**
  * MythTV file connection
  */
 struct cmyth_file {

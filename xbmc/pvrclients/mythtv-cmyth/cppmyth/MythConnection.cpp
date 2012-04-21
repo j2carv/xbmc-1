@@ -1,6 +1,7 @@
 #include "MythConnection.h"
 #include "MythRecorder.h"
 #include "MythFile.h"
+#include "MythSGFile.h"
 #include "MythProgramInfo.h"
 #include "MythEventHandler.h"
 #include "MythTimer.h"
@@ -29,7 +30,7 @@ m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>),m_server(server),m_port(port)
   
 }
 
-std::vector< CStdString > MythConnection::GetStorageGroupFileList(CStdString sgGetList)
+std::vector< CStdString > MythConnection::GetStorageGroupFileList_(CStdString sgGetList)
   {
     std::vector< CStdString > retval;
     Lock();
@@ -51,7 +52,24 @@ std::vector< CStdString > MythConnection::GetStorageGroupFileList(CStdString sgG
     return retval;
   }
 
-MythFile MythConnection::ConnectPath(char* pthFilename, char* pthStorageGroup)
+std::vector< MythSGFile > MythConnection::GetStorageGroupFileList(CStdString storagegroup)
+{
+    Lock();
+    CStdString hostname = GetBackendHostname();
+    cmyth_storagegroup_filelist_t filelist=CMYTH->StoragegroupGetFilelist(*m_conn_t,storagegroup.Buffer(),hostname.Buffer());
+    int len=CMYTH->StoragegroupFilelistCount(filelist);
+    std::vector< MythSGFile >  retval(len);
+    for(int i=0;i<len;i++)
+    {
+      cmyth_storagegroup_file_t file=CMYTH->StoragegroupFilelistGetItem(filelist,i);
+      retval.push_back(MythSGFile(file));
+    }
+    CMYTH->RefRelease(filelist);
+    Unlock();
+    return retval;
+}
+
+MythFile MythConnection::ConnectPath(CStdString filename, CStdString storageGroup)
 {
   Lock();
   MythFile retval = MythFile(CMYTH->ConnConnectPath(pthFilename,*m_conn_t,64*1024, 16*1024,pthStorageGroup),*this);

@@ -1215,9 +1215,23 @@ extern int cmyth_mysql_get_recprofiles(cmyth_database_t db, cmyth_recprofile_t**
 
 extern char* cmyth_mysql_get_cardtype(cmyth_database_t db, int chanid);
 
-// Get a storage group file list
+/* Get a storage group file list */
 extern int cmyth_storagegroup_filelist(cmyth_conn_t control, char** *sgFilelist, char* sg2List, char*  mythostname);
 
+struct cmyth_storagegroup_filelist;
+typedef struct cmyth_storagegroup_filelist* cmyth_storagegroup_filelist_t;
+
+struct cmyth_storagegroup_file;
+typedef struct cmyth_storagegroup_file* cmyth_storagegroup_file_t;
+
+extern cmyth_storagegroup_file_t cmyth_storagegroup_filelist_get_item(cmyth_storagegroup_filelist_t fl, int index);
+extern int cmyth_storagegroup_filelist_count(cmyth_storagegroup_filelist_t fl);
+
+extern cmyth_storagegroup_filelist_t cmyth_storagegroup_get_filelist(cmyth_conn_t control,char* storagegroup, char* hostname); 
+
+extern char* cmyth_storagegroup_file_get_filename(cmyth_storagegroup_file_t file);
+extern unsigned long cmyth_storagegroup_file_get_lastmodified(cmyth_storagegroup_file_t file);
+extern unsigned long long cmyth_storagegroup_file_get_size(cmyth_storagegroup_file_t file);
 
 #endif /* __CMYTH_H */
 >>>>>>> added: Improved support for mythtv timers

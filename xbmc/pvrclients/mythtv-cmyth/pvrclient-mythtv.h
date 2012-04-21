@@ -85,8 +85,8 @@ private:
     boost::bimaps::unordered_set_of< boost::bimaps::tagged< CStdString , mythcat >,boost::hash< CStdString > >,
     boost::bimaps::tagged< int , pvrcat >
     > catbimap;
-    
-  fileOps *fOps_client;
+
+  fileOps2 *m_fOps2_client;
   int Genre(CStdString g);
   CStdString Genre(int g);
   MythConnection m_con;

@@ -2,11 +2,8 @@
 #include "client.h"
 #include <time.h>
 #include "recordingRules.h"
-<<<<<<< HEAD
-=======
 #include "tools.h"
 #include <boost/regex.hpp>
->>>>>>> ADDED: Place recordings in series/movie folders
 using namespace ADDON;
 
 
@@ -96,7 +93,7 @@ using namespace ADDON;
   
 
 PVRClientMythTV::PVRClientMythTV()
-  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap()
+  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap(),m_fOps2_client(0)
 {
   m_categoryMap.insert(catbimap::value_type("Movie",0x10));
   m_categoryMap.insert(catbimap::value_type("Movie", 0x10));
@@ -257,23 +254,29 @@ PVRClientMythTV::PVRClientMythTV()
   m_categoryMap.insert(catbimap::value_type("Crime drama", 0));
   m_categoryMap.insert(catbimap::value_type("Sports non-event", 0x40));
   m_categoryMap.insert(catbimap::value_type("Reality", 0));
-
   
-  fOps_client = new fileOps(g_szHostname,g_iMythPort);
+  
 }
 
 PVRClientMythTV::~PVRClientMythTV()
 {
+  if(m_fOps2_client)
+  {
+    delete m_fOps2_client;
+    m_fOps2_client = 0;
+  }
   m_eventHandler.Stop();
 }
 
 CStdString PVRClientMythTV::GetArtWork(FILE_OPTIONS storageGroup, CStdString shwTitle) {
   if ((storageGroup == FILE_OPS_GET_COVERART) || 
-    (storageGroup == FILE_OPS_GET_FANART) || 
-    (storageGroup == FILE_OPS_GET_CHAN_ICONS))
+    (storageGroup == FILE_OPS_GET_FANART))
+    {
+      return m_fOps2_client->getArtworkPath(shwTitle,storageGroup);
+  } 
+  else if(storageGroup == FILE_OPS_GET_CHAN_ICONS)
   {
-    return fOps_client->getArtworkPath(shwTitle,storageGroup);
-    
+    return m_fOps2_client->getChannelIconPath(shwTitle);
   }
   else 
   {
@@ -286,14 +289,14 @@ CStdString PVRClientMythTV::GetArtWork(FILE_OPTIONS storageGroup, CStdString shw
 int PVRClientMythTV::Genre(CStdString g)
 {
   int retval=0;
-  XBMC->Log(LOG_DEBUG,"- %s - ## Genre ## - %s -",__FUNCTION__,g.c_str());
+  //XBMC->Log(LOG_DEBUG,"- %s - ## Genre ## - %s -",__FUNCTION__,g.c_str());
   try{
     if(m_categoryMap.by< mythcat >().count(g))
       retval=m_categoryMap.by< mythcat >().at(g);
     
   }
   catch(std::out_of_range){}
-  XBMC->Log(LOG_DEBUG,"- %s - ## Genre ## - ret: %d -",__FUNCTION__,retval);
+  //XBMC->Log(LOG_DEBUG,"- %s - ## Genre ## - ret: %d -",__FUNCTION__,retval);
   return retval;
 }
 CStdString PVRClientMythTV::Genre(int g)
@@ -353,6 +356,7 @@ bool PVRClientMythTV::Connect()
   m_eventHandler=m_con.CreateEventHandler();
   m_protocolVersion.Format("%i",m_con.GetProtocolVersion());
   m_connectionString.Format("%s:%i",g_szHostname,g_iMythPort);
+  m_fOps2_client = new fileOps2(m_con);
   m_db=MythDatabase(g_szHostname,g_szMythDBname,g_szMythDBuser,g_szMythDBpassword);
   if(m_db.IsNull())
   {
@@ -570,13 +574,14 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       }
 
       time_t startTime = it->second.StartTime();
-      MythTimestamp tmeStamp(startTime);
-      
+            
       XBMC->Log(LOG_DEBUG,"%s - BLLLAAAHHHH - %s - %s - %d - Watched: %d",
-		__FUNCTION__, title.c_str(),tmeStamp.String().c_str(), it->second.ChannelID(),
-		m_db.GetWatchedStatus(it->second.ChannelID(),tmeStamp.String()));
+		__FUNCTION__, title.c_str(),
+		m_db.GetWatchedStatus(it->second.RecordID()));
       
       CStdString defIcon = GetArtWork(FILE_OPS_GET_COVERART,title);
+      if(defIcon == "")
+        defIcon = m_fOps2_client->getPreviewIconPath(id+".png");
       CStdString fanIcon = GetArtWork(FILE_OPS_GET_FANART,title);
       tag.strIconPath=defIcon.c_str();
       tag.strDefFanart=fanIcon.c_str();
@@ -1108,7 +1113,7 @@ bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, ID: %s, duration: %i",__FUNCTION__,recinfo.strTitle,recinfo.strRecordingId,recinfo.iDuration);
   CStdString id=recinfo.strRecordingId;
   m_file=m_con.ConnectFile(m_recordings.at(id));
-  m_eventHandler.SetRecordingListener(&m_file,id);
+  m_eventHandler.SetRecordingListener(m_file,id);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,!m_file.IsNull());
   return !m_file.IsNull();

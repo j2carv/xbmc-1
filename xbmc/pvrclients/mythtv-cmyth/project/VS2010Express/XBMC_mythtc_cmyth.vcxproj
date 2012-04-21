@@ -20,6 +20,7 @@
     <ClCompile Include="..\..\cppmyth\MythFile.cpp" />
     <ClCompile Include="..\..\cppmyth\MythProgramInfo.cpp" />
     <ClCompile Include="..\..\cppmyth\MythRecorder.cpp" />
+    <ClCompile Include="..\..\cppmyth\MythSGFile.cpp" />
     <ClCompile Include="..\..\cppmyth\MythSignal.cpp" />
     <ClCompile Include="..\..\cppmyth\MythTimer.cpp" />
     <ClCompile Include="..\..\cppmyth\MythTimestamp.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\..\cppmyth\MythPointer.h" />
     <ClInclude Include="..\..\cppmyth\MythProgramInfo.h" />
     <ClInclude Include="..\..\cppmyth\MythRecorder.h" />
+    <ClInclude Include="..\..\cppmyth\MythSGFile.h" />
     <ClInclude Include="..\..\cppmyth\MythSignal.h" />
     <ClInclude Include="..\..\cppmyth\MythTimer.h" />
     <ClInclude Include="..\..\cppmyth\MythTimestamp.h" />

@@ -69,6 +69,18 @@
     <ClCompile Include="..\..\recordingrules.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+<<<<<<< HEAD
+=======
+    <ClCompile Include="..\..\..\..\..\lib\platform\windows\os-threads.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fileOps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cppmyth\MythSGFile.cpp">
+      <Filter>Source Files\cppmyth</Filter>
+    </ClCompile>
+>>>>>>> FIX: rewrote the artwork code. Will now use preview image if no fanart is present.
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\client.h">
@@ -128,6 +140,15 @@
     <ClInclude Include="..\..\recordingrules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="..\..\fileOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cppmyth\MythSGFile.h">
+      <Filter>Header Files\cppmyth</Filter>
+    </ClInclude>
+>>>>>>> FIX: rewrote the artwork code. Will now use preview image if no fanart is present.
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\lib\cmyth\cmythimport.txt" />

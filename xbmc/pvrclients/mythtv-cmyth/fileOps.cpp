@@ -1,413 +1,274 @@
-#include "fileOps.h"
-#include "FileItem.h"
-#include "Util.h"
-#include "filesystem/File.h"
 #include <stdio.h>
 #include <map>
 #include <ctime>
-#include "libXBMC_addon.h"
-#include "filesystem/SpecialProtocol.h"
-#include "cppmyth/MythFile.h"
-#include <pvr/recordings/PVRRecordings.h>
+#include <algorithm>
 
+#include <boost/filesystem/fstream.hpp>
+#include <boost/regex.hpp>
+#include "cppmyth/MythFile.h"
+#include "client.h"
+#include "fileOps.h"
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 using namespace ADDON;
 
-fileOps::fileOps()
-:myth_server(""),myth_port(0)
+fileOps2::fileOps2(MythConnection &mythConnection)
+  :m_con(mythConnection),m_localBasePath(g_szUserPath.c_str()),m_sg_strings(),CThread(),CMutex(),m_queue_content(), m_jobqueue()
 {
-  
-  baseLocalCachepath = "special://home/cache/";
-  checkDirectory(baseLocalCachepath);
-  isMyth = false;
-  
+  m_localBasePath /= "cache";
+  if(!createDirectory(m_localBasePath))
+    XBMC->Log(LOG_ERROR,"%s - Failed to create cache directory %s",__FUNCTION__,m_localBasePath.c_str());
+  m_sg_strings[FILE_OPS_GET_COVERART] = "coverart";
+  m_sg_strings[FILE_OPS_GET_FANART] = "fanart";
+  m_sg_strings[FILE_OPS_GET_BANNER] = "banner";
+  m_sg_strings[FILE_OPS_GET_SCREENSHOT] = "screenshot";
+  m_sg_strings[FILE_OPS_GET_POSTER] = "poster";
+  m_sg_strings[FILE_OPS_GET_BACKCOVER] = "backcover";
+  m_sg_strings[FILE_OPS_GET_INSIDECOVER] = "insidecover";
+  m_sg_strings[FILE_OPS_GET_CD_IMAGE] = "cdimage";        
+  m_sg_strings[FILE_OPS_GET_CHAN_ICONS] = "ChannelIcons";     
+  CreateThread();
 }
 
-fileOps::fileOps(MythConnection &mythConnection)
-  :myth_server(""),myth_port(0),baseLocalCachepath(g_szUserPath.c_str()),mythConP(mythConnection),isMyth(true)
+CStdString fileOps2::getChannelIconPath(CStdString remotePath)
 {
-  baseLocalCachepath /= "cache";
-  checkDirectory(baseLocalCachepath);
-  XBMC->Log(LOG_DEBUG,"%s: mythConnection - Connection created!",__FUNCTION__);
-}
- 
-
-fileOps::fileOps(CStdString mythServer,int mythPort)
-:myth_server(mythServer),myth_port(mythPort)
-{
-
-  mythConP = MythConnection(mythServer,mythPort);
-  if(!mythConP.IsConnected())
-  {
-    XBMC->QueueNotification(QUEUE_ERROR,"%s: mythConnection - Not Connected - %s:%i",
-			    __FUNCTION__,mythServer.c_str(),mythPort);
-    isMyth = false;
+  //Check local directory
+  if(m_icons.count(remotePath)>0)
+    return m_icons.at(remotePath);
+  CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();
+  boost::filesystem::path localFilePath = m_localBasePath / "channels" / remoteFilename.c_str();
+  if(!boost::filesystem::exists(localFilePath))
+  {      
+    Lock();
+    fileOps2::jobItem job(localFilePath, "/channels/"+remoteFilename,"");
+    m_jobqueue.push(job);
+    m_queue_content.Signal();
+    Unlock();
   }
-  else {
-    isMyth = true;
-    XBMC->Log(LOG_DEBUG,"%s: mythConnection - Connection created!",__FUNCTION__);
-  }
-  
-  baseLocalCachepath = "special://home/cache/";
-  checkDirectory(baseLocalCachepath);
+  m_icons[remotePath] = localFilePath.string();
+  return localFilePath.string();
+
 }
 
-void fileOps::checkRecordings ( PVR_HANDLE handle )
-{ 
-  // Experimenting with updating videoinfotag
-  PVR::CPVRRecordings *someRecordings = (PVR::CPVRRecordings*) handle->dataAddress;
-  
-  if ((someRecordings->size() > 0)  && (isMyth)) 
+CStdString fileOps2::getPreviewIconPath(CStdString remotePath)
+{
+  //Check local directory
+  if(m_preview.count(remotePath)>0)
+    return m_preview.at(remotePath);
+  CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();
+  boost::filesystem::path localFilePath = m_localBasePath / "preview" / remoteFilename.c_str();
+  if(!boost::filesystem::exists(localFilePath))
+  {      
+    Lock();
+    fileOps2::jobItem job(localFilePath, remoteFilename,"Default");
+    m_jobqueue.push(job);
+    m_queue_content.Signal();
+    Unlock();
+  }
+  m_preview[remotePath] = localFilePath.string();
+  return localFilePath.string();
+}
+
+CStdString fileOps2::getArtworkPath(CStdString title,FILE_OPTIONS Get_What)
+{
+  CStdString retval;
+  //update remote filelist
+  time_t curTime;
+  time(&curTime);
+  if (m_SGFilelist.count(Get_What)==0||((int)curTime - m_lastSGupdate.at(Get_What)) > 30) { // Limit storage group updates to once every 30 seconds
+    m_SGFilelist[Get_What] = m_con.GetStorageGroupFileList(m_sg_strings.at(Get_What));//=GetStorageGroupFiles(Get_What)
+    for(auto it=m_SGFilelist.at(Get_What).begin();it!=m_SGFilelist.at(Get_What).end();it++)XBMC->Log(LOG_DEBUG,"%s: Storagegroup %s, filename: %s",__FUNCTION__,m_sg_strings.at(Get_What).c_str(),it->Filename().c_str());
+    m_lastSGupdate[Get_What] = curTime;
+  }
+  //check title against remote regex_match(title .*_storagegroup) 
+  CStdString re_string;
+  re_string.Format("%s.*_%s\\.(?:jpg|png|bmp)",title,m_sg_strings.at(Get_What));    
+  if(Get_What==FILE_OPS_GET_CHAN_ICONS)
   {
-    CFileItemList fileList;
-    someRecordings->GetRecordings(&fileList);
-    
-    for (int i=0;i<fileList.Size();i++) 
+    boost::filesystem::path chanicon(title.c_str());
+    re_string = chanicon.filename().string();
+  }
+  boost::regex re(re_string.c_str());
+  std::vector< MythSGFile >::iterator it = m_SGFilelist.at(Get_What).begin();
+  for(;it!=m_SGFilelist.at(Get_What).end()&&!boost::regex_match(it->Filename(),re);it++);
+  if(it==m_SGFilelist.at(Get_What).end())
+  {
+    //if no match return ""
+    return "";
+  }
+  //check local file cache for up to date match
+  CStdString localFilename;
+  CStdString filename=it->Filename();
+  localFilename.Format("%u_%s",it->LastModified(),filename);
+  boost::filesystem::path localFilePath = m_localBasePath / m_sg_strings.at(Get_What).c_str() / localFilename.c_str();
+  if(boost::filesystem::exists(localFilePath))
+    return localFilePath.string();
+  //else add to "files to fetch" and return expected path
+  Lock();
+  fileOps2::jobItem job(localFilePath, it->Filename(), m_sg_strings.at(Get_What));
+  m_jobqueue.push(job);
+  m_queue_content.Signal();
+  Unlock();
+  return localFilePath.string();
+}
+
+fileOps2::~fileOps2()
+{
+  cleanCache();
+  StopThread(-1); //Set stopping. don't wait as we need to signal the thread first.
+  m_queue_content.Signal();
+  StopThread(); //wait for thread to stop;
+}
+
+void fileOps2::cleanCache()
+{
+  //Need to be redone at some time. Too much repeated code. But at least it works now.
+  boost::regex re("^([[:digit:]]{1,20})_(.*)");
+  boost::smatch match;
+  for(std::map< FILE_OPTIONS, std::vector< MythSGFile > >::iterator it = m_SGFilelist.begin();it != m_SGFilelist.end(); it++)
+  {
+    boost::filesystem::path dirPath = m_localBasePath;
+    dirPath /= m_sg_strings.at(it->first).c_str();     
+    for(boost::filesystem::recursive_directory_iterator dit(dirPath);dit != boost::filesystem::recursive_directory_iterator();dit++)
     {
-      
-      PVR::CPVRRecording* pvrTag = fileList.Get(i)->GetPVRRecordingInfoTag();
-      CStdString iconPath = getArtworkPath(pvrTag->m_strTitle.c_str(),FILE_OPS_GET_COVERART);
-      if (!iconPath.IsEmpty()) 
+      bool deletefile = true;
+      CStdString filename = dit->path().filename().string();    
+      if(boost::regex_search(filename,match,re)&&match[0].matched)
       {
-	someRecordings->UpdateEntry(*pvrTag);
+        std::string lastmodified = std::string(match[1].first,match[1].second);
+        std::string title = std::string(match[2].first,match[2].second);
+        for( std::vector< MythSGFile >::iterator mit = it->second.begin();mit != it->second.end(); mit++ )
+        {
+          CStdString mfilename = mit->Filename();
+          unsigned int mlm = mit->LastModified();
+          if(!mit->Filename().CompareNoCase(title.c_str())&&mit->LastModified()==atoi(lastmodified.c_str()))
+          {
+            deletefile = false;
+            break;
+          }
+        }
+        if(deletefile)
+          boost::filesystem::remove(dit->path());
       }
-    }    
-  }  
-}
-
-/*
-* Function takes the title of a show, and a folder to search in
-* returns a path to the artwork
-*/
-CStdString fileOps::getArtworkPath ( CStdString title, FILE_OPTIONS Get_What )
-{
-  CStdString retPath;
-  if (title.IsEmpty()) 
-    return retPath;
-  
-  CStdString awGroup;
-  if (Get_What == FILE_OPS_GET_CHAN_ICONS)
-    awGroup = "channels";
-  else if (Get_What == FILE_OPS_GET_COVERART)
-    awGroup = "coverart";
-  else if (Get_What == FILE_OPS_GET_FANART)
-    awGroup = "fanart";
-  else
-    return retPath;
-  
-  if (Get_What == FILE_OPS_GET_CHAN_ICONS) 
-  {
-    boost::filesystem::path someUrl(title.c_str());
-    title = someUrl.filename().c_str();
-  }
-  else {
-    int mrkrPos = title.find_first_of("::");
-    if (mrkrPos<=0)
-      mrkrPos=title.length();
-    
-    title = title.Left(mrkrPos);
-  }
-  
-  XBMC->Log(LOG_DEBUG,"%s - ## - Checking for Artwork File - %s - in - %s - ##",
-	    __FUNCTION__, title.c_str(), awGroup.c_str());
-  
-  retPath = checkFolderForTitle(title,awGroup);
-  
-  if (retPath.IsEmpty() && isMyth)
-  {
-    // If still no result check if we can sync with mythbackends storage group and try again
-    if (!mythConP.IsConnected()) 
-    {
-      XBMC->Log(LOG_DEBUG,"%s - ###########Not connected to mythbackend#######", __FUNCTION__);
-      return retPath;
     }
-    
-    if (Get_What == FILE_OPS_GET_CHAN_ICONS) 
-    {
-      GetFileFromBackend(title,"channels");
-    }
-    else
-    {
-      syncSGCache(awGroup); //Thread this function, so xbmc doesnt hang when getting recordings.
-    } 
-    retPath = checkFolderForTitle(title,awGroup);
   }
-  
-  return retPath;
+  for(boost::filesystem::recursive_directory_iterator dit( m_localBasePath / "channels");dit != boost::filesystem::recursive_directory_iterator();dit++)
+  {
+    bool deletefile = true;
+    for(std::map< CStdString, CStdString >::iterator it = m_icons.begin(); it != m_icons.end(); it++ )
+      if( !it->second.CompareNoCase(dit->path().string().c_str()))
+      {
+        deletefile = false;
+        break;
+      }
+      if(deletefile)
+        boost::filesystem::remove(dit->path());
+  }
+  for(boost::filesystem::recursive_directory_iterator dit( m_localBasePath / "preview");dit != boost::filesystem::recursive_directory_iterator();dit++)
+  {
+    bool deletefile = true;
+    for(std::map< CStdString, CStdString >::iterator it = m_preview.begin(); it != m_preview.end(); it++ )
+      if( !it->second.CompareNoCase(dit->path().string().c_str()))
+      {
+        deletefile = false;
+        break;
+      }
+      if(deletefile)
+        boost::filesystem::remove(dit->path());
+  }
 }
 
-CStdString fileOps::convSpecialPath (CStdString thePath, bool toRegular/*=true*/) {
-  if (toRegular) // default
-  {
-    return CSpecialProtocol::TranslatePath(thePath);
-  }
-  else 
-  {
-    //TODO::converts Regular to special??
-    //CUtil::TranslateSpecialSource(thePath);
-  }
-}
-
-CStdString fileOps::GetFileFromBackend ( CStdString filenameToGet, CStdString fromStorageGroup )
+void* fileOps2::Process()
 {
-  XBMC->Log(LOG_DEBUG,"%s - Getting File via Myth Protocol - %s",
-	    __FUNCTION__,filenameToGet.c_str());
-  
-  if (filenameToGet.Left(1).compare("/") != 0) 
-  {
-    filenameToGet = "/" + filenameToGet;
-  }
-  
-  MythFile theFile;
-  
-  if (fromStorageGroup.CompareNoCase("channels")==0) 
-  {
-    CStdString chanFilename = "/channels" + filenameToGet;
-    CStdString chanSG = "c";
-    theFile=mythConP.ConnectPath((char*)chanFilename.c_str(),(char*)chanSG.c_str());
-  }
-  else 
-  {
-    theFile=mythConP.ConnectPath((char*)filenameToGet.c_str(),(char*)fromStorageGroup.c_str());
-  }
+  time_t curTime;
+  time_t lastCacheClean=0;
 
-  if (theFile.IsNull()) 
+  while(!IsStopped())
   {
-    return "";
+    m_queue_content.Wait(60*1000);
+    while(!m_jobqueue.empty())
+    {
+      Lock();
+      fileOps2::jobItem job = m_jobqueue.front();
+      m_jobqueue.pop();
+      Unlock();
+      MythFile file = m_con.ConnectPath(job.remoteFilename,job.storageGroup);
+      writeFile(job.localFilename,file);
+    }
+    time(&curTime);
+    if(curTime>lastCacheClean+60*60*24)
+      cleanCache();
   }
-  int theFilesLength = theFile.Duration();
-  if (theFilesLength <= 0) 
+  return NULL;
+}
+
+bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
+{
+  if(!createDirectory(destination,true))
   {
-    return "";
+    XBMC->Log(LOG_ERROR,"%s - Failed to create destination directory: %s",
+      __FUNCTION__,destination.parent_path().c_str()); 
+    return false;
   }
-  
-  CStdString writeFilePath = baseLocalCachepath + fromStorageGroup + filenameToGet;
-  checkDirectory(writeFilePath,true);
-  
-  XFILE::CFile writeFile;
-  if (writeFile.OpenForWrite(writeFilePath))
+  if(source.IsNull())
+  {
+    XBMC->Log(LOG_ERROR,"%s - NULL file provided.",
+      __FUNCTION__,destination.parent_path().c_str()); 
+    return false;
+  }
+  unsigned long long length = source.Duration(); 
+  boost::filesystem::fstream writeFile;
+  writeFile.open(destination,std::fstream::binary|std::fstream::out);
+  if (writeFile)
   {
     //char* theFileBuff = new char[theFilesLength];
-    long long  totalRead = 0;
+    unsigned long long  totalRead = 0;
     unsigned int buffersize = 4096;
-    char* theFileTmpBuff = new char[buffersize];
+    char* buffer = new char[buffersize];
     long long  readsize = 1024;
-    while (totalRead < theFilesLength)
+    while (totalRead < length)
     {
-      char* theFileTmpBuff = new char[theFilesLength];
-      int readData = theFile.Read(theFileTmpBuff,theFilesLength-totalRead);
+
+      int readData = source.Read(buffer,readsize);
       if (readData <= 0)
       {
         break;
       }
-      writeFile.Write((const void*)theFileTmpBuff,readData);
-      /*char *filePntr = theFileBuff;
-      if (totalRead > 0) {
-        filePntr += (totalRead);
+      writeFile.write(buffer,readData);
+      if(readsize == readData)
+      {
+        readsize <<=1;
+        if(readsize > buffersize)
+        {
+          buffersize <<=1;
+          delete buffer;
+          buffer = new char[buffersize];
+        }
       }
-      if (readData > (theFilesLength-totalRead)) {
-        readData = (theFilesLength-totalRead);
-      }
-      memcpy((void*)filePntr,(void*)theFileTmpBuff,readData);
-      */
-      
       totalRead += readData;
     }
-    writeFile.Close();
-    if (totalRead < theFilesLength) 
+    writeFile.close();
+    delete buffer;
+    if (totalRead < length) 
     {
-    XBMC->Log(LOG_DEBUG,"%s - Did not Read all data - %s - %d - %d",
-	      __FUNCTION__,filenameToGet.c_str(),totalRead,theFilesLength);    
+      XBMC->Log(LOG_DEBUG,"%s - Did not Read all data - %s - %d - %d",
+        __FUNCTION__,destination.c_str(),totalRead,length);    
     }
-    return writeFilePath;
-  }
-  else 
-  {
-    return "";
-  }
-  
-}
-
-void fileOps::syncSGCache ( CStdString awGroup )
-{
-  
-  XBMC->Log(LOG_DEBUG,"%s - Syncing Storage Groups - %s",__FUNCTION__,awGroup.c_str());
-  time_t curTime;
-  time(&curTime);
-  
-  if (((int)curTime - lastSGupdate[awGroup]) < 30) { // Limit storage group updates to once every 30 seconds
-    return;
-  }
-  
-  lastSGupdate[awGroup] = (int)curTime;
-  //Get Missing files
-  std::vector<CStdString> filesToGet = missingSGFiles(mythConP.GetStorageGroupFileList(awGroup),LocalFilelist[awGroup]);
-  
-  
-  for (unsigned int a=0;a<filesToGet.size();a++) 
-  {
-    XBMC->Log(LOG_DEBUG,"%s - Missing File - %s - FROM - %s",__FUNCTION__,filesToGet[a].c_str(),awGroup.c_str());
-    GetFileFromBackend(filesToGet[a],awGroup);
-  }
-  
-  if (filesToGet.size()>0) 
-  {
-    updateLocalFilesList(awGroup);
-  }
-  XBMC->Log(LOG_DEBUG,"%s - Sync Done - %s",__FUNCTION__,awGroup.c_str());
-}
-
-CStdString fileOps::checkFolderForTitle ( CStdString title, CStdString awGroup )
-{
-  
-  CStdString retPath;
-  std::vector<CStdString> fileList = LocalFilelist[awGroup];
-  for (unsigned int curFl=0;curFl<fileList.size();curFl++) 
-  {
-    if (title.CompareNoCase(fileList[curFl].Left(title.length()).c_str()) == 0) 
-    {
-      //Found a Title match
-      retPath = baseLocalCachepath + awGroup + "/" + fileList[curFl];
-      break;
-    }
-  }
-  if (retPath.IsEmpty())
-  {
-    updateLocalFilesList(awGroup);
-    std::vector<CStdString> fileList = LocalFilelist[awGroup];
-    for (unsigned int curFl=0;curFl<fileList.size();curFl++) 
-    {
-      if (title.CompareNoCase(fileList[curFl].Left(title.length()).c_str()) == 0) 
-      {
-        //Found a Title match
-        retPath = baseLocalCachepath + awGroup + "/" + fileList[curFl];
-        break;
-      }
-    }
-  }
-  
-  return retPath;
-}
-
-
-bool fileOps::checkDirectory ( CStdString dirPath, bool hasFilename/* = false */)
-{
-  int pos = 0;
-  int offset = 0;
-  CStdString srchString = dirPath;
-  while (pos >= 0) {
-    pos = srchString.find_first_of("/",pos+1);
-    if (pos < 0) {
-      break;
-    }
-    if (pos <= baseLocalCachepath.length()) {
-      continue;
-    }
-    CUtil::CreateDirectoryEx(srchString.Left(pos)); 
-    if (offset > 20) {
-      break;
-    }
-    offset++;
-  }
-  if (!hasFilename) {
-    CUtil::CreateDirectoryEx(dirPath);
-  }
-  return true;
-}
-
-std::vector<CStdString> fileOps::getADirectoryList ( CStdString dirPath )
-{
-  CFileItemList items;
-  CUtil::GetRecursiveListing(dirPath, items, "", true);
-  std::vector<CStdString> retStr;
-  for (int i = 0; i < items.Size(); ++i) 
-  {
-    retStr.push_back(items[i]->GetLabel());
-  }
-  
-  return retStr;
-}
-
-
-bool fileOps::updateLocalFilesList (CStdString localFolder) 
-{
-  CStdString localPath = baseLocalCachepath + localFolder + "/";
-  if ((CUtil::CreateDirectoryEx(baseLocalCachepath)) 
-    && (CUtil::CreateDirectoryEx(localPath))) 
-  {
-    
-    LocalFilelist[localFolder] = getADirectoryList(localPath);
     return true;
   }
   else 
   {
+    XBMC->Log(LOG_ERROR,"%s - Failed to create destination file: %s",
+      __FUNCTION__,destination.filename().c_str()); 
     return false;
   }
 }
 
-std::vector<CStdString> fileOps::missingSGFiles ( std::vector<CStdString> hayStack, std::vector<CStdString> needle )
+bool fileOps2::createDirectory(boost::filesystem::path dirPath, bool hasFilename/* = false */)
 {
-  // Returns items in haystack that are not in needle
-  
-  std::vector<CStdString> missingFiles;
-  
-  for (unsigned int i = 0; i < hayStack.size();i++) 
-  {
-    CStdString remoteFile = hayStack[i].c_str();
-    bool flMissing = true;
-    for (unsigned int k = 0; k < needle.size();k++) 
-    {
-      CStdString localFile = needle[k].c_str();
-      if (remoteFile.CompareNoCase(localFile.c_str()) == 0) 
-      {
-	flMissing = false;
-	break;
-      }
-    }
-    if (flMissing) 
-    {
-      missingFiles.push_back(remoteFile.c_str());
-    }
-  }
-  return missingFiles;
+  if(hasFilename)
+    return boost::filesystem::is_directory(dirPath.parent_path())?true:boost::filesystem::create_directory(dirPath.parent_path());
+  else
+    return boost::filesystem::is_directory(dirPath)?true:boost::filesystem::create_directory(dirPath);
 }
 
-void fileOps::saveSGList (std::vector<CStdString> sgFileList, CStdString sgToSaveAs) 
-{
-  
-  SGFilelist[sgToSaveAs] = sgFileList;
-  
-}
-
-bool fileOps::storeFileInSG ( char* saveBuffer, int buffLength, CStdString flSaveName, CStdString sgToSaveIn )
-{
-  CStdString theLocalPath;
-  
-  if (flSaveName.Left(1).compare("/") == 0) 
-  {
-    theLocalPath = baseLocalCachepath + sgToSaveIn + flSaveName;
-  }
-  else 
-  {
-    theLocalPath = baseLocalCachepath + sgToSaveIn + "/" + flSaveName;
-  }
-  return writeToFile(theLocalPath,saveBuffer,buffLength);
-}
-
-bool fileOps::writeToFile ( CStdString filePath, char* writeBuffer, int writeLength )
-{
-  
-  XFILE::CFile file;
-  if (file.OpenForWrite(filePath)) 
-  {
-    file.Write((const void*)writeBuffer,writeLength);
-    file.Close();
-    return true;
-  }
-  else 
-  {
-    return false;
-  }
-  
-}
