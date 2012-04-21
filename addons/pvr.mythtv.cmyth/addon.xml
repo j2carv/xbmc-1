@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="pvr.mythtv.cmyth"
-  version="0.1"
+  version="0.1.0"
   name="MythTV cmyth PVR Client"
-  provider-name="Tonny Petersen<tsp@person.dk>">
+  provider-name="Tonny Petersen">
   <requires>
     <c-pluff version="0.1"/>
   </requires>
