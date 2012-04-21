@@ -243,8 +243,7 @@ copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."
-</Command>
+      <Command>copy "$(TargetPath)"  "$(ProjectDir)..\.."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug (OpenGL)|Win32'">

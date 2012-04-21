@@ -217,7 +217,8 @@ void MythConnection::Lock()
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"Lock %i",m_conn_t.get());
   m_conn_t->Lock();
-  
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"Lock acquired %i",m_conn_t.get());
 }
 
 void MythConnection::Unlock()

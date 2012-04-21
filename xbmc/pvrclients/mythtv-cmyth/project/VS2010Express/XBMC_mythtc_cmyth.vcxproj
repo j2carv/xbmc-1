@@ -96,7 +96,7 @@
     <IncludePath>$(SolutionDir)\..\..\xbmc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\..\..\addons\pvr.mythtv.cmyth\</OutDir>
+    <OutDir>$(ProjectDir)..\..\..\..\..\addons\pvr.mythtv.cmyth\</OutDir>
     <TargetName>XBMC_MythTV_cmyth_win32</TargetName>
     <TargetExt>.pvr</TargetExt>
     <ExtensionsToDeleteOnClean>*.cdf;*.cache;*.obj;*.ilk;*.resources;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.meta;*.tlog;*.manifest;*.res;*.pch;*.exp;*.idb;*.rep;*.xdc;*.pdb;*_manifest.rc;*.bsc;*.sbr;*.xml;*.pvr</ExtensionsToDeleteOnClean>
