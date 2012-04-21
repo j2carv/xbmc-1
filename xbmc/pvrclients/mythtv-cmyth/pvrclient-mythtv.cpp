@@ -93,7 +93,7 @@ using namespace ADDON;
   
 
 PVRClientMythTV::PVRClientMythTV()
-  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap(),m_fOps_client(0)
+  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap(),m_fOps2_client(0)
 {
   m_categoryMap.insert(catbimap::value_type("Movie",0x10));
   m_categoryMap.insert(catbimap::value_type("Movie", 0x10));
@@ -260,21 +260,23 @@ PVRClientMythTV::PVRClientMythTV()
 
 PVRClientMythTV::~PVRClientMythTV()
 {
-  if(m_fOps_client)
+  if(m_fOps2_client)
   {
-    delete m_fOps_client;
-    m_fOps_client = 0;
+    delete m_fOps2_client;
+    m_fOps2_client = 0;
   }
   m_eventHandler.Stop();
 }
 
 CStdString PVRClientMythTV::GetArtWork(FILE_OPTIONS storageGroup, CStdString shwTitle) {
   if ((storageGroup == FILE_OPS_GET_COVERART) || 
-    (storageGroup == FILE_OPS_GET_FANART) || 
-    (storageGroup == FILE_OPS_GET_CHAN_ICONS))
+    (storageGroup == FILE_OPS_GET_FANART))
+    {
+      return m_fOps2_client->getArtworkPath(shwTitle,storageGroup);
+  } 
+  else if(storageGroup == FILE_OPS_GET_CHAN_ICONS)
   {
-    return m_fOps_client->getArtworkPath(shwTitle,storageGroup);
-    
+    return m_fOps2_client->getChannelIconPath(shwTitle);
   }
   else 
   {
@@ -354,8 +356,7 @@ bool PVRClientMythTV::Connect()
   m_eventHandler=m_con.CreateEventHandler();
   m_protocolVersion.Format("%i",m_con.GetProtocolVersion());
   m_connectionString.Format("%s:%i",g_szHostname,g_iMythPort);
-  //m_fOps_client = new fileOps(g_szHostname,g_iMythPort);
-  m_fOps_client = new fileOps(m_con);
+  m_fOps2_client = new fileOps2(m_con);
   m_db=MythDatabase(g_szHostname,g_szMythDBname,g_szMythDBuser,g_szMythDBpassword);
   if(m_db.IsNull())
   {
@@ -579,6 +580,8 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
 		m_db.GetWatchedStatus(it->second.RecordID()));
       
       CStdString defIcon = GetArtWork(FILE_OPS_GET_COVERART,title);
+      if(defIcon == "")
+        defIcon = m_fOps2_client->getPreviewIconPath(id+".png");
       CStdString fanIcon = GetArtWork(FILE_OPS_GET_FANART,title);
       tag.strIconPath=defIcon.c_str();
       tag.strDefFanart=fanIcon.c_str();

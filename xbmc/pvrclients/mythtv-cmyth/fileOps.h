@@ -4,52 +4,63 @@
 
 #include "utils/StdString.h"
 #include <vector>
+#include <map>
+#include <queue>
+#include "cppmyth/MythSGFile.h"
+#include "../../../lib/platform/threads/threads.h"
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #define BOOST_FILESYSTEM_VERSION 3
 #include <boost/filesystem.hpp>
 
-#include <map>
+
 
 class MythConnection;
 
 typedef enum
   {
-    FILE_OPS_GET_COVERART   = 0,
-    FILE_OPS_GET_FANART     = 1, /*!< @brief the timer is scheduled for recording */
-    FILE_OPS_GET_CHAN_ICONS = 2, /*!< @brief the timer is currently recordings */
+    FILE_OPS_GET_COVERART,
+    FILE_OPS_GET_FANART, 
+    FILE_OPS_GET_CHAN_ICONS, //TODO: channel icons will be available as a storage group in v.0.25
+    FILE_OPS_GET_BANNER,
+    FILE_OPS_GET_SCREENSHOT,
+    FILE_OPS_GET_POSTER,
+    FILE_OPS_GET_BACKCOVER,
+    FILE_OPS_GET_INSIDECOVER,
+    FILE_OPS_GET_CD_IMAGE,
+    FILE_OPS_GET_THUMBNAIL
   } FILE_OPTIONS;
   
-class fileOps
+
+class fileOps2 : public CThread, public CMutex
 {
 public:
-  fileOps();
-  fileOps(CStdString mythServer,int mythPort);
-  fileOps(MythConnection &mythConnection);
-  
-  bool checkDirectory(boost::filesystem::path dirPath, bool hasFilename = false);
-  std::vector< CStdString > getADirectoryList(boost::filesystem::path dirPath);
-  bool writeToFile( boost::filesystem::path filePath, char* writeBuffer, int writeLength );
-  void saveSGList (std::vector<CStdString> sgFileList, CStdString sgToSaveAs);
-  bool updateLocalFilesList (CStdString localFolder);
-  bool storeFileInSG( char* saveBuffer, int buffLength, CStdString flSaveName, CStdString sgToSaveIn );
-  std::vector<CStdString> missingSGFiles ( std::vector<CStdString> hayStack, std::vector<CStdString> needle );
+  fileOps2(MythConnection &mythConnection);
+   virtual ~fileOps2();
   CStdString getArtworkPath(CStdString title,FILE_OPTIONS Get_What);
-  CStdString checkFolderForTitle(CStdString title,CStdString awGroup);
-  void syncSGCache(CStdString awGroup);
-  CStdString GetFileFromBackend ( CStdString filenameToGet, CStdString fromStorageGroup );
-  void checkRecordings (PVR_HANDLE handle);
-  
-  
-private:
-  CStdString myth_server;
-  int myth_port;
-  
-  std::map< CStdString, std::vector< CStdString > > SGFilelist;
-  std::map< CStdString, std::vector< CStdString > > LocalFilelist;
-  boost::filesystem::path baseLocalCachepath;
-  std::map< CStdString, int > lastSGupdate;
-  MythConnection mythConP;
-  bool isMyth;
+  CStdString getChannelIconPath(CStdString remotePath);
+  CStdString getPreviewIconPath(CStdString remotePath);
+protected:
+  bool createDirectory(boost::filesystem::path dirPath, bool hasFilename = false);
+  bool localFileExists(MythSGFile &remotefile, boost::filesystem::path dirPath);
+  void* Process();
+  bool writeFile(boost::filesystem::path destination, MythFile &source); 
+  void cleanCache();
+  std::map< FILE_OPTIONS, std::vector< MythSGFile > > m_SGFilelist;
+  std::map< FILE_OPTIONS, int > m_lastSGupdate;
+  std::map< CStdString, CStdString > m_icons;
+  std::map< CStdString, CStdString > m_preview;
+  boost::filesystem::path m_localBasePath;
+  MythConnection m_con;
+  std::map< FILE_OPTIONS, CStdString > m_sg_strings;
+  CEvent m_queue_content;
+  struct jobItem {
+    boost::filesystem::path localFilename;
+    CStdString remoteFilename;
+    CStdString storageGroup;
+    jobItem(boost::filesystem::path localFilename,CStdString remoteFilename,CStdString storageGroup):localFilename(localFilename),remoteFilename(remoteFilename),storageGroup(storageGroup){}    
+  };
+  std::queue< fileOps2::jobItem > m_jobqueue;
+
 };
 
 #endif

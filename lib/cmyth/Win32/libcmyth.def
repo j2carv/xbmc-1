@@ -274,4 +274,10 @@ EXPORTS
 	cmyth_file_position
 	cmyth_update_file_length
 	cmyth_storagegroup_filelist
+	cmyth_storagegroup_filelist_get_item
+    cmyth_storagegroup_filelist_count
+    cmyth_storagegroup_get_filelist
+    cmyth_storagegroup_file_get_filename
+    cmyth_storagegroup_file_get_lastmodified
+    cmyth_storagegroup_file_get_size
 

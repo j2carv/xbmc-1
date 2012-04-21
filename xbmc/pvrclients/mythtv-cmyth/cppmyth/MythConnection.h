@@ -11,6 +11,7 @@ class MythFile;
 class MythProgramInfo;
 class MythEventHandler;
 class MythTimer;
+class MythSGFile;
 
 
 class MythConnection 
@@ -40,7 +41,8 @@ public:
   CStdString GetBackendHostname();
   void DefaultTimer(MythTimer &timer);
   MythFile ConnectPath(CStdString filename, CStdString storageGroup);
-  std::vector< CStdString > GetStorageGroupFileList(CStdString sgGetList);
+  std::vector< CStdString > GetStorageGroupFileList_(CStdString sgGetList);
+  std::vector< MythSGFile > GetStorageGroupFileList(CStdString storagegroup);
   
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
