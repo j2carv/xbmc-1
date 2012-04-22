@@ -8,6 +8,7 @@
 #include "cppmyth/MythFile.h"
 #include "client.h"
 #include "fileOps.h"
+#include "stdio.h"
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 using namespace ADDON;
@@ -128,6 +129,7 @@ fileOps2::~fileOps2()
 void fileOps2::cleanCache()
 {
   //Need to be redone at some time. Too much repeated code. But at least it works now.
+  try{
   boost::regex re("^([[:digit:]]{1,20})_(.*)");
   boost::smatch match;
   for(std::map< FILE_OPTIONS, std::vector< MythSGFile > >::iterator it = m_SGFilelist.begin();it != m_SGFilelist.end(); it++)
@@ -158,31 +160,38 @@ void fileOps2::cleanCache()
       }
     }
   }
-  for(boost::filesystem::recursive_directory_iterator dit( m_localBasePath / "channels");dit != boost::filesystem::recursive_directory_iterator();dit++)
-  {
-    bool deletefile = true;
-    for(std::map< CStdString, CStdString >::iterator it = m_icons.begin(); it != m_icons.end(); it++ )
-      if( !it->second.CompareNoCase(dit->path().string().c_str()))
+  if(boost::filesystem::exists( m_localBasePath / "channels" ))
+    for(boost::filesystem::recursive_directory_iterator dit( m_localBasePath / "channels");dit != boost::filesystem::recursive_directory_iterator();dit++)
+    {
+      bool deletefile = true;
+      for(std::map< CStdString, CStdString >::iterator it = m_icons.begin(); it != m_icons.end(); it++ )
+        if( !it->second.CompareNoCase(dit->path().string().c_str()))
+        {
+          if(boost::filesystem::file_size(dit->path())>0)
+            deletefile = false;
+          break;
+        }
+        if(deletefile)
+          boost::filesystem::remove(dit->path());
+    }
+    if(boost::filesystem::exists( m_localBasePath / "preview" ))
+      for(boost::filesystem::recursive_directory_iterator dit( m_localBasePath / "preview");dit != boost::filesystem::recursive_directory_iterator();dit++)
       {
-        if(boost::filesystem::file_size(dit->path())>0)
-          deletefile = false;
-        break;
+        bool deletefile = true;
+        for(std::map< CStdString, CStdString >::iterator it = m_preview.begin(); it != m_preview.end(); it++ )
+          if( !it->second.CompareNoCase(dit->path().string().c_str()))
+          {
+            if(boost::filesystem::file_size(dit->path())>0)
+              deletefile = false;
+            break;
+          }
+          if(deletefile)
+            boost::filesystem::remove(dit->path());
       }
-      if(deletefile)
-        boost::filesystem::remove(dit->path());
   }
-  for(boost::filesystem::recursive_directory_iterator dit( m_localBasePath / "preview");dit != boost::filesystem::recursive_directory_iterator();dit++)
+  catch(...)
   {
-    bool deletefile = true;
-    for(std::map< CStdString, CStdString >::iterator it = m_preview.begin(); it != m_preview.end(); it++ )
-      if( !it->second.CompareNoCase(dit->path().string().c_str()))
-      {
-        if(boost::filesystem::file_size(dit->path())>0)
-          deletefile = false;
-        break;
-      }
-      if(deletefile)
-        boost::filesystem::remove(dit->path());
+    XBMC->Log(LOG_ERROR,"%s, caught exception during cache cleaning",__FUNCTION__);
   }
 }
 
@@ -238,8 +247,14 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
     return false;
   }
   unsigned long long length = source.Duration(); 
-  boost::filesystem::fstream writeFile;
-  writeFile.open(destination,std::fstream::binary|std::fstream::out);
+  
+  FILE* f = fopen(destination.string().c_str(),"w");
+  fwrite("HEJ",1,3,f);
+  fclose(f);
+
+  FILE*  writeFile = fopen(destination.string().c_str(),"w");
+  //std::ofstream writeFile(destination.string(),std::ios_base::binary /*| std::ios_base::trunc*/);
+  
   if (writeFile)
   {
     //char* theFileBuff = new char[theFilesLength];
@@ -255,7 +270,8 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
       {
         break;
       }
-      writeFile.write(buffer,readData);
+      //writeFile.write(buffer,readData);
+      fwrite(buffer,1,readData,writeFile);
       if(readsize == readData)
       {
         readsize <<=1;
@@ -268,7 +284,9 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
       }
       totalRead += readData;
     }
-    writeFile.close();
+    //writeFile.close();
+    fclose(writeFile);
+    writeFile = 0;
     delete buffer;
     if (totalRead < length) 
     {
