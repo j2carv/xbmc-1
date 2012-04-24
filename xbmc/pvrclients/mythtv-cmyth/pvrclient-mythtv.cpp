@@ -563,16 +563,14 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       {
         XBMC->Log(LOG_ERROR,"%s: Malformed regulare expression : \"%s\" ",__FUNCTION__,g_szSeriesIdentifier.c_str());
       }
-
-      if((tag.iGenreType==0x10||genre==0x00)&&tag.iDuration>(g_iMinMovieLength*60)&&!regex_series_match)
+      
+      if((tag.iGenreType==0x10||genre==0x00)&&tag.iDuration>(g_iMinMovieLength*60)&&!regex_series_match&&(it->second.ProgramID().substr(0,2)=="MV"||it->second.ProgramID()==""))
       {
         group.Format("%s/Movies",tag.strDirectory);
         tag.strDirectory=group;
       }
       else
       {
-
-
         try {
           boost::regex re(g_szSeriesRegEx);
           boost::smatch result;
