@@ -926,7 +926,7 @@ cmyth_livetv_chain_seek(cmyth_recorder_t rec, long long offset, int whence)
 
 	pthread_mutex_lock(&mutex);
 
-	ret = cmyth_file_seek(fp, offset, whence);
+	ret = cmyth_file_seek_unlocked(fp, offset, whence);
 
 	PRINTF("** SSDEBUG: new pos %lld after seek command\n", ret);
 
