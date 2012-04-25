@@ -555,6 +555,89 @@ cmyth_file_seek(cmyth_file_t file, long long offset, int whence)
 	return ret;
 }
 
+long long
+cmyth_file_seek_unlocked(cmyth_file_t file, long long offset, int whence)
+{
+	char msg[128];
+	int err;
+	int count;
+	long long c;
+	long r;
+	long long ret;
+
+	if (file == NULL)
+		return -EINVAL;
+
+	if ((offset == 0) && (whence == SEEK_CUR))
+		return file->file_pos;
+
+	if ((offset == file->file_pos) && (whence == SEEK_SET))
+		return file->file_pos;
+
+	while(file->file_pos < file->file_req) {
+		c = file->file_req - file->file_pos;
+		if(c > sizeof(msg))
+			c = sizeof(msg);
+
+		if (cmyth_file_get_block(file, msg, (unsigned long)c) < 0)
+			return -1;
+	}
+
+
+	snprintf(msg, sizeof(msg),
+		 "QUERY_FILETRANSFER %ld[]:[]SEEK[]:[]%d[]:[]%d[]:[]%d[]:[]%d[]:[]%d",
+		 file->file_id,
+		 (int32_t)(offset >> 32),
+		 (int32_t)(offset & 0xffffffff),
+		 whence,
+		 (int32_t)(file->file_pos >> 32),
+		 (int32_t)(file->file_pos & 0xffffffff));
+
+	if ((err = cmyth_send_message(file->file_control, msg)) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_send_message() failed (%d)\n",
+			  __FUNCTION__, err);
+		ret = err;
+		goto out;
+	}
+
+	if ((count=cmyth_rcv_length(file->file_control)) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_rcv_length() failed (%d)\n",
+			  __FUNCTION__, count);
+		ret = count;
+		goto out;
+	}
+	if ((r=cmyth_rcv_long_long(file->file_control, &err, &c, count)) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR,
+			  "%s: cmyth_rcv_long_long() failed (%d)\n",
+			  __FUNCTION__, r);
+		ret = err;
+		goto out;
+	}
+
+	switch (whence) {
+	case SEEK_SET:
+		file->file_pos = offset;
+		break;
+	case SEEK_CUR:
+		file->file_pos += offset;
+		break;
+	case SEEK_END:
+		file->file_pos = file->file_length - offset;
+		break;
+	}
+
+	file->file_req = file->file_pos;
+	if(file->file_pos > file->file_length)
+		file->file_length = file->file_pos;
+
+	ret = file->file_pos;
+
+    out:
+	
+	return ret;
+}
 /*
  * cmyth_file_read(cmyth_recorder_t rec, char *buf, unsigned long len)
  * 

@@ -246,6 +246,8 @@ struct cmyth_file {
 	cmyth_conn_t file_control;	/**< master backend connection */
 };
 
+long long cmyth_file_seek_unlocked(cmyth_file_t file, long long offset, int whence);
+
 struct cmyth_ringbuf {
 	cmyth_conn_t conn_data;
 	long file_id;
