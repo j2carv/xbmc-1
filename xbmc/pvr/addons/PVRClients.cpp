@@ -351,10 +351,15 @@ int64_t CPVRClients::SeekStream(int64_t iFilePosition, int iWhence/* = SEEK_SET*
 {
   int64_t streamNewPos(0);
   CSingleLock lock(m_critSection);
-
+#ifdef _WIN32
   if(GetCurrentAddonCapabilities().bSupportsTimeshift && m_bIsPlayingLiveTV)
+  {
     streamNewPos = m_clientMap[m_currentChannel.ClientID()]->SeekLiveStream(iFilePosition, iWhence);
+  }
   else if (m_bIsPlayingLiveTV)
+#elif
+  if (m_bIsPlayingLiveTV)
+#endif
     streamNewPos = 0;
   else if (m_bIsPlayingRecording)
     streamNewPos = m_clientMap[m_currentRecording.m_iClientId]->SeekRecordedStream(iFilePosition, iWhence);

@@ -897,6 +897,11 @@ cmyth_livetv_chain_seek(cmyth_recorder_t rec, long long offset, int whence)
 		}
 		return offset;
 	}
+  else
+  {
+    cur = rec->rec_livetv_chain->chain_current;
+		fp  = rec->rec_livetv_chain->chain_files[cur];
+  }
 
 	offset += fp->file_req;
 
