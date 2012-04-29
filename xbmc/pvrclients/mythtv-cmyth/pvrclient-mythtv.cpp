@@ -606,6 +606,25 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       tag.strStreamURL="";
 
       PVR->TransferRecordingEntry(handle,&tag);
+      
+      size_t dirsep = title.find_last_of("/");
+      if(dirsep != CStdString::npos)
+      {
+        tag.strDirectory = "/All Recordings/";
+        newtitle =  title.substr(dirsep+1,title.size());
+        tag.strTitle = newtitle.c_str();
+        id.append("@");
+        tag.strRecordingId = id.c_str();
+        PVR->TransferRecordingEntry(handle,&tag);
+      }
+      else
+      {
+        tag.strDirectory = "/All Recordings/";
+        tag.strTitle = title.c_str();
+        id.append("@");
+        tag.strRecordingId = id.c_str();
+        PVR->TransferRecordingEntry(handle,&tag);
+      }
     }
   }
   if(g_bExtraDebug)
@@ -618,6 +637,8 @@ PVR_ERROR PVRClientMythTV::DeleteRecording(const PVR_RECORDING &recording)
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
   CStdString id=recording.strRecordingId;
+  if(*id.rbegin() == '@')
+    id = id.substr(0,id.size()-1);
   bool ret = m_con.DeleteRecording(m_recordings.at(id));
   if(ret && m_recordings.erase(recording.strRecordingId))
   {
@@ -1125,6 +1146,8 @@ bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - title: %s, ID: %s, duration: %i",__FUNCTION__,recinfo.strTitle,recinfo.strRecordingId,recinfo.iDuration);
   CStdString id=recinfo.strRecordingId;
+  if(*id.rbegin() == '@')
+    id = id.substr(0,id.size()-1);
   m_file=m_con.ConnectFile(m_recordings.at(id));
   m_eventHandler.SetRecordingListener(m_file,id);
   if(g_bExtraDebug)
