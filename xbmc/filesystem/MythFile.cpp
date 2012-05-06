@@ -280,8 +280,8 @@ bool CMythFile::SetupFile(const CURL& url)
     return false;
 
   m_filename = url.GetFileName().Mid(6);
-
-  m_file = m_dll->conn_connect_path((char*)m_filename.c_str(), m_control, 16*1024, 4096);
+  CStdString storagegroup;
+  m_file = m_dll->conn_connect_path((char*)m_filename.c_str(), m_control, 16*1024, 4096, (char*)storagegroup.c_str());
   if(!m_file)
   {
     CLog::Log(LOGERROR, "%s - unable to connect to file", __FUNCTION__);
