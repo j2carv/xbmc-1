@@ -33,7 +33,7 @@
 #include <string.h>
 #include <cmyth_local.h>
 
-void destroy_char_array2(void* p)
+extern void destroy_char_array2(void* p)
 {
   char** ptr = (char**)p;
   if(!ptr)
@@ -47,26 +47,32 @@ void destroy_char_array2(void* p)
 
 int cmyth_storagegroup_filelist(cmyth_conn_t control, char** *sgFilelist, char* sg2List, char*  mythostname)
 {
+  
   char msg[256];
   int res=0;
   int count;
   int err = 0;
-  char **ret;/* = profiles;*/
+  int i = 0;
+  char **ret;
+  int consumed; /* = profiles;*/
+  char tmp_str[32768];
 
   if (!control) {
     cmyth_dbg(CMYTH_DBG_ERROR, "%s: no connection\n", __FUNCTION__);
-    return NULL;
+    return 0;
   }
-
+  
   pthread_mutex_lock(&mutex);
 
   snprintf(msg, sizeof(msg), "QUERY_SG_GETFILELIST[]:[]%s[]:[]%s[]:[][]:[]1", mythostname, sg2List);
-
-  if ((err = cmyth_send_message(control, msg)) < 0) {
+  
+  err = cmyth_send_message(control, msg);
+  if (err < 0) {
     cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_send_message() failed (%d)\n", __FUNCTION__, err);
     res = 0;
     goto out;
   }
+
   count = cmyth_rcv_length(control);
   if (count < 0) {
     cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_length() failed (%d)\n", __FUNCTION__, count);
@@ -74,19 +80,17 @@ int cmyth_storagegroup_filelist(cmyth_conn_t control, char** *sgFilelist, char* 
     goto out;
   }
 
-  ret = ref_alloc( sizeof( char*) * ((int) 512 ) );
+  ret = (char**)ref_alloc( sizeof( char*) * (count + 1 ) );/*count + 1 ??*/
   if (!ret) {
     cmyth_dbg(CMYTH_DBG_ERROR, "%s: alloc() failed for list\n", __FUNCTION__);
     res = 0;
     goto out;
   }
+  
+  ref_set_destroy((void*)ret,destroy_char_array2);
 
-  ref_set_destroy(ret,destroy_char_array2);
-  int i=0;
-  int consumed;
-  char tmp_str[32768];
   while (i < count) {
-    consumed = cmyth_rcv_string(control, err, tmp_str, sizeof(tmp_str) - 1, count);
+    consumed = cmyth_rcv_string(control, &err, tmp_str, sizeof(tmp_str) - 1, count);
     count -= consumed;
     if (err) {
       cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_string() failed (%d)\n", __FUNCTION__, count);

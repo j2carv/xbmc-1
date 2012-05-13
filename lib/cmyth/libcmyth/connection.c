@@ -748,7 +748,7 @@ cmyth_conn_connect_path(char* path, cmyth_conn_t control,
 			  __FUNCTION__, ann_size);
 		goto shut;
 	}
-        if (control->conn_version >= 50) { //Earlier versions may support this, I havnt tested, MythWiki says all protocol support it
+        if (control->conn_version >= 44) { /*TSP: from version 44 according to the source code*/
           if (strlen(sgToGetFrom) > 1) {
             sprintf(announcement, "ANN FileTransfer %s 0 0 0[]:[]%s[]:[]%s",
                          my_hostname, path, sgToGetFrom);
@@ -758,10 +758,6 @@ cmyth_conn_connect_path(char* path, cmyth_conn_t control,
                          my_hostname, path);
           }
         }
-        else if (control->conn_version >= 44) {
-		sprintf(announcement, "ANN FileTransfer %s[]:[]%s[]:[]",
-			  my_hostname, path);
-	}
 	else {
 		sprintf(announcement, "ANN FileTransfer %s[]:[]%s",
 			  my_hostname, path);

@@ -5,11 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include "MythPointer.h"
 #include "MythConnection.h"
-<<<<<<< HEAD
-#include "thread.h"
-=======
 #include "../../../../lib/platform/threads/threads.h"
->>>>>>> FIX: gcc compile errors
 
 class MythProgramInfo;
 class MythChannel;

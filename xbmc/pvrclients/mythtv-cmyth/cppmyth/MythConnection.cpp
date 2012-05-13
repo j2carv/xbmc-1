@@ -36,7 +36,7 @@ std::vector< CStdString > MythConnection::GetStorageGroupFileList_(CStdString sg
     Lock();
     char **sg;
     CStdString bckHostNme = GetBackendHostname();
-    int len = CMYTH->StoragegroupFilelist(*m_conn_t,&sg,(char*)sgGetList.c_str(),(char*)bckHostNme.c_str());
+    int len = CMYTH->StoragegroupFilelist(*m_conn_t,&sg,sgGetList.Buffer(),bckHostNme.Buffer());
     if(!sg)
       return retval;
     for(int i=0;i<len;i++)
@@ -44,7 +44,7 @@ std::vector< CStdString > MythConnection::GetStorageGroupFileList_(CStdString sg
       char *tmp=sg[i];
       CStdString tmpSG(tmp);
       XBMC->Log(LOG_DEBUG,"%s - ############################# - %s",__FUNCTION__,tmpSG.c_str());
-      retval.push_back(tmpSG.c_str());
+      retval.push_back(tmpSG/*.c_str()*/);
     }
     
     CMYTH->RefRelease(sg);
@@ -72,7 +72,7 @@ std::vector< MythSGFile > MythConnection::GetStorageGroupFileList(CStdString sto
 MythFile MythConnection::ConnectPath(CStdString filename, CStdString storageGroup)
 {
   Lock();
-  MythFile retval = MythFile(CMYTH->ConnConnectPath(pthFilename,*m_conn_t,64*1024, 16*1024,pthStorageGroup),*this);
+  MythFile retval = MythFile(CMYTH->ConnConnectPath(filename.Buffer(),*m_conn_t,64*1024, 16*1024,storageGroup.Buffer()),*this);
   Unlock();
   return retval;
 }

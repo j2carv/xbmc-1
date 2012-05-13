@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\addons\library.xbmc.addon\dlfcn-win32.cpp" />
+    <ClCompile Include="..\..\..\..\..\lib\platform\windows\os-threads.cpp" />
     <ClCompile Include="..\..\client.cpp" />
     <ClCompile Include="..\..\cppmyth\MythChannel.cpp" />
     <ClCompile Include="..\..\cppmyth\MythConnection.cpp" />
@@ -24,10 +25,9 @@
     <ClCompile Include="..\..\cppmyth\MythSignal.cpp" />
     <ClCompile Include="..\..\cppmyth\MythTimer.cpp" />
     <ClCompile Include="..\..\cppmyth\MythTimestamp.cpp" />
+    <ClCompile Include="..\..\fileOps.cpp" />
     <ClCompile Include="..\..\pvrclient-mythtv.cpp" />
     <ClCompile Include="..\..\recordingrules.cpp" />
-    <ClCompile Include="..\..\thread.cpp" />
-    <ClCompile Include="..\..\tools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\addons\library.xbmc.addon\dlfcn-win32.h" />
@@ -45,10 +45,10 @@
     <ClInclude Include="..\..\cppmyth\MythSignal.h" />
     <ClInclude Include="..\..\cppmyth\MythTimer.h" />
     <ClInclude Include="..\..\cppmyth\MythTimestamp.h" />
+    <ClInclude Include="..\..\fileOps.h" />
     <ClInclude Include="..\..\libcmyth.h" />
     <ClInclude Include="..\..\pvrclient-mythtv.h" />
     <ClInclude Include="..\..\recordingrules.h" />
-    <ClInclude Include="..\..\thread.h" />
     <ClInclude Include="..\..\tools.h" />
   </ItemGroup>
   <ItemGroup>
@@ -106,8 +106,8 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;_USE_32BIT_TIME_T;_WINSOCKAPI_;USE_DEMUX;__STDC_CONSTANT_MACROS;__WINDOWS__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\..\project\BuildDependencies\include;..\..\..\..\..\lib\cmyth\include;..\..\..\..\..\lib\ffmpeg;..\..\..\..\..\lib\ffmpeg\include;..\..\..\..\..\lib\ffmpeg\include-xbmc-win32;..\..\;..\..\pthread_win32;..\..\windows;..\..\..\..\addons\include;..\..\..\..\cores\dvdplayer\DVDDemuxers;..\..\..\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;_USE_32BIT_TIME_T;_WINSOCKAPI_;USE_DEMUX;__STDC_CONSTANT_MACROS;__WINDOWS__;TARGET_WINDOWS;_WINDOWS;_MSVC;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\..\project\BuildDependencies\include;..\..\..\..\..\lib\cmyth\include;..\..\..\..\win32;..\..\..\..\..\lib\ffmpeg;..\..\..\..\..\lib\ffmpeg\include;..\..\..\..\..\lib\ffmpeg\include-xbmc-win32;..\..\;..\..\pthread_win32;..\..\windows;..\..\..\..\addons\include;..\..\..\..\cores\dvdplayer\DVDDemuxers;..\..\..\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -121,6 +121,12 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(ProjectDir)\..\..\boost_win32_dependency.bat</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Check boost install</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -144,6 +150,12 @@
     <PostBuildEvent>
       <Command>copy ..\..\* "E:\atom\mythtv cmyth\"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(ProjectDir)\..\..\boost_win32_dependency.bat</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Check boost install</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,7 +19,7 @@ public:
   void Stop();
   void PreventLiveChainUpdate();
   void AllowLiveChainUpdate();
-  void SetRecordingListener(MythFile *mFile, CStdString strRecId);
+  void SetRecordingListener(MythFile &file, CStdString recId);
 private:
   class ImpMythEventHandler;
   boost::shared_ptr< ImpMythEventHandler > m_imp;

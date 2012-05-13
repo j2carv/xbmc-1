@@ -36,7 +36,7 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
   {
     //m_recorder_t->Unlock();
     m_conn.Unlock();
-    cSleep(100);
+    usleep(100000);
     m_conn.Lock();
     //m_recorder_t->Lock();
   }
@@ -148,7 +148,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
   {
     //m_recorder_t->Unlock();
     m_conn.Unlock();
-    cSleep(100);
+    usleep(100000);
     //m_recorder_t->Lock();
     m_conn.Lock();
   }
@@ -158,7 +158,7 @@ bool MythRecorder::SetChannel(MythChannel &channel)
   for(int i=0;i<20;i++)
   {
     if(!IsRecording())
-      cSleep(1);
+      usleep(1000);
     else
       break;
   }

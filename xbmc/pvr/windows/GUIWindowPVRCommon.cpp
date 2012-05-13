@@ -64,7 +64,6 @@ CGUIWindowPVRCommon::CGUIWindowPVRCommon(CGUIWindowPVR *parent, PVRWindow window
     m_iSortOrder      = m_parent->GetViewState()->GetSortOrder();
     m_iSortMethod     = m_parent->GetViewState()->GetSortMethod();
   }
-  m_bIsFocusing     = false;
 }
 
 bool CGUIWindowPVRCommon::operator ==(const CGUIWindowPVRCommon &right) const
@@ -679,10 +678,14 @@ bool CGUIWindowPVRCommon::PlayFile(CFileItem *item, bool bPlayMinimized /* = fal
     bool bSwitchSuccessful(false);
 
     /* try a fast switch */
-  if (item->IsPVRChannel() && (g_PVRManager.IsPlayingTV() || g_PVRManager.IsPlayingRadio()) && 	
-    (item->GetPVRChannelInfoTag()->IsRadio() == g_PVRManager.IsPlayingRadio()))
-      bSwitchSuccessful = g_application.m_pPlayer->SwitchChannel(*item->GetPVRChannelInfoTag());
-    
+    if (item->IsPVRChannel() && (g_PVRManager.IsPlayingTV() || g_PVRManager.IsPlayingRadio()) &&
+        (item->GetPVRChannelInfoTag()->IsRadio() == g_PVRManager.IsPlayingRadio()) && g_application.m_pPlayer)
+    {
+      CPVRChannel* channel = item->GetPVRChannelInfoTag();
+      if (channel->StreamURL().IsEmpty())
+        bSwitchSuccessful = g_application.m_pPlayer->SwitchChannel(*channel);
+    }
+
     if (!bSwitchSuccessful)
     {
       g_application.getApplicationMessenger().PlayFile(*item, false);

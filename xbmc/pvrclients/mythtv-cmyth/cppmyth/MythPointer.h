@@ -2,7 +2,6 @@
 
 #include "libcmyth.h"
 #include "../../../../lib/platform/threads/threads.h"
-#include "thread.h"
 
 extern CHelper_libcmyth *CMYTH;
 
@@ -33,7 +32,7 @@ protected:
   T m_mythpointer;
 };
 
-template <class T> class MythPointerThreadSafe : public MythPointer<T>, public cMutex
+template <class T> class MythPointerThreadSafe : public MythPointer<T>, public CMutex
 {
 public:
   operator T()

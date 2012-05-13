@@ -61,8 +61,6 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(void)
   m_strGenre           = StringUtils::EmptyString;
   m_iGenreType         = 0;
   m_iGenreSubType      = 0;
-  m_iGenreType         = 0;
-  m_iGenreSubType      = 0;
   m_StartTime          = CDateTime::GetUTCDateTime();
   m_StopTime           = m_StartTime;
   m_state              = PVR_TIMER_STATE_SCHEDULED;
@@ -90,23 +88,13 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(const PVR_TIMER &timer, CPVRChannel *channel,
   m_strGenre           = CEpg::ConvertGenreIdToString(timer.iGenreType, timer.iGenreSubType);
   m_iGenreType         = timer.iGenreType;
   m_iGenreSubType      = timer.iGenreSubType;
-  m_epgInfo            = NULL;
+  m_iEpgId             = -1;
   m_channel            = channel;
   m_bIsRadio           = channel && channel->IsRadio();
   m_state              = timer.state;
   m_strFileNameAndPath.Format("pvr://client%i/timers/%i", m_iClientId, m_iClientIndex);
 
-  if (timer.iEpgUid > 0)
-  {
-    m_epgInfo = channel->GetEPG()->GetTag(timer.iEpgUid, m_StartTime);
-    if (m_epgInfo)
-    {
-      m_strGenre = m_epgInfo->Genre();
-      m_iGenreType = m_epgInfo->GenreType();
-      m_iGenreSubType = m_epgInfo->GenreSubType();
-    }
-  }
-
+  UpdateEpgEvent();
   UpdateSummary();
 }
 
@@ -351,15 +339,10 @@ bool CPVRTimerInfoTag::UpdateEntry(const CPVRTimerInfoTag &tag)
   m_strGenre          = tag.m_strGenre;
   m_iGenreType        = tag.m_iGenreType;
   m_iGenreSubType     = tag.m_iGenreSubType;
+  m_strSummary        = tag.m_strSummary;
+
   /* try to find an epg event */
   UpdateEpgEvent();
-  if (m_epgInfo != NULL)
-  {
-    m_strGenre = m_epgInfo->Genre();
-    m_iGenreType = m_epgInfo->GenreType();
-    m_iGenreSubType = m_epgInfo->GenreSubType();
-    m_epgInfo->SetTimer(this);
-  }
 
   if (m_strSummary.IsEmpty())
     UpdateSummary();
@@ -543,7 +526,6 @@ CPVRTimerInfoTag *CPVRTimerInfoTag::CreateFromEpg(const CEpgInfoTag &tag)
   newTag->m_iGenreSubType     = tag.GenreSubType();
   newTag->SetStartFromUTC(newStart);
   newTag->SetEndFromUTC(newEnd);
-  
 
   if (tag.Plot().IsEmpty())
   {

@@ -41,25 +41,25 @@ void tokenize(const std::string& str, ContainerT& tokens,
 *								MythEventHandler
 */
 
-class MythEventHandler::ImpMythEventHandler : public cThread
+class MythEventHandler::ImpMythEventHandler : public CThread, public CMutex
 {
   friend class MythEventHandler;
 public:
   ImpMythEventHandler(CStdString server,unsigned short port);
   MythRecorder m_rec;
   MythSignal m_signal;
-  MythFile *m_file;
+  MythFile m_file;
   CStdString curRecordingId;
   void UpdateFilesize(CStdString signal);
-  void SetRecEventListener(MythFile *mFile, CStdString recId);
+  void SetRecEventListener(MythFile &file, CStdString recId);
   cmyth_conn_t m_conn_t;
-  virtual void Action(void);	
+  virtual void* Process(void);	
   virtual ~ImpMythEventHandler();
   void UpdateSignal(CStdString &signal);
   };
 
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
-:m_rec(MythRecorder()),m_conn_t(0),cThread("MythEventHandler"),m_signal()
+:m_rec(MythRecorder()),m_conn_t(0),CThread(),m_signal(),CMutex()
   {
     char *cserver=strdup(server.c_str());
     cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);
@@ -70,7 +70,7 @@ MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,uns
 
   MythEventHandler::ImpMythEventHandler::~ImpMythEventHandler()
   {
-    Cancel(30);
+    StopThread(30);
     CMYTH->RefRelease(m_conn_t);
     m_conn_t=0;
   }
@@ -78,7 +78,7 @@ MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,uns
 MythEventHandler::MythEventHandler(CStdString server,unsigned short port)
   :m_imp(new ImpMythEventHandler(server,port))
 {
-  m_imp->Start();
+  m_imp->CreateThread();
 }
 
 MythEventHandler::MythEventHandler()
@@ -113,16 +113,16 @@ MythSignal MythEventHandler::GetSignal()
   return m_imp->m_signal;
 }
 
-void MythEventHandler::SetRecordingListener ( MythFile *mFile, CStdString strRecId )
+void MythEventHandler::SetRecordingListener ( MythFile &file, CStdString recId )
 {
   m_imp->Lock();
-  m_imp->SetRecEventListener(mFile,strRecId);
+  m_imp->SetRecEventListener(file,recId);
   m_imp->Unlock();
 }
 
-void MythEventHandler::ImpMythEventHandler::SetRecEventListener ( MythFile *mFile, CStdString recId )
+void MythEventHandler::ImpMythEventHandler::SetRecEventListener ( MythFile &file, CStdString recId )
 {
-  m_file = mFile;
+  m_file = file;
   char b [20];
   sscanf(recId.c_str(),"/%4s_%14s",b,b+4);
   CStdString uniqId=b;
@@ -131,17 +131,16 @@ void MythEventHandler::ImpMythEventHandler::SetRecEventListener ( MythFile *mFil
 
 void MythEventHandler::ImpMythEventHandler::UpdateFilesize(CStdString signal)
 {
-  unsigned int length;
+  long long length;
   char b [20];
-  sscanf(signal.c_str(),"%4s %4s-%2s-%2sT%2s:%2s:%2s %u",b,b+4,b+8,b+10,b+12,b+14,b+16,&length);
+  sscanf(signal.c_str(),"%4s %4s-%2s-%2sT%2s:%2s:%2s %lli",b,b+4,b+8,b+10,b+12,b+14,b+16,&length);
   
-  long long lngLength = length;// Can I cast this straight to to the updateDuration Function??
   CStdString uniqId=b;
   
   if (curRecordingId.compare(uniqId) == 0) {
-    XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING CURRENT RECORDING LENGTH-- EVENT msg: %s %u",
+    XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING CURRENT RECORDING LENGTH-- EVENT msg: %s %ll",
              __FUNCTION__,uniqId.c_str(),length);
-    m_file->updateDuration(lngLength);
+    m_file.UpdateDuration(length);
   }
 }
 
@@ -180,7 +179,7 @@ void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
   }
 }
 
-void MythEventHandler::ImpMythEventHandler::Action(void)
+void* MythEventHandler::ImpMythEventHandler::Process(void)
 {
   const char* events[]={	"CMYTH_EVENT_UNKNOWN",\
     "CMYTH_EVENT_CLOSE",\
@@ -255,4 +254,5 @@ void MythEventHandler::ImpMythEventHandler::Action(void)
     timeout.tv_sec=0;
     timeout.tv_usec=100000;
   }
+  return NULL;
 }

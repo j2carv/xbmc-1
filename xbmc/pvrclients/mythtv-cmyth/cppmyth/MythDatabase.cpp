@@ -112,7 +112,7 @@ std::vector<MythRecordingProfile > MythDatabase::GetRecordingProfiles()
   return retval;
 }
 
-int MythDatabase::GetWatchedStatus(int chanid, CStdString Starttime)
+bool MythDatabase::GetWatchedStatus(int recordid)
 {
   m_database_t->Lock();
   bool watched = CMYTH->GetWatchedStatusMysql(*m_database_t,recordid)==1;
@@ -120,12 +120,12 @@ int MythDatabase::GetWatchedStatus(int chanid, CStdString Starttime)
   return watched;
 }
 
-int MythDatabase::SetWatchedStatus(int chanid, CStdString Starttime, int intWatched)
+int MythDatabase::SetWatchedStatus(int recordid,bool watched)
 {
   m_database_t->Lock();
   int retval = CMYTH->SetWatchedStatusMysql(*m_database_t,recordid, watched?1:0);
   m_database_t->Unlock();
-  return 0;
+  return retval;
 }
 
 int MythDatabase::AddTimer(MythTimer &timer)

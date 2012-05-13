@@ -78,23 +78,20 @@ namespace PLATFORM
   inline int64_t GetTimeMs()
   {
   #if defined(__APPLE__)
-    return (int64_t) (CVGetCurrentHostTime() * 1000 / CVGetHostClockFrequency());
+    return (int64_t) (CVGetCurrentHostTime() / (int64_t)(CVGetHostClockFrequency() * 0.001));
   #elif defined(__WINDOWS__)
-    time_t rawtime;
-    time(&rawtime);
-
     LARGE_INTEGER tickPerSecond;
     LARGE_INTEGER tick;
     if (QueryPerformanceFrequency(&tickPerSecond))
     {
       QueryPerformanceCounter(&tick);
-      return (int64_t) (tick.QuadPart / 1000.);
+      return (int64_t) (tick.QuadPart / (tickPerSecond.QuadPart / 1000.));
     }
     return -1;
   #else
-    timeval time;
-    gettimeofday(&time, NULL);
-    return (int64_t) (time.tv_sec * 1000 + time.tv_usec / 1000);
+    timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    return (int64_t)time.tv_sec * 1000 + time.tv_nsec / 1000000;
   #endif
   }
 
@@ -103,4 +100,23 @@ namespace PLATFORM
   {
     return (T)GetTimeMs() / (T)1000.0;
   }
+
+  class CTimeout
+  {
+  public:
+    CTimeout(void) : m_iTarget(0) {}
+    CTimeout(uint32_t iTimeout) { Init(iTimeout); }
+
+    bool IsSet(void) const       { return m_iTarget > 0; }
+    void Init(uint32_t iTimeout) { m_iTarget = GetTimeMs() + iTimeout; }
+
+    uint32_t TimeLeft(void) const
+    {
+      uint64_t iNow = GetTimeMs();
+      return (iNow > m_iTarget) ? 0 : (uint32_t)(m_iTarget - iNow);
+    }
+
+  private:
+    uint64_t m_iTarget;
+  };
 };

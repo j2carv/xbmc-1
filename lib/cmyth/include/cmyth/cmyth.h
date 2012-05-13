@@ -599,8 +599,8 @@ extern int cmyth_database_set_user(cmyth_database_t db, char *user);
 extern int cmyth_database_set_pass(cmyth_database_t db, char *pass);
 extern int cmyth_database_set_name(cmyth_database_t db, char *name);
 
-extern int cmyth_get_watched_status_mysql(cmyth_database_t db, int chanid, char* starttime);
-extern int cmyth_set_watched_status_mysql(cmyth_database_t db, int chanid, char* starttime, int watchedStat);
+extern int cmyth_get_watched_status_mysql(cmyth_database_t db, int recordid);
+extern int cmyth_set_watched_status_mysql(cmyth_database_t db, int recordid, int watchedStat);
 
 /*
  * -----------------------------------------------------------------
@@ -1197,9 +1197,6 @@ typedef struct  cmyth_rec {
 
 extern int cmyth_mysql_get_recorder_list(cmyth_database_t db,cmyth_rec_t** reclist);
 
-<<<<<<< HEAD
-#endif /* __CMYTH_H */
-=======
 extern int cmyth_mysql_get_prog_finder_time_title_chan(cmyth_database_t db,cmyth_program_t *prog, char* title,time_t starttime,int chanid);
 
 extern int cmyth_mysql_get_storagegroups(cmyth_database_t db, char** *profiles);
@@ -1234,4 +1231,3 @@ extern unsigned long cmyth_storagegroup_file_get_lastmodified(cmyth_storagegroup
 extern unsigned long long cmyth_storagegroup_file_get_size(cmyth_storagegroup_file_t file);
 
 #endif /* __CMYTH_H */
->>>>>>> added: Improved support for mythtv timers

@@ -40,14 +40,9 @@ public:
   CStdString GetHostname();
   CStdString GetBackendHostname();
   void DefaultTimer(MythTimer &timer);
-<<<<<<< HEAD
-  MythFile ConnectPath(char* pthFilename, char* pthStorageGroup);
-  std::vector< CStdString > GetStorageGroupFileList(CStdString sgGetList);
-=======
   MythFile ConnectPath(CStdString filename, CStdString storageGroup);
   std::vector< CStdString > GetStorageGroupFileList_(CStdString sgGetList);
   std::vector< MythSGFile > GetStorageGroupFileList(CStdString storagegroup);
->>>>>>> FIX: rewrote the artwork code. Will now use preview image if no fanart is present.
   
 private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;

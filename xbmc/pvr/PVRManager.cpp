@@ -103,7 +103,7 @@ void CPVRManager::Cleanup(void)
     delete m_pendingUpdates.at(iJobPtr);
   m_pendingUpdates.clear();
 
-  m_managerState = ManagerStateStopped;
+  SetState(ManagerStateStopped);
 }
 
 void CPVRManager::ResetProperties(void)
@@ -133,7 +133,7 @@ void CPVRManager::Start(void)
     return;
 
   ResetProperties();
-  m_managerState = ManagerStateStarting;
+  SetState(ManagerStateStarting);
 
   m_database->Open();
 
@@ -144,13 +144,11 @@ void CPVRManager::Start(void)
 void CPVRManager::Stop(void)
 {
   /* check whether the pvrmanager is loaded */
-  CSingleLock lock(m_critSection);
-  if (m_managerState == ManagerStateStopping ||
-      m_managerState == ManagerStateStopped)
+  if (GetState() == ManagerStateStopping ||
+      GetState() == ManagerStateStopped)
     return;
 
-  m_managerState = ManagerStateStopping;
-  lock.Leave();
+  SetState(ManagerStateStopping);
 
   /* stop the EPG updater, since it might be using the pvr add-ons */
   g_EpgContainer.Unload();
@@ -198,8 +196,7 @@ void CPVRManager::Process(void)
   }
 
   if (GetState() == ManagerStateStarting)
-    CSingleLock lock(m_critSection);
-    m_managerState = ManagerStateStarted;
+    SetState(ManagerStateStarted);
   else
     return;
 
@@ -269,7 +266,7 @@ bool CPVRManager::StartUpdateThreads(void)
   CLog::Log(LOGNOTICE, "PVRManager - starting up");
 
   /* create the pvrmanager thread, which will ensure that all data will be loaded */
-  m_managerState = ManagerStateStarting;
+  SetState(ManagerStateStarting);
   Create();
   SetPriority(-1);
 
@@ -313,7 +310,7 @@ bool CPVRManager::Load(void)
   m_recordings->Load();
 
   CSingleLock lock(m_critSection);
-  if (m_managerState != ManagerStateStarting)
+  if (GetState() != ManagerStateStarting)
     return false;
 
   CGUIWindowPVR *pWindow = (CGUIWindowPVR *) g_windowManager.GetWindow(WINDOW_PVR);
@@ -655,26 +652,7 @@ void CPVRManager::LoadCurrentChannelSettings()
 
 void CPVRManager::SetPlayingGroup(CPVRChannelGroup *group)
 {
-  CSingleLock lock(m_critSection);
-
-  if (group == NULL)
-    return;
-
-  //bool bChanged(false);
-  if (group->IsRadio())
-  {
-    //bChanged = m_currentRadioGroup == NULL || *m_currentRadioGroup != *group;
-    m_currentRadioGroup = group;
-  }
-  else
-  {
-    //bChanged = m_currentTVGroup == NULL || *m_currentTVGroup != *group;
-    m_currentTVGroup = group;
-  }
-
-  /* set this group as selected group and set channel numbers */
-  //if (bChanged)
-    group->SetSelectedGroup();
+  m_channelGroups->Get(group->IsRadio())->SetSelectedGroup(group);
 }
 
 CPVRChannelGroup *CPVRManager::GetPlayingGroup(bool bRadio /* = false */)
@@ -991,8 +969,7 @@ void CPVRManager::LocalizationChanged(void)
 
 bool CPVRManager::IsInitialising(void) const
 {
-  CSingleLock lock(m_critSection);
-  return m_managerState == ManagerStateStarting;
+  return GetState() == ManagerStateStarting;
 }
 
 bool CPVRManager::IsStarted(void) const
