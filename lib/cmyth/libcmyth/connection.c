@@ -79,6 +79,15 @@ static myth_protomap_t protomap[] = {
 	{62, "78B5631E"},
 	{63, "3875641D"},
 	{64, "8675309J"},
+	{65, "D2BB94C2"},
+	{66, "0C0FFEE0"},
+	{67, "0G0G0G0"},
+	{68, "90094EAD"},
+	{69, "63835135"},
+	{70, "53153836"},
+	{71, "05e82186"},
+	{72, "D78EFD6F"},
+	{73, "D7FE8D6F"},
 	{0, 0}
 };
 
@@ -550,7 +559,7 @@ cmyth_conn_connect_file(cmyth_proginfo_t prog,  cmyth_conn_t control,
 	int err = 0;
 	int count = 0;
 	int r;
-	int ann_size = sizeof("ANN FileTransfer []:[][]:[]");
+	int ann_size = sizeof("ANN FileTransfer 0[]:[][]:[]");
 	cmyth_file_t ret = NULL;
 
 	if (!prog) {
@@ -598,6 +607,12 @@ cmyth_conn_connect_file(cmyth_proginfo_t prog,  cmyth_conn_t control,
 			  myth_host, prog->proginfo_port, buflen);
 		goto shut;
 	}
+	/*
+	 * Explicitly set the conn version to the control version as cmyth_connect() doesn't and some of
+	 * the cmyth_rcv_* functions expect it to be the same as the protocol version used by mythbackend.
+	 */
+	conn->conn_version = control->conn_version;
+
 	ann_size += strlen(prog->proginfo_pathname) + strlen(my_hostname);
 	announcement = malloc(ann_size);
 	if (!announcement) {
@@ -607,7 +622,7 @@ cmyth_conn_connect_file(cmyth_proginfo_t prog,  cmyth_conn_t control,
 		goto shut;
 	}
 	if (control->conn_version >= 44) {
-		sprintf(announcement, "ANN FileTransfer %s[]:[]%s[]:[]",
+		sprintf(announcement, "ANN FileTransfer %s 0[]:[]%s[]:[]", // write = false
 			  my_hostname, prog->proginfo_pathname);
 	}
 	else {
@@ -654,7 +669,7 @@ cmyth_conn_connect_file(cmyth_proginfo_t prog,  cmyth_conn_t control,
 	r = cmyth_rcv_u_long_long(conn, &err, &ret->file_length, count);
 	if (err) {
 		cmyth_dbg(CMYTH_DBG_ERROR,
-			  "%s: (length) cmyth_rcv_longlong() failed (%d)\n",
+			  "%s: (length) cmyth_rcv_u_long_long() failed (%d)\n",
 			  __FUNCTION__, err);
 		goto shut;
 	}
@@ -706,7 +721,7 @@ cmyth_conn_connect_path(char* path, cmyth_conn_t control,
 	int err = 0;
 	int count = 0;
 	int r, port;
-	int ann_size = sizeof("ANN FileTransfer []:[][]:[]");
+	int ann_size = sizeof("ANN FileTransfer 0[]:[][]:[]");
 	struct sockaddr_in addr;
         socklen_t addr_size = sizeof(addr);
 	cmyth_file_t ret = NULL;
@@ -739,10 +754,14 @@ cmyth_conn_connect_path(char* path, cmyth_conn_t control,
 			  __FUNCTION__, host, port, buflen);
 		goto shut;
 	}
+	/*
+	 * Explicitly set the conn version to the control version as cmyth_connect() doesn't and some of
+	 * the cmyth_rcv_* functions expect it to be the same as the protocol version used by mythbackend.
+	 */
+	conn->conn_version = control->conn_version;
 	
 	ann_size += strlen(path) + strlen(my_hostname) + strlen(sgToGetFrom) + 6;
-	announcement = malloc(ann_size);
-	if (!announcement) {
+	announcement = malloc(ann_size);	if (!announcement) {
 		cmyth_dbg(CMYTH_DBG_ERROR,
 			  "%s: malloc(%d) failed for announcement\n",
 			  __FUNCTION__, ann_size);
@@ -754,8 +773,8 @@ cmyth_conn_connect_path(char* path, cmyth_conn_t control,
                          my_hostname, path, sgToGetFrom);
           }
           else {
-            sprintf(announcement, "ANN FileTransfer %s[]:[]%s[]:[]",
-                         my_hostname, path);
+			sprintf(announcement, "ANN FileTransfer %s 0[]:[]%s[]:[]",  // write = false
+			  my_hostname, path);
           }
         }
 	else {
@@ -801,7 +820,7 @@ cmyth_conn_connect_path(char* path, cmyth_conn_t control,
 	r = cmyth_rcv_u_long_long(conn, &err, &ret->file_length, count);
 	if (err) {
 		cmyth_dbg(CMYTH_DBG_ERROR,
-			  "%s: (length) cmyth_rcv_longlong() failed (%d)\n",
+			  "%s: (length) cmyth_rcv_u_long_long() failed (%d)\n",
 			  __FUNCTION__, err);
 		goto shut;
 	}
