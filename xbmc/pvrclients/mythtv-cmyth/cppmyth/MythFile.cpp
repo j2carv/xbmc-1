@@ -9,6 +9,21 @@ using namespace ADDON;
  *        MythFile
  */
 
+/* Call 'call', then if 'cond' condition is true see if we're still
+ * connected to the control socket and try to re-connect if not.
+ * If reconnection is ok, call 'call' again. */
+#define CMYTH_FILE_CALL( var, cond, call )  m_conn.Lock(); \
+                                            var = CMYTH->call; \
+                                            m_conn.Unlock(); \
+                                            if ( cond ) \
+                                            { \
+                                                if ( !m_conn.IsConnected() && m_conn.TryReconnect() ) \
+                                                { \
+                                                    m_conn.Lock(); \
+                                                    var = CMYTH->call; \
+                                                    m_conn.Unlock(); \
+                                                } \
+                                            } \
 
  MythFile::MythFile()
    :m_file_t(new MythPointer<cmyth_file_t>()),m_conn(MythConnection())
@@ -23,9 +38,8 @@ using namespace ADDON;
  
 void MythFile::UpdateDuration (unsigned long long length )
  {
-    m_conn.Lock();
-    CMYTH->UpdateFileLength(*m_file_t,length);
-    m_conn.Unlock();
+    int retval = 0;
+    CMYTH_FILE_CALL( retval, retval < 0, UpdateFileLength( *m_file_t, length ) );
   }
   
   bool  MythFile::IsNull()
@@ -37,32 +51,28 @@ void MythFile::UpdateDuration (unsigned long long length )
 
   int MythFile::Read(void* buffer,long long length)
   {
-   m_conn.Lock();
-   int bytesRead=CMYTH->FileRead(*m_file_t,static_cast<char*>(buffer),length);
-   m_conn.Unlock();
-   return bytesRead;
+    int bytesRead;
+    CMYTH_FILE_CALL( bytesRead, bytesRead < 0, FileRead(*m_file_t, static_cast< char * >( buffer ), length ) );
+    return bytesRead;
   }
 
   long long MythFile::Seek(long long offset, int whence)
   {
-    m_conn.Lock();
-    long long retval = CMYTH->FileSeek(*m_file_t,offset,whence);
-    m_conn.Unlock();
+    long long retval = 0;
+    CMYTH_FILE_CALL( retval, retval < 0, FileSeek( *m_file_t, offset, whence ) );
     return retval;
   }
   
   unsigned long long MythFile::CurrentPosition()
   {
-    m_conn.Lock();
-    unsigned long long retval = CMYTH->FilePosition(*m_file_t);
-    m_conn.Unlock();
+    unsigned long long retval = 0;
+    CMYTH_FILE_CALL( retval, retval < 0, FilePosition( *m_file_t ) );
     return retval;
   }
   
   unsigned long long MythFile::Duration()
   {
-    m_conn.Lock();
-    unsigned long long retval = CMYTH->FileLength(*m_file_t);
-    m_conn.Unlock();
+    unsigned long long retval = 0;
+    CMYTH_FILE_CALL( retval, retval < 0, FileLength( *m_file_t ) );
     return retval;
   }

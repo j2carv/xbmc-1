@@ -404,9 +404,17 @@ if (SetDbgMsgcallback == NULL)      { fprintf(stderr, "Unable to assign function
 dlsym(m_libcmyth, "cmyth_conn_connect_ctrl");
 if (ConnConnectCtrl == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    ConnReconnectCtrl      = (int (*)(cmyth_conn_t control))
+dlsym(m_libcmyth, "cmyth_conn_reconnect_ctrl");
+if (ConnReconnectCtrl == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     ConnConnectEvent      = (cmyth_conn_t (*)(char* server,  unsigned short port,  unsigned buflen, int tcp_rcvbuf))
 dlsym(m_libcmyth, "cmyth_conn_connect_event");
 if (ConnConnectEvent == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    ConnReconnectEvent    = (int (*)(cmyth_conn_t conn))
+dlsym(m_libcmyth, "cmyth_conn_reconnect_event");
+if (ConnReconnectEvent == NULL)    { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
     ConnConnectFile      = (cmyth_file_t (*)(cmyth_proginfo_t prog, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf))
 dlsym(m_libcmyth, "cmyth_conn_connect_file");
@@ -671,6 +679,10 @@ if (LivetvKeepRecording == NULL)      { fprintf(stderr, "Unable to assign functi
     DatabaseInit      = (cmyth_database_t (*)(char* host, char* db_name, char* user, char* pass))
 dlsym(m_libcmyth, "cmyth_database_init");
 if (DatabaseInit == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    DatabaseClose     = (void (*)(cmyth_database_t db))
+dlsym(m_libcmyth, "cmyth_database_close");
+if (DatabaseClose == NULL)     { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
     DatabaseSetHost      = (int (*)(cmyth_database_t db, char* host))
 dlsym(m_libcmyth, "cmyth_database_set_host");
@@ -1411,7 +1423,9 @@ void (*DbgNone)(void);
 void (*Dbg)(int level, char* fmt, ...);
 void (*SetDbgMsgcallback)(void (* msgcb)(int level,char* ));
 cmyth_conn_t (*ConnConnectCtrl)(char* server, unsigned short port, unsigned buflen, int tcp_rcvbuf);
+int (*ConnReconnectCtrl)(cmyth_conn_t control);
 cmyth_conn_t (*ConnConnectEvent)(char* server,  unsigned short port,  unsigned buflen, int tcp_rcvbuf);
+int (*ConnReconnectEvent)(cmyth_conn_t conn);
 cmyth_file_t (*ConnConnectFile)(cmyth_proginfo_t prog, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf);
 cmyth_file_t (*ConnConnectPath)(char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf,char* sgToGetFrom);
 int (*ConnConnectRing)(cmyth_recorder_t rec, unsigned buflen,int tcp_rcvbuf);
@@ -1478,6 +1492,7 @@ long long (*LivetvSeek)(cmyth_recorder_t rec,long long offset, int whence);
 int (*LivetvRead)(cmyth_recorder_t rec,  char* buf,  unsigned long len);
 int (*LivetvKeepRecording)(cmyth_recorder_t rec, cmyth_database_t db, int keep);
 cmyth_database_t (*DatabaseInit)(char* host, char* db_name, char* user, char* pass);
+void (*DatabaseClose)(cmyth_database_t db);
 int (*DatabaseSetHost)(cmyth_database_t db, char* host);
 int (*DatabaseSetUser)(cmyth_database_t db, char* user);
 int (*DatabaseSetPass)(cmyth_database_t db, char* pass);

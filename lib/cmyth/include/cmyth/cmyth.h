@@ -239,6 +239,13 @@ extern cmyth_conn_t cmyth_conn_connect_ctrl(char *server,
 					    unsigned buflen, int tcp_rcvbuf);
 
 /**
+ * Create a control connection to a backend.
+ * \param control control handle
+ * \return integer success
+ */
+extern int cmyth_conn_reconnect_ctrl(cmyth_conn_t control);
+
+/**
  * Create an event connection to a backend.
  * \param server server hostname or ip address
  * \param port port number to connect on
@@ -249,6 +256,13 @@ extern cmyth_conn_t cmyth_conn_connect_ctrl(char *server,
 extern cmyth_conn_t cmyth_conn_connect_event(char *server,
 					     unsigned short port,
 					     unsigned buflen, int tcp_rcvbuf);
+
+/**
+ * Re-create an event connection to a backend.
+ * \param conn control handle
+ * \return integer success
+ */
+extern int cmyth_conn_reconnect_event(cmyth_conn_t conn);
 
 /**
  * Create a file connection to a backend.
@@ -609,6 +623,7 @@ extern int mythtv_new_livetv(void);
  */
 
 extern cmyth_database_t cmyth_database_init(char *host, char *db_name, char *user, char *pass);
+extern void             cmyth_database_close(cmyth_database_t db);
 extern cmyth_chanlist_t myth_tvguide_load_channels(cmyth_database_t db,
 																									 int sort_desc);
 extern int cmyth_database_set_host(cmyth_database_t db, char *host);

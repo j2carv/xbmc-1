@@ -9,19 +9,51 @@
 
 using namespace ADDON;
 
+/* Call 'call', then if 'cond' condition is true see if we're still
+ * connected to the control socket and try to re-connect if not.
+ * If reconnection is ok, call 'call' again. */
+#define CMYTH_CONN_CALL( var, cond, call )  Lock(); \
+                                            var = CMYTH->call; \
+                                            Unlock(); \
+                                            if ( cond ) \
+                                            { \
+                                                if ( !IsConnected() && TryReconnect() ) \
+                                                { \
+                                                    Lock(); \
+                                                    var = CMYTH->call; \
+                                                    Unlock(); \
+                                                } \
+                                            } \
+
+/* Similar to CMYTH_CONN_CALL, but it will release 'var' if it was not NULL
+ * right before calling 'call' again. */
+#define CMYTH_CONN_CALL_REF( var, cond, call )  Lock(); \
+                                                var = CMYTH->call; \
+                                                Unlock(); \
+                                                if ( cond ) \
+                                                { \
+                                                    if ( !IsConnected() && TryReconnect() ) \
+                                                    { \
+                                                        Lock(); \
+                                                        if ( var != NULL ) \
+                                                            CMYTH->RefRelease( var ); \
+                                                        var = CMYTH->call; \
+                                                        Unlock(); \
+                                                    } \
+                                                } \
 
 /*   
 *								MythConnection
 */
 
 MythConnection::MythConnection():
-m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>()),m_server(""),m_port(0)
+m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>()),m_server(""),m_port(0),m_retry_count(0)
 {  
 }
 
 
 MythConnection::MythConnection(CStdString server,unsigned short port):
-m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>),m_server(server),m_port(port)
+m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>),m_server(server),m_port(port),m_retry_count(0)
 {
   char *cserver=strdup(server.c_str());
   cmyth_conn_t connection=CMYTH->ConnConnectCtrl(cserver,port,64*1024, 16*1024);
@@ -54,9 +86,10 @@ std::vector< CStdString > MythConnection::GetStorageGroupFileList_(CStdString sg
 
 std::vector< MythSGFile > MythConnection::GetStorageGroupFileList(CStdString storagegroup)
 {
-    Lock();
     CStdString hostname = GetBackendHostname();
-    cmyth_storagegroup_filelist_t filelist=CMYTH->StoragegroupGetFilelist(*m_conn_t,storagegroup.Buffer(),hostname.Buffer());
+    cmyth_storagegroup_filelist_t filelist = NULL;
+    CMYTH_CONN_CALL_REF( filelist, filelist == NULL, StoragegroupGetFilelist( *m_conn_t, storagegroup.Buffer(), hostname.Buffer() ) );
+    Lock();
     int len=CMYTH->StoragegroupFilelistCount(filelist);
     std::vector< MythSGFile >  retval(len);
     for(int i=0;i<len;i++)
@@ -71,30 +104,52 @@ std::vector< MythSGFile > MythConnection::GetStorageGroupFileList(CStdString sto
 
 MythFile MythConnection::ConnectPath(CStdString filename, CStdString storageGroup)
 {
-  Lock();
-  MythFile retval = MythFile(CMYTH->ConnConnectPath(filename.Buffer(),*m_conn_t,64*1024, 16*1024,storageGroup.Buffer()),*this);
-  Unlock();
+  cmyth_file_t file = NULL;
+  CMYTH_CONN_CALL_REF( file, file == NULL, ConnConnectPath( filename.Buffer(),*m_conn_t,64*1024, 16*1024,storageGroup.Buffer()) );
+  MythFile retval = MythFile( file, *this );
   return retval;
 }
 
-  bool MythConnection::IsConnected()
+bool MythConnection::IsConnected()
 {
-  return *m_conn_t!=0;
+  Lock();
+  bool connected = *m_conn_t != 0 && !CMYTH->ConnHung(*m_conn_t);
+  Unlock();
+  if ( g_bExtraDebug )
+    XBMC->Log( LOG_DEBUG, "%s - %i", __FUNCTION__, connected );
+  return connected;
+}
+
+bool MythConnection::TryReconnect()
+{
+    bool retval = false;
+    if ( m_retry_count < 10 )
+    {
+        m_retry_count++;
+        Lock();
+        retval = CMYTH->ConnReconnectCtrl( *m_conn_t );
+        Unlock();
+        if ( retval )
+            m_retry_count = 0;
+    }
+    if ( g_bExtraDebug && !retval )
+        XBMC->Log( LOG_DEBUG, "%s - Unable to reconnect (retry count: %d)", __FUNCTION__, m_retry_count );
+    return retval;
 }
 
 MythRecorder MythConnection::GetFreeRecorder()
 {
-  Lock();
-  MythRecorder retval = MythRecorder(CMYTH->ConnGetFreeRecorder(*m_conn_t),*this);
-  Unlock();
+  cmyth_recorder_t rec = NULL;
+  CMYTH_CONN_CALL_REF( rec, rec == NULL, ConnGetFreeRecorder( *m_conn_t ) );
+  MythRecorder retval = MythRecorder( rec, *this );
   return retval;
 }
 
 MythRecorder MythConnection::GetRecorder(int n)
 {
-  Lock();
-  MythRecorder retval = MythRecorder(CMYTH->ConnGetRecorderFromNum(*m_conn_t,n),*this);
-  Unlock();
+  cmyth_recorder_t rec = NULL;
+  CMYTH_CONN_CALL_REF( rec, rec == NULL, ConnGetRecorderFromNum( *m_conn_t, n ) );
+  MythRecorder retval = MythRecorder( rec, *this );
   return retval;
 }
 
@@ -102,7 +157,8 @@ MythRecorder MythConnection::GetRecorder(int n)
   {
     Lock();
     boost::unordered_map<CStdString, MythProgramInfo>  retval;
-    cmyth_proglist_t proglist=CMYTH->ProglistGetAllRecorded(*m_conn_t);
+    cmyth_proglist_t proglist = NULL;
+    CMYTH_CONN_CALL_REF( proglist, proglist == NULL, ProglistGetAllRecorded( *m_conn_t ) );
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
@@ -120,7 +176,8 @@ MythRecorder MythConnection::GetRecorder(int n)
    {
     Lock();
     boost::unordered_map<CStdString, MythProgramInfo>  retval;
-    cmyth_proglist_t proglist=CMYTH->ProglistGetAllPending(*m_conn_t);
+    cmyth_proglist_t proglist = NULL;
+    CMYTH_CONN_CALL_REF( proglist, proglist == NULL, ProglistGetAllPending( *m_conn_t ) );
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
@@ -138,7 +195,8 @@ MythRecorder MythConnection::GetRecorder(int n)
    {
     Lock();
     boost::unordered_map<CStdString, MythProgramInfo>  retval;
-    cmyth_proglist_t proglist=CMYTH->ProglistGetAllScheduled(*m_conn_t);
+    cmyth_proglist_t proglist = NULL;
+    CMYTH_CONN_CALL_REF( proglist, proglist == NULL, ProglistGetAllScheduled( *m_conn_t ) );
     int len=CMYTH->ProglistGetCount(proglist);
     for(int i=0;i<len;i++)
     {
@@ -154,10 +212,9 @@ MythRecorder MythConnection::GetRecorder(int n)
 
   bool  MythConnection::DeleteRecording(MythProgramInfo &recording)
   {
-    Lock();
-    bool retval = CMYTH->ProginfoDeleteRecording(*m_conn_t,*recording.m_proginfo_t)==0;
-    Unlock();
-    return retval;
+    int retval = 0;
+    CMYTH_CONN_CALL( retval, retval != 0, ProginfoDeleteRecording( *m_conn_t, *recording.m_proginfo_t ) );
+    return retval==0;
   }
 
 
@@ -173,35 +230,34 @@ CStdString MythConnection::GetServer()
 
 int MythConnection::GetProtocolVersion()
 {
-  Lock();
-  int retval = CMYTH->ConnGetProtocolVersion(*m_conn_t);
-  Unlock();
+  int retval = 0;
+  CMYTH_CONN_CALL( retval, retval < 0, ConnGetProtocolVersion( *m_conn_t ) );
   return retval;
 }
 
 bool MythConnection::GetDriveSpace(long long &total,long long &used)
 {
-  Lock();
-  bool retval = CMYTH->ConnGetFreespace(*m_conn_t,&total,&used)==0;
-  Unlock();
-  return retval;
+  int retval = 0;
+  CMYTH_CONN_CALL( retval, retval != 0, ConnGetFreespace( *m_conn_t, &total, &used ) );
+  return retval==0;
 }
 
 bool MythConnection::UpdateSchedules(int id)
 {
-  Lock();
   CStdString cmd;
   cmd.Format("RESCHEDULE_RECORDINGS %i",id);
-  bool retval = CMYTH->ScheduleRecording(*m_conn_t,cmd.Buffer())>=0;
-  Unlock();
-  return retval;  
+  int retval = 0;
+  CMYTH_CONN_CALL( retval, retval < 0, ScheduleRecording( *m_conn_t, cmd.Buffer() ) );
+  return retval>=0;
 }
 
 MythFile MythConnection::ConnectFile(MythProgramInfo &recording)
 {
-  Lock();
-  MythFile retval = MythFile(CMYTH->ConnConnectFile(*recording.m_proginfo_t,*m_conn_t,64*1024, 16*1024),*this);
-  Unlock();
+  cmyth_file_t file = NULL;
+  /* When file is not NULL doesn't need to mean there is no more connection,
+   * so always check after callng ConnConnectFile if still connected to control socket. */
+  CMYTH_CONN_CALL_REF( file, true, ConnConnectFile( *recording.m_proginfo_t, *m_conn_t, 64 * 1024, 16 * 1024 ) );
+  MythFile retval = MythFile( file, *this );
   return retval;
 }
 
@@ -233,7 +289,8 @@ void MythConnection::Unlock()
   {
     CStdString retval;
     Lock();
-    char * value = CMYTH->ConnGetSetting(*m_conn_t,hostname.Buffer(),setting.Buffer());
+    char * value = NULL;
+    CMYTH_CONN_CALL_REF( value, value == NULL, ConnGetSetting( *m_conn_t, hostname.Buffer(), setting.Buffer() ) );
     retval = value;
     CMYTH->RefRelease(value);
     value = NULL;
@@ -243,18 +300,19 @@ void MythConnection::Unlock()
 
   bool MythConnection::SetSetting(CStdString hostname,CStdString setting,CStdString value)
   {
-    bool retval = false;
+    int retval = 0;
     Lock();
-    retval = CMYTH->ConnSetSetting(*m_conn_t,hostname.Buffer(),setting.Buffer(),value.Buffer()) >= 0;
+    CMYTH_CONN_CALL( retval, retval < 0, ConnSetSetting( *m_conn_t, hostname.Buffer(), setting.Buffer(), value.Buffer() ) );
     Unlock();
-    return retval;
+    return retval>=0;
   }
 
   CStdString MythConnection::GetHostname()
   {
     CStdString retval;
     Lock();
-    char * hostname = CMYTH->ConnGetClientHostname(*m_conn_t);
+    char * hostname = NULL;
+    CMYTH_CONN_CALL_REF( hostname, hostname == NULL, ConnGetClientHostname( *m_conn_t ) );
     retval = hostname;
     CMYTH->RefRelease(hostname);
     hostname = NULL;
@@ -266,7 +324,8 @@ void MythConnection::Unlock()
   {
     CStdString retval;
     Lock();
-    char * hostname = CMYTH->ConnGetBackendHostname(*m_conn_t);
+    char * hostname = NULL;
+    CMYTH_CONN_CALL_REF( hostname, hostname == NULL, ConnGetBackendHostname( *m_conn_t ) );
     retval = hostname;
     CMYTH->RefRelease(hostname);
     hostname = NULL;

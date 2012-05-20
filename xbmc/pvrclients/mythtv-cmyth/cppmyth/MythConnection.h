@@ -27,6 +27,7 @@ public:
   boost::unordered_map< CStdString, MythProgramInfo > GetScheduledPrograms();
   bool DeleteRecording(MythProgramInfo &recording);
   bool IsConnected();
+  bool TryReconnect();
   CStdString GetServer();
   int GetProtocolVersion();
   bool GetDriveSpace(long long &total,long long &used);
@@ -48,4 +49,5 @@ private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
   CStdString m_server;
   unsigned short m_port;
+  int m_retry_count;
 };

@@ -56,10 +56,12 @@ public:
   virtual void* Process(void);	
   virtual ~ImpMythEventHandler();
   void UpdateSignal(CStdString &signal);
+  CStdString m_server;
+  unsigned short m_port;
   };
 
 MythEventHandler::ImpMythEventHandler::ImpMythEventHandler(CStdString server,unsigned short port)
-:m_rec(MythRecorder()),m_conn_t(0),CThread(),m_signal(),CMutex()
+:m_rec(MythRecorder()),m_conn_t(0),CThread(),m_signal(),CMutex(),m_server(server),m_port(port)
   {
     char *cserver=strdup(server.c_str());
     cmyth_conn_t connection=CMYTH->ConnConnectEvent(cserver,port,64*1024, 16*1024);
@@ -256,6 +258,15 @@ void* MythEventHandler::ImpMythEventHandler::Process(void)
       {
 	//        XBMC->Log(LOG_NOTICE,"Recording list change",__FUNCTION__);
         PVR->TriggerRecordingUpdate();
+      }
+      if (myth_event==CMYTH_EVENT_CLOSE)
+      {
+        XBMC->Log( LOG_NOTICE, "%s - Event client connection closed", __FUNCTION__ );
+        bool retval = CMYTH->ConnReconnectEvent( m_conn_t );
+        if ( retval )
+          XBMC->Log( LOG_NOTICE, "%s - Connected client to event socket", __FUNCTION__ );
+        else
+          XBMC->Log( LOG_NOTICE, "%s - Could not connect client to event socket", __FUNCTION__ );
       }
       databuf[0]=0;
 
