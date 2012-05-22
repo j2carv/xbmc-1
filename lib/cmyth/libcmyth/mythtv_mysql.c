@@ -1013,7 +1013,7 @@ cmyth_mythtv_remove_previos_recorded(cmyth_database_t db,char *query)
 
 int
 cmyth_mysql_testdb_connection(cmyth_database_t db,char **message) {
-	char *buf=malloc(sizeof(char)*1001);
+	char *buf=ref_alloc(sizeof(char)*1001);
 	int new_conn = 0;
 	if (db->mysql != NULL) {
 		if (mysql_stat(db->mysql) == NULL) {
