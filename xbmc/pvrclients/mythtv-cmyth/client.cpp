@@ -72,33 +72,40 @@ extern "C" {
 
 ADDON_STATUS ADDON_Create(void* hdl, void* props)
 {
-  if (!props) 
-    return ADDON_STATUS_UNKNOWN;
-
-  PVR_PROPERTIES* pvrprops = (PVR_PROPERTIES*)props;
-
   XBMC = new CHelper_libXBMC_addon;
+  
   if (!XBMC->RegisterMe(hdl))
     return ADDON_STATUS_UNKNOWN;
+  XBMC->Log(LOG_DEBUG, "Creating MythTV cmyth PVR-Client");
+  XBMC->Log(LOG_DEBUG, "Register handle @ libXBMC_addon...done[1/7]");
+  
+  XBMC->Log(LOG_DEBUG, "Checking props...");
+  if (!props) 
+    return ADDON_STATUS_UNKNOWN;
+  XBMC->Log(LOG_DEBUG, "Checking props...done[2/7]");
 
+  PVR_PROPERTIES* pvrprops = (PVR_PROPERTIES*)props;
+  XBMC->Log(LOG_DEBUG, "Register handle @ libXBMC_pvr...");
   PVR = new CHelper_libXBMC_pvr;
   if (!PVR->RegisterMe(hdl))
     return ADDON_STATUS_UNKNOWN;
+  XBMC->Log(LOG_DEBUG, "Register handle @ libXBMC_addon...done[3/7]");
 
+  XBMC->Log(LOG_DEBUG, "Register handle @ libXBMC_gui...");
   GUI = new CHelper_libXBMC_gui;
   if (!GUI->RegisterMe(hdl))
     return ADDON_STATUS_UNKNOWN;
+  XBMC->Log(LOG_DEBUG, "Register handle @ libXBMC_gui...done[4/7]");
 
-  XBMC->Log(LOG_DEBUG, "Loading cmyth library");
+  XBMC->Log(LOG_DEBUG, "Loading cmyth library...");
   CMYTH = new CHelper_libcmyth;
   if (!CMYTH->RegisterMe(hdl))
   {
     XBMC->Log(LOG_ERROR, "Failed to load cmyth library!");
     return ADDON_STATUS_UNKNOWN;
   }
-
-  XBMC->Log(LOG_DEBUG, "Creating MythTV cmyth PVR-Client");
-
+  XBMC->Log(LOG_DEBUG, "Loading cmyth library...done[5/7]");
+  
   m_CurStatus    = ADDON_STATUS_UNKNOWN;
   g_iClientID    = pvrprops->iClientId;
   g_szUserPath   = pvrprops->strUserPath;
@@ -200,13 +207,15 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   free (buffer);
 
-
+  XBMC->Log(LOG_DEBUG,"Creating PVRClientMythTV...");
   g_client = new PVRClientMythTV();
   if (!g_client->Connect())
   {
+    XBMC->Log(LOG_ERROR,"Failed to connect to backend");
 	m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
     return m_CurStatus;
   }
+  XBMC->Log(LOG_DEBUG,"Creating PVRClientMythTV...done[6/7]");
 
   /* Read setting "LiveTV Priority" from backend database */
   bool savedLiveTVPriority;
@@ -225,6 +234,8 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   
   m_CurStatus = ADDON_STATUS_OK;
   g_bCreated = true;
+
+  XBMC->Log(LOG_DEBUG, "MythTV cmyth PVR-Client successfully created[7/7]");
   return m_CurStatus;
 }
 

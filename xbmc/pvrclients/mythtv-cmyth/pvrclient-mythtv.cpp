@@ -1012,6 +1012,7 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - chanID: %i, channumber: %i",__FUNCTION__,channel.iUniqueId,channel.iChannelNumber);
+  m_lock.Lock();
   if(m_rec.IsNull())
   {
     MythChannel chan=m_channels.at(channel.iUniqueId);
@@ -1023,19 +1024,24 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
         XBMC->Log(LOG_DEBUG,"%s: Opening new recorder %i",__FUNCTION__,m_rec.ID());
         m_eventHandler.SetRecorder(m_rec);
         if(m_rec.SpawnLiveTV(chan))
+        {
+          m_lock.Unlock();
           return true;
+        }
       }
       m_rec=MythRecorder();
       m_eventHandler.SetRecorder(m_rec);//Redundant
     }
     if(g_bExtraDebug)
       XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
+    m_lock.Unlock();
     return false;
   }
   else
   {
     if(g_bExtraDebug)
       XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
+    m_lock.Unlock();
     return true;
   }
 }
@@ -1045,6 +1051,7 @@ void PVRClientMythTV::CloseLiveStream()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+  m_lock.Lock();
   m_eventHandler.PreventLiveChainUpdate();
   m_rec.Stop();
   m_rec=MythRecorder();
@@ -1052,6 +1059,7 @@ void PVRClientMythTV::CloseLiveStream()
   m_eventHandler.AllowLiveChainUpdate();
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
+  m_lock.Unlock();
   return;
 }
 
@@ -1059,6 +1067,7 @@ int PVRClientMythTV::ReadLiveStream(unsigned char *pBuffer, unsigned int iBuffer
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - size: %i",__FUNCTION__,iBufferSize);
+  m_lock.Lock();
   if(m_rec.IsNull())
     return -1;
   int dataread=m_rec.ReadLiveTV(pBuffer,iBufferSize);
@@ -1066,6 +1075,7 @@ int PVRClientMythTV::ReadLiveStream(unsigned char *pBuffer, unsigned int iBuffer
     XBMC->Log(LOG_DEBUG,"%s: Read %i Bytes",__FUNCTION__,dataread);
   else if(dataread==0)
     XBMC->Log(LOG_INFO,"%s: Read 0 Bytes!",__FUNCTION__);
+  m_lock.Unlock();
   return dataread;
 }
 
@@ -1073,9 +1083,11 @@ int PVRClientMythTV::GetCurrentClientChannel()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+  m_lock.Lock();
   if(m_rec.IsNull())
     return -1;
   MythProgramInfo currentProgram=m_rec.GetCurrentProgram();
+  m_lock.Unlock();
   return currentProgram.ChannelID();
 }
 
@@ -1103,10 +1115,14 @@ bool PVRClientMythTV::SwitchChannel(const PVR_CHANNEL &channelinfo)
 long long PVRClientMythTV::SeekLiveStream(long long iPosition, int iWhence) { 
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - pos: %i, whence: %i",__FUNCTION__,iPosition,iWhence);
+  m_lock.Lock();
+  if(m_rec.IsNull())
+    return -1;
   int whence=iWhence==SEEK_SET?WHENCE_SET:iWhence==SEEK_CUR?WHENCE_CUR:WHENCE_END;
   long long retval= m_rec.LiveTVSeek(iPosition,whence);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - pos: %i",__FUNCTION__,retval);
+  m_lock.Unlock();
   return retval;
 }
 
@@ -1114,9 +1130,13 @@ long long PVRClientMythTV::LengthLiveStream()
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
+  m_lock.Lock();
+  if(m_rec.IsNull())
+    return -1;
   long long retval=m_rec.LiveTVDuration();
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - duration: %i",__FUNCTION__,retval);
+  m_lock.Unlock();
   return retval;
 }
 
@@ -1134,7 +1154,7 @@ PVR_ERROR PVRClientMythTV::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
   signalStatus.iUNC=signal.UNC();
   CStdString ID;
   CStdString adaptorStatus=signal.AdapterStatus();
-  ID.Format("Myth Recorder %i",m_rec.ID());
+  ID.Format("Myth Recorder %i",signal.ID());
   strcpy(signalStatus.strAdapterName,ID.Buffer());
   strcpy(signalStatus.strAdapterStatus,adaptorStatus.Buffer());
   if(g_bExtraDebug)

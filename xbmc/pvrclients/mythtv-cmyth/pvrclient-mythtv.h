@@ -93,6 +93,7 @@ private:
   MythEventHandler m_eventHandler;
   MythDatabase m_db;
   MythRecorder m_rec;
+  CMutex m_lock;
   MythFile m_file;
   CStdString m_protocolVersion;
   CStdString m_connectionString;
