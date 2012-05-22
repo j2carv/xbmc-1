@@ -85,11 +85,17 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pvrclient_tvheadend", "..\..\xbmc\pvrclients\tvheadend\project\VS2010Express\XBMC_tvheadend.vcxproj", "{C04B0FB1-667D-4F1C-BDAE-A07CDFFA74A3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{00700E12-A63B-4E54-B962-4011A90584BD} = {00700E12-A63B-4E54-B962-4011A90584BD}
+		{E2DF1AC8-E9BF-43B8-B5D9-7EC3B513EEF1} = {E2DF1AC8-E9BF-43B8-B5D9-7EC3B513EEF1}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XbmcCommons", "XbmcCommons.vcxproj", "{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pvrclient_mythtv_cmyth", "..\..\xbmc\pvrclients\mythtv-cmyth\project\VS2010Express\XBMC_mythtc_cmyth.vcxproj", "{A55ACC6B-837D-4784-8E41-66947B1D9B8C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XbmcThreads", "XbmcThreads.vcxproj", "{034B1D02-CA92-455D-8866-DB95BEE49C10}"
+	ProjectSection(ProjectDependencies) = postProject
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17} = {87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
