@@ -175,6 +175,10 @@ void MythEventHandler::ImpMythEventHandler::UpdateSignal(CStdString &signal)
     {
       m_signal.m_UNC=std::atoi(tok2[1].c_str());
     }
+    else if(tok2[0]=="cardid")
+    {
+      m_signal.m_ID=std::atoi(tok2[1].c_str());
+    }
     }
   }
 }

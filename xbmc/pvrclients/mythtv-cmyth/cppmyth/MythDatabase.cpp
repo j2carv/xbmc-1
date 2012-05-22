@@ -37,7 +37,7 @@ bool  MythDatabase::TestConnection(CStdString &msg)
   m_database_t->Lock();
   bool retval=CMYTH->MysqlTestdbConnection(*m_database_t,&cmyth_msg)==1;
   msg=cmyth_msg;
-  free(cmyth_msg);
+  CMYTH->RefRelease(cmyth_msg);
   m_database_t->Unlock();
   return retval;
 }
