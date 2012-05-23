@@ -138,8 +138,9 @@ void MythEventHandler::ImpMythEventHandler::UpdateFilesize(CStdString signal)
   CStdString uniqId=b;
   
   if (curRecordingId.compare(uniqId) == 0) {
-    XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING CURRENT RECORDING LENGTH-- EVENT msg: %s %ll",
-             __FUNCTION__,uniqId.c_str(),length);
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"EVENT: %s, --UPDATING CURRENT RECORDING LENGTH-- EVENT msg: %s %ll",
+	  __FUNCTION__,uniqId.c_str(),length);
     m_file.UpdateDuration(length);
   }
 }
@@ -215,13 +216,15 @@ void* MythEventHandler::ImpMythEventHandler::Process(void)
     if(CMYTH->EventSelect(m_conn_t,&timeout)>0)
     {
       myth_event=CMYTH->EventGet(m_conn_t,databuf,2048);
-      XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
+      if(g_bExtraDebug)
+	XBMC->Log(LOG_DEBUG,"EVENT ID: %s, EVENT databuf: %s",events[myth_event],databuf);
       if(myth_event==CMYTH_EVENT_UPDATE_FILE_SIZE)
       {
        CStdString signal=databuf;
        UpdateFilesize(signal);
        //1044 2012-03-20T20:00:00 54229688
-       XBMC->Log(LOG_NOTICE,"%s: FILE_SIZE_UPDATE: %i",__FUNCTION__,databuf);
+       if(g_bExtraDebug)
+	 XBMC->Log(LOG_NOTICE,"%s: FILE_SIZE_UPDATE: %i",__FUNCTION__,databuf);
       }
       if(myth_event==CMYTH_EVENT_LIVETV_CHAIN_UPDATE)
       {
@@ -229,10 +232,12 @@ void* MythEventHandler::ImpMythEventHandler::Process(void)
         if(!m_rec.IsNull())
         {
           bool retval=m_rec.LiveTVChainUpdate(CStdString(databuf));
-          XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE: %i",__FUNCTION__,retval);
+	  if(g_bExtraDebug)
+	    XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE: %i",__FUNCTION__,retval);
         }
         else
-          XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
+	  if(g_bExtraDebug)
+	    XBMC->Log(LOG_NOTICE,"%s: CHAIN_UPDATE - No recorder",__FUNCTION__);
         Unlock();
       }
       if(myth_event==CMYTH_EVENT_SIGNAL)
@@ -242,13 +247,14 @@ void* MythEventHandler::ImpMythEventHandler::Process(void)
       }
       if(myth_event==CMYTH_EVENT_SCHEDULE_CHANGE)
       {
-        XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
+	if(g_bExtraDebug)
+	  XBMC->Log(LOG_NOTICE,"Schedule change",__FUNCTION__);
         PVR->TriggerTimerUpdate();
         PVR->TriggerRecordingUpdate();
       }
       if(myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_ADD||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_DELETE||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE_UPDATE||myth_event==CMYTH_EVENT_RECORDING_LIST_CHANGE)
       {
-        XBMC->Log(LOG_NOTICE,"Recording list change",__FUNCTION__);
+	//        XBMC->Log(LOG_NOTICE,"Recording list change",__FUNCTION__);
         PVR->TriggerRecordingUpdate();
       }
       databuf[0]=0;
