@@ -57,7 +57,8 @@ CStdString fileOps2::getChannelIconPath(CStdString remotePath)
 CStdString fileOps2::getPreviewIconPath(CStdString remotePath)
 {
   //Check local directory
-  XBMC->Log(LOG_DEBUG,"%s: preview icon: %s",__FUNCTION__,remotePath.c_str());
+  if(g_bExtraDebug)
+    XBMC->Log(LOG_DEBUG,"%s: preview icon: %s",__FUNCTION__,remotePath.c_str());
   if(m_preview.count(remotePath)>0)
     return m_preview.at(remotePath);
   CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();

@@ -423,7 +423,8 @@ PVR_ERROR PVRClientMythTV::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL
   if(iStart!=m_EPGstart&&iEnd!=m_EPGend)
   {
     m_EPG=m_db.GetGuide(iStart,iEnd);
-    XBMC->Log(LOG_DEBUG,"%s: Fetching EPG - size: %i",__FUNCTION__,m_EPG.size());
+    if(g_bExtraDebug)
+      XBMC->Log(LOG_DEBUG,"%s: Fetching EPG - size: %i",__FUNCTION__,m_EPG.size());
     m_EPGstart=iStart;
     m_EPGend=iEnd;
   }
@@ -705,7 +706,8 @@ PVR_ERROR PVRClientMythTV::GetTimers(PVR_HANDLE handle)
             tag.strTitle=title;
             CStdString summary=proginfo.Description(); 
             tag.strSummary=summary;
-            XBMC->Log(LOG_DEBUG,"%s ## - State: %d - ##",__FUNCTION__,proginfo.Status());
+	    if(g_bExtraDebug)
+	      XBMC->Log(LOG_DEBUG,"%s ## - State: %d - ##",__FUNCTION__,proginfo.Status());
             switch(proginfo.Status())
             {
             case RS_RECORDING:
@@ -1021,7 +1023,8 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
       m_rec=m_con.GetRecorder(*it);
       if(!m_rec.IsRecording())
       {
-        XBMC->Log(LOG_DEBUG,"%s: Opening new recorder %i",__FUNCTION__,m_rec.ID());
+	if(g_bExtraDebug)
+	  XBMC->Log(LOG_DEBUG,"%s: Opening new recorder %i",__FUNCTION__,m_rec.ID());
         m_eventHandler.SetRecorder(m_rec);
         if(m_rec.SpawnLiveTV(chan))
         {
