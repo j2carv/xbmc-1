@@ -9,7 +9,10 @@
 #include "cppmyth/MythSGFile.h"
 #include "../../../lib/platform/threads/threads.h"
 #define BOOST_FILESYSTEM_NO_DEPRECATED
+// Use v3, if it's available.
+#if defined(BOOST_FILESYSTEM_VERSION)
 #define BOOST_FILESYSTEM_VERSION 3
+#endif
 #include <boost/filesystem.hpp>
 
 
