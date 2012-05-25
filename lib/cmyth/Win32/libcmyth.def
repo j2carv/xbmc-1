@@ -45,6 +45,11 @@ EXPORTS
 	cmyth_file_request_block
 	cmyth_file_seek
 	cmyth_freespace_create
+	cmyth_inputlist_create
+	cmyth_input_destroy
+	cmyth_input_create
+	cmyth_rcv_free_inputlist
+	cmyth_get_free_inputlist
 	cmyth_keyframe_create
 	cmyth_keyframe_fill
 	cmyth_keyframe_string
