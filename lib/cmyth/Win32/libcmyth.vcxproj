@@ -139,6 +139,7 @@
     <ClCompile Include="..\libcmyth\event.c" />
     <ClCompile Include="..\libcmyth\file.c" />
     <ClCompile Include="..\libcmyth\freespace.c" />
+    <ClCompile Include="..\libcmyth\input.c" />
     <ClCompile Include="..\libcmyth\keyframe.c" />
     <ClCompile Include="..\libcmyth\livetv.c" />
     <ClCompile Include="..\libcmyth\mysql_query.c" />

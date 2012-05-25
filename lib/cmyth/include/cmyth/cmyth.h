@@ -154,6 +154,23 @@ typedef struct cmyth_chanlist *cmyth_chanlist_t;
 struct cmyth_tvguide_progs;
 typedef struct cmyth_tvguide_progs *cmyth_tvguide_progs_t;
 
+/* fetzerch: Added to support querying of free inputs (is tunable on) */
+struct cmyth_input {
+        char *inputname;
+        unsigned long sourceid;
+        unsigned long inputid;
+        unsigned long cardid;
+        unsigned long multiplexid;
+        unsigned long livetvorder; /* new in V71 */
+};
+typedef struct cmyth_input *cmyth_input_t;
+
+struct cmyth_inputlist {
+        cmyth_input_t *input_list;
+        long input_count;
+};
+typedef struct cmyth_inputlist *cmyth_inputlist_t;
+
 /*
  * -----------------------------------------------------------------
  * Debug Output Control
@@ -1093,6 +1110,17 @@ extern cmyth_commbreaklist_t cmyth_mysql_get_commbreaklist(cmyth_database_t db, 
 extern cmyth_commbreaklist_t cmyth_get_commbreaklist(cmyth_conn_t conn, cmyth_proginfo_t prog);
 extern cmyth_commbreaklist_t cmyth_get_cutlist(cmyth_conn_t conn, cmyth_proginfo_t prog);
 extern int cmyth_rcv_commbreaklist(cmyth_conn_t conn, int *err, cmyth_commbreaklist_t breaklist, int count);
+
+/*
+ * -------
+ * Card Input Operations
+ * -------
+ */
+extern cmyth_inputlist_t cmyth_inputlist_create(void);
+extern cmyth_input_t cmyth_input_create(void);
+extern cmyth_inputlist_t cmyth_get_free_inputlist(cmyth_recorder_t rec);
+extern int cmyth_rcv_free_inputlist(cmyth_conn_t conn, int *err, cmyth_inputlist_t inputlist, int count);
+
 
 /*
  * mysql info
