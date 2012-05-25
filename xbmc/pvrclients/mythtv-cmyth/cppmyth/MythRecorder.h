@@ -19,6 +19,7 @@ public:
   bool LiveTVChainUpdate(CStdString chainID);
   bool IsNull();
   bool IsRecording();
+  bool IsTunable(MythChannel &channel);
   int ID();
   bool CheckChannel(MythChannel &channel);
   bool SetChannel(MythChannel &channel);

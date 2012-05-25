@@ -45,6 +45,11 @@ int MythChannel::SourceID()
   return CMYTH->ChannelSourceid(*m_channel_t);
 }
 
+int MythChannel::MultiplexID()
+{
+  return CMYTH->ChannelMultiplex(*m_channel_t);
+}
+
 CStdString  MythChannel::Name()
 {
   char* cChan=CMYTH->ChannelName(*m_channel_t);
