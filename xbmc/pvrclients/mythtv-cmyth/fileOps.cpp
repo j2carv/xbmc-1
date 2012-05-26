@@ -226,7 +226,8 @@ void fileOps2::cleanCache()
 void* fileOps2::Process()
 {
   time_t curTime;
-  time_t lastCacheClean=0;
+  time_t lastCacheClean;
+  time(&lastCacheClean);
 
   while(!IsStopped())
   {
@@ -255,7 +256,10 @@ void* fileOps2::Process()
     }
     time(&curTime);
     if(curTime>lastCacheClean+60*60*24)
+    {
       cleanCache();
+      time(&lastCacheClean);
+    }
   }
   return NULL;
 }
@@ -281,10 +285,6 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
   }
   unsigned long long length = source.Duration(); 
   
-  FILE* f = fopen(destination.string().c_str(),"w");
-  fwrite("HEJ",1,3,f);
-  fclose(f);
-
   FILE*  writeFile = fopen(destination.string().c_str(),"w");
   //std::ofstream writeFile(destination.string(),std::ios_base::binary /*| std::ios_base::trunc*/);
   
