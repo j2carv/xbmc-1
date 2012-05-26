@@ -192,6 +192,23 @@ typedef struct cmyth_chanlist *cmyth_chanlist_t;
 struct cmyth_tvguide_progs;
 typedef struct cmyth_tvguide_progs *cmyth_tvguide_progs_t;
 
+/* fetzerch: Added to support querying of free inputs (is tunable on) */
+struct cmyth_input {
+        char *inputname;
+        unsigned long sourceid;
+        unsigned long inputid;
+        unsigned long cardid;
+        unsigned long multiplexid;
+        unsigned long livetvorder; /* new in V71 */
+};
+typedef struct cmyth_input *cmyth_input_t;
+
+struct cmyth_inputlist {
+        cmyth_input_t *input_list;
+        long input_count;
+};
+typedef struct cmyth_inputlist *cmyth_inputlist_t;
+
 typedef struct cmyth_program {
 	int chanid;
 	char callsign[30];
@@ -1075,6 +1092,22 @@ if (GetCutlist == NULL)      { fprintf(stderr, "Unable to assign function %s\n",
 dlsym(m_libcmyth, "cmyth_rcv_commbreaklist");
 if (RcvCommbreaklist == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+    InputlistCreate      = (cmyth_inputlist_t (*)(void))
+dlsym(m_libcmyth, "cmyth_inputlist_create");
+if (InputlistCreate == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    InputCreate       = (cmyth_input_t (*)(void))
+dlsym(m_libcmyth, "cmyth_input_create");
+if (InputCreate == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    GetFreeInputlist      = (cmyth_inputlist_t (*)(cmyth_recorder_t rec))
+dlsym(m_libcmyth, "cmyth_get_free_inputlist");
+if (GetFreeInputlist == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
+    RcvFreeInputlist      = (int (*)(cmyth_conn_t conn, int* err, cmyth_inputlist_t inputlist, int count))
+dlsym(m_libcmyth, "cmyth_rcv_free_inputlist");
+if (RcvFreeInputlist == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
     MysqlGetRecgroups      = (int (*)(cmyth_database_t, cmyth_recgroups_t**))
 dlsym(m_libcmyth, "cmyth_mysql_get_recgroups");
 if (MysqlGetRecgroups == NULL)      { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
@@ -1550,6 +1583,10 @@ cmyth_commbreak_t (*CommbreakCreate)(void);
 cmyth_commbreaklist_t (*GetCommbreaklist)(cmyth_conn_t conn, cmyth_proginfo_t prog);
 cmyth_commbreaklist_t (*GetCutlist)(cmyth_conn_t conn, cmyth_proginfo_t prog);
 int (*RcvCommbreaklist)(cmyth_conn_t conn, int* err, cmyth_commbreaklist_t breaklist, int count);
+cmyth_inputlist_t (*InputlistCreate)(void);
+cmyth_input_t (*InputCreate)(void);
+cmyth_inputlist_t (*GetFreeInputlist)(cmyth_recorder_t rec);
+int (*RcvFreeInputlist)(cmyth_conn_t conn, int* err, cmyth_inputlist_t inputlist, int count);
 int (*MysqlGetRecgroups)(cmyth_database_t, cmyth_recgroups_t**);
 int (*MysqlDeleteScheduledRecording)(cmyth_database_t db, char* query);
 int (*MysqlInsertIntoRecord)(cmyth_database_t db, char* query, char* query1, char* query2, char* title, char* subtitle, char* description, char* callsign);

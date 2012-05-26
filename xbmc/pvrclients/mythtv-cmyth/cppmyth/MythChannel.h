@@ -15,6 +15,7 @@ public:
   CStdString Number();
   CStdString Callsign();
   int SourceID();
+  int MultiplexID();
   CStdString Name();
   CStdString Icon();
   bool Visible();
