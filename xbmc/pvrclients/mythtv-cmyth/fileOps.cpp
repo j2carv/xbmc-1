@@ -18,7 +18,11 @@ fileOps2::fileOps2(MythConnection &mythConnection)
 {
   m_localBasePath /= "cache";
   if(!createDirectory(m_localBasePath))
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
     XBMC->Log(LOG_ERROR,"%s - Failed to create cache directory %s",__FUNCTION__,m_localBasePath.c_str());
+#else
+    XBMC->Log(LOG_ERROR,"%s - Failed to create cache directory %s",__FUNCTION__,m_localBasePath.native_file_string().c_str());
+#endif
   m_sg_strings[FILE_OPS_GET_COVERART] = "coverart";
   m_sg_strings[FILE_OPS_GET_FANART] = "fanart";
   m_sg_strings[FILE_OPS_GET_BANNER] = "banner";
@@ -39,8 +43,19 @@ CStdString fileOps2::getChannelIconPath(CStdString remotePath)
   XBMC->Log(LOG_DEBUG,"%s: channelicon: %s",__FUNCTION__,remotePath.c_str());
   if(m_icons.count(remotePath)>0)
     return m_icons.at(remotePath);
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
   CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();
+#else
+  CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename();
+#endif
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
   boost::filesystem::path localFilePath = m_localBasePath / "channels" / remoteFilename.c_str();
+#else
+  CStdString localFilePathStr = m_localBasePath.native_file_string().c_str();
+  localFilePathStr.append("/channels/");
+  localFilePathStr.append(remoteFilename);
+  boost::filesystem::path localFilePath = localFilePathStr;
+#endif
   if(!boost::filesystem::exists(localFilePath))
   {      
     Lock();
@@ -61,7 +76,11 @@ CStdString fileOps2::getPreviewIconPath(CStdString remotePath)
     XBMC->Log(LOG_DEBUG,"%s: preview icon: %s",__FUNCTION__,remotePath.c_str());
   if(m_preview.count(remotePath)>0)
     return m_preview.at(remotePath);
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
   CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename().string();
+#else
+  CStdString remoteFilename = boost::filesystem::path(remotePath.c_str()).filename();
+#endif
   boost::filesystem::path localFilePath = m_localBasePath / "preview" / remoteFilename.c_str();
   if(!boost::filesystem::exists(localFilePath))
   {      
@@ -93,7 +112,11 @@ CStdString fileOps2::getArtworkPath(CStdString title,FILE_OPTIONS Get_What)
   if(Get_What==FILE_OPS_GET_CHAN_ICONS)
   {
     boost::filesystem::path chanicon(title.c_str());
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
     re_string = chanicon.filename().string();
+#else
+    re_string = chanicon.filename();
+#endif
   }
   boost::regex re(re_string.c_str());
   std::vector< MythSGFile >::iterator it = m_SGFilelist.at(Get_What).begin();
@@ -140,7 +163,11 @@ void fileOps2::cleanCache()
     for(boost::filesystem::recursive_directory_iterator dit(dirPath);dit != boost::filesystem::recursive_directory_iterator();dit++)
     {
       bool deletefile = true;
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
       CStdString filename = dit->path().filename().string();    
+#else
+      CStdString filename = dit->path().filename();
+#endif
       if(boost::regex_search(filename,match,re)&&match[0].matched)
       {
         std::string lastmodified = std::string(match[1].first,match[1].second);
@@ -235,16 +262,21 @@ void* fileOps2::Process()
 
 bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
 {
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
+  CStdString parentPath = destination.parent_path().c_str();
+#else
+  CStdString parentPath = destination.parent_path().native_file_string().c_str();
+#endif
   if(!createDirectory(destination,true))
   {
     XBMC->Log(LOG_ERROR,"%s - Failed to create destination directory: %s",
-      __FUNCTION__,destination.parent_path().c_str()); 
+      __FUNCTION__,parentPath);
     return false;
   }
   if(source.IsNull())
   {
     XBMC->Log(LOG_ERROR,"%s - NULL file provided.",
-      __FUNCTION__,destination.parent_path().c_str()); 
+      __FUNCTION__,parentPath);
     return false;
   }
   unsigned long long length = source.Duration(); 
@@ -291,8 +323,13 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
     delete buffer;
     if (totalRead < length) 
     {
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION >= 3
+      CStdString destinationStr = destination.c_str();
+#else
+      CStdString destinationStr = destination.native_file_string().c_str();
+#endif
       XBMC->Log(LOG_DEBUG,"%s - Did not Read all data - %s - %d - %d",
-        __FUNCTION__,destination.c_str(),totalRead,length);    
+        __FUNCTION__,destinationStr,totalRead,length);
     }
     return true;
   }
