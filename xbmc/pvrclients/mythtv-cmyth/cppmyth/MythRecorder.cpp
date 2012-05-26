@@ -90,6 +90,47 @@ bool MythRecorder::IsRecording()
   return retval;
 }
 
+bool MythRecorder::IsTunable(MythChannel &channel)
+{
+  m_conn.Lock();
+
+  XBMC->Log(LOG_DEBUG,"%s: called for recorder %i, channel %i",__FUNCTION__,ID(),channel.ID());
+
+  cmyth_inputlist_t inputlist=CMYTH->GetFreeInputlist(*m_recorder_t);
+
+  bool ret = false;
+  for (int i=0; i < inputlist->input_count; ++i)
+  {
+    cmyth_input_t input = inputlist->input_list[i];
+    if ((int)input->sourceid != channel.SourceID())
+    {
+      XBMC->Log(LOG_DEBUG,"%s: skip input, source id differs (channel: %i, input: %i)",__FUNCTION__, channel.SourceID(), input->sourceid);
+      continue;
+    }
+
+    if (input->multiplexid && (int)input->multiplexid != channel.MultiplexID())
+    {
+      XBMC->Log(LOG_DEBUG,"%s: skip input, multiplex id id differs (channel: %i, input: %i)",__FUNCTION__, channel.MultiplexID(), input->multiplexid);
+      continue;
+    }
+
+    XBMC->Log(LOG_DEBUG,"%s: using recorder, input is tunable: source id: %i, multiplex id: channel: %i, input: %i)",__FUNCTION__, channel.SourceID(), channel.MultiplexID(), input->multiplexid);
+
+    ret = true;
+    break;
+  }
+
+  CMYTH->RefRelease(inputlist);
+  m_conn.Unlock();
+
+  if (!ret)
+  {
+    XBMC->Log(LOG_DEBUG,"%s: recorder is not tunable",__FUNCTION__);
+  }
+
+  return ret;
+}
+
 bool MythRecorder::CheckChannel(MythChannel &channel)
 {
   m_conn.Lock();
