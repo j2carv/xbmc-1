@@ -96,4 +96,51 @@ int inline weekday(time_t *time)
 	int retval = ptm->tm_wday;
 	return retval;	
 }
+
+template <class T> class SingleLock {
+private:
+  T *mutex;
+  bool locked;
+  bool Lock()
+  {
+    if (mutex && !locked)
+    {
+      mutex->Lock();
+      locked = true;
+      return true;
+    }
+    return false;
+  }
+
+  bool Unlock()
+  {
+    if (mutex && locked)
+    {
+      Mutex->Unlock();
+      locked = false;
+      return true;
+    }
+    return false;
+  }
+
+public:
+  SingleLock(T *Mutex)
+  {
+    mutex = Mutex;
+    locked = false;
+    Lock();
+  }
+
+  ~SingleLock()
+  {
+    if (mutex && locked)
+      mutex->Unlock();
+  }
+  
+  void Leave() { Unlock(); }
+  void Enter() { Lock(); }
+};
+
+
+
 #endif //__TOOLS_H
