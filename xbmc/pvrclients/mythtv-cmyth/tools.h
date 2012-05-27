@@ -116,7 +116,7 @@ private:
   {
     if (mutex && locked)
     {
-      Mutex->Unlock();
+      mutex->Unlock();
       locked = false;
       return true;
     }
