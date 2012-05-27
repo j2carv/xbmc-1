@@ -274,13 +274,13 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
   if(!createDirectory(destination,true))
   {
     XBMC->Log(LOG_ERROR,"%s - Failed to create destination directory: %s",
-      __FUNCTION__,parentPath);
+      __FUNCTION__,parentPath.c_str());
     return false;
   }
   if(source.IsNull())
   {
     XBMC->Log(LOG_ERROR,"%s - NULL file provided.",
-      __FUNCTION__,parentPath);
+      __FUNCTION__,parentPath.c_str());
     return false;
   }
   unsigned long long length = source.Duration(); 
@@ -329,7 +329,7 @@ bool fileOps2::writeFile(boost::filesystem::path destination, MythFile &source)
       CStdString destinationStr = destination.native_file_string().c_str();
 #endif
       XBMC->Log(LOG_DEBUG,"%s - Did not Read all data - %s - %d - %d",
-        __FUNCTION__,destinationStr,totalRead,length);
+        __FUNCTION__,destinationStr.c_str(),totalRead,length);
     }
     return true;
   }

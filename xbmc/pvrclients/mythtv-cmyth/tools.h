@@ -99,14 +99,14 @@ int inline weekday(time_t *time)
 
 template <class T> class SingleLock {
 private:
-  T *mutex;
-  bool locked;
+  T *m_mutex;
+  bool m_locked;
   bool Lock()
   {
-    if (mutex && !locked)
+    if (m_mutex && !m_locked)
     {
-      mutex->Lock();
-      locked = true;
+      m_mutex->Lock();
+      m_locked = true;
       return true;
     }
     return false;
@@ -114,10 +114,10 @@ private:
 
   bool Unlock()
   {
-    if (mutex && locked)
+    if (m_mutex && m_locked)
     {
-      mutex->Unlock();
-      locked = false;
+      m_mutex->Unlock();
+      m_locked = false;
       return true;
     }
     return false;
@@ -126,15 +126,14 @@ private:
 public:
   SingleLock(T *Mutex)
   {
-    mutex = Mutex;
-    locked = false;
+    m_mutex = Mutex;
+    m_locked = false;
     Lock();
   }
 
   ~SingleLock()
   {
-    if (mutex && locked)
-      mutex->Unlock();
+    Unlock();    
   }
   
   void Leave() { Unlock(); }
