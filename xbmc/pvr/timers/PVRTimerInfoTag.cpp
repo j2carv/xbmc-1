@@ -47,6 +47,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(void)
   m_iClientId          = g_PVRClients->GetFirstConnectedClientID();
   m_iClientIndex       = -1;
   m_iClientChannelUid  = -1;
+  m_iClientScheduleId  = -1;
   m_iPriority          = g_guiSettings.GetInt("pvrrecord.defaultpriority");
   m_iLifetime          = g_guiSettings.GetInt("pvrrecord.defaultlifetime");
   m_bIsRepeating       = false;
@@ -54,6 +55,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(void)
   m_strFileNameAndPath = StringUtils::EmptyString;
   m_iChannelNumber     = 0;
   m_bIsRadio           = false;
+  m_iClientScheduleId  = -1;
   m_iEpgId             = -1;
   m_channel            = NULL;
   m_iMarginStart       = g_guiSettings.GetInt("pvrrecord.marginstart");
@@ -75,6 +77,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(const PVR_TIMER &timer, CPVRChannel *channel,
   m_iClientId          = iClientId;
   m_iClientIndex       = timer.iClientIndex;
   m_iClientChannelUid  = channel ? channel->UniqueID() : timer.iClientChannelUid;
+  m_iClientScheduleId  = timer.iClientScheduleId;
   m_iChannelNumber     = channel ? g_PVRChannelGroups->GetGroupAll(channel->IsRadio())->GetChannelNumber(*channel) : 0;
   m_StartTime          = timer.startTime + g_advancedSettings.m_iPVRTimeCorrection;
   m_StopTime           = timer.endTime + g_advancedSettings.m_iPVRTimeCorrection;
@@ -92,6 +95,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(const PVR_TIMER &timer, CPVRChannel *channel,
   m_channel            = channel;
   m_bIsRadio           = channel && channel->IsRadio();
   m_state              = timer.state;
+  m_iSerieRule         = timer.iSerieRule;
   m_strFileNameAndPath.Format("pvr://client%i/timers/%i", m_iClientId, m_iClientIndex);
 
   UpdateEpgEvent();
@@ -136,6 +140,7 @@ CPVRTimerInfoTag &CPVRTimerInfoTag::operator=(const CPVRTimerInfoTag &orig)
   m_iClientIndex       = orig.m_iClientIndex;
   m_strSummary         = orig.m_strSummary;
   m_iClientChannelUid  = orig.m_iClientChannelUid;
+  m_iClientScheduleId  = orig.m_iClientScheduleId;
   m_bIsRepeating       = orig.m_bIsRepeating;
   m_StartTime          = orig.m_StartTime;
   m_StopTime           = orig.m_StopTime;
@@ -151,6 +156,7 @@ CPVRTimerInfoTag &CPVRTimerInfoTag::operator=(const CPVRTimerInfoTag &orig)
   m_iMarginEnd         = orig.m_iMarginEnd;
   m_state              = orig.m_state;
   m_iChannelNumber     = orig.m_iChannelNumber;
+  m_iSerieRule         = orig.m_iSerieRule;
 
   return *this;
 }
@@ -322,6 +328,7 @@ bool CPVRTimerInfoTag::UpdateEntry(const CPVRTimerInfoTag &tag)
   m_strTitle          = tag.m_strTitle;
   m_strDirectory      = tag.m_strDirectory;
   m_iClientChannelUid = tag.m_iClientChannelUid;
+  m_iClientScheduleId = tag.m_iClientScheduleId;
   m_StartTime         = tag.m_StartTime;
   m_StopTime          = tag.m_StopTime;
   m_FirstDay          = tag.m_FirstDay;

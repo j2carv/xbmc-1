@@ -76,6 +76,7 @@ namespace PVR
     int                   m_iClientId;          /*!< @brief ID of the backend */
     int                   m_iClientIndex;       /*!< @brief index number of the tag, given by the backend, -1 for new */
     int                   m_iClientChannelUid;  /*!< @brief channel uid */
+    int                   m_iClientScheduleId;    /*!< the id of the epg table or -1 if none */
     int                   m_iPriority;          /*!< @brief priority of the timer */
     int                   m_iLifetime;          /*!< @brief lifetime of the timer in days */
     bool                  m_bIsRepeating;       /*!< @brief repeating timer if true, use the m_FirstDay and repeat flags */
@@ -89,6 +90,7 @@ namespace PVR
     CStdString            m_strGenre;           /*!< @brief genre of the timer */
     int                   m_iGenreType;         /*!< @brief genre type of the timer */
     int                   m_iGenreSubType;      /*!< @brief genre subtype of the timer */
+    int                   m_iSerieRule;         /*!< @brief rules for the serie recording */
 
     CPVRTimerInfoTag(void);
     CPVRTimerInfoTag(const PVR_TIMER &timer, CPVRChannel *channel, unsigned int iClientId);
@@ -130,6 +132,7 @@ namespace PVR
     void SetStartFromUTC(CDateTime &start) { m_StartTime = start; }
     void SetStartFromLocalTime(CDateTime &start) { m_StartTime = start.GetAsUTCDateTime(); }
 
+    void SetSerieRules(int iSerieRule) {m_iSerieRule=iSerieRule;}
     const CDateTime &EndAsUTC(void) const { return m_StopTime; }
     const CDateTime &EndAsLocalTime(void) const;
     void SetEndFromUTC(CDateTime &end) { m_StopTime = end; }

@@ -85,6 +85,7 @@ void CPVRClient::ResetProperties(void)
 
 void CPVRClient::ResetAddonCapabilities(void)
 {
+<<<<<<< HEAD
   m_addonCapabilities.bSupportsChannelSettings    = false;
   m_addonCapabilities.bSupportsTimeshift          = false;
   m_addonCapabilities.bSupportsEPG                = false;
@@ -98,6 +99,21 @@ void CPVRClient::ResetAddonCapabilities(void)
   m_addonCapabilities.bHandlesDemuxing            = false;
   m_addonCapabilities.bSupportsRecordingFolders   = false;
   m_addonCapabilities.bSupportsRecordingPlayCount = false;
+=======
+  m_addonCapabilities.bSupportsChannelSettings  = false;
+  m_addonCapabilities.bSupportsTimeshift        = false;
+  m_addonCapabilities.bSupportsEPG              = false;
+  m_addonCapabilities.bSupportsTV               = false;
+  m_addonCapabilities.bSupportsRadio            = false;
+  m_addonCapabilities.bSupportsRecordings       = false;
+  m_addonCapabilities.bSupportsTimers           = false;
+  m_addonCapabilities.bSupportsChannelGroups    = false;
+  m_addonCapabilities.bSupportsChannelScan      = false;
+  m_addonCapabilities.bHandlesInputStream       = false;
+  m_addonCapabilities.bHandlesDemuxing          = false;
+  m_addonCapabilities.bSupportsRecordingFolders = false;
+  m_addonCapabilities.dwSupportsRecordingRules  = 0;
+>>>>>>> 8b1ee5b... pvr: Serie Recording.
 }
 
 bool CPVRClient::Create(int iClientId)
@@ -207,6 +223,7 @@ inline void PVRWriteClientTimerInfo(const CPVRTimerInfoTag &xbmcTimer, PVR_TIMER
   CEpgInfoTag *epgTag = xbmcTimer.GetEpgInfoTag();
 
   addonTimer.iClientIndex      = xbmcTimer.m_iClientIndex;
+  addonTimer.iClientScheduleId = xbmcTimer.m_iClientScheduleId;
   addonTimer.state             = xbmcTimer.m_state;
   addonTimer.iClientIndex      = xbmcTimer.m_iClientIndex;
   addonTimer.iClientChannelUid = xbmcTimer.m_iClientChannelUid;
@@ -219,12 +236,14 @@ inline void PVRWriteClientTimerInfo(const CPVRTimerInfoTag &xbmcTimer, PVR_TIMER
   addonTimer.startTime         = start - g_advancedSettings.m_iPVRTimeCorrection;
   addonTimer.endTime           = end - g_advancedSettings.m_iPVRTimeCorrection;
   addonTimer.firstDay          = firstDay - g_advancedSettings.m_iPVRTimeCorrection;
-  addonTimer.iEpgUid           = epgTag ? epgTag->UniqueBroadcastID() : -1;
   addonTimer.strSummary        = xbmcTimer.m_strSummary.c_str();
   addonTimer.iMarginStart      = xbmcTimer.m_iMarginStart;
   addonTimer.iMarginEnd        = xbmcTimer.m_iMarginEnd;
   addonTimer.iGenreType        = xbmcTimer.m_iGenreType;
   addonTimer.iGenreSubType     = xbmcTimer.m_iGenreSubType;
+  addonTimer.iSerieRule        = xbmcTimer.m_iSerieRule;
+  addonTimer.iEpgUid           = epgTag ? epgTag->EpgID():0;
+
 }
 
 /*!

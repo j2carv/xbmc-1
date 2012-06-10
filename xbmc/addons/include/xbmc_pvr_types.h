@@ -132,6 +132,19 @@ extern "C" {
   } PVR_TIMER_STATE;
 
   /*!
+   * @brief PVR serie rules
+   */
+  typedef enum
+  {
+    PVR_SERIE_ON = 0x1,             /*!< @brief record the serie (All episodes on all channels)*/
+    PVR_SERIE_SAME_CHANNEL = 0x2,   /*!< @brief Filter out episodes not on this channel */
+    PVR_SERIE_SKIP_REPEAT = 0x4,    /*!< @brief skip the repeat */
+    PVR_SERIE_SAME_WEEKDAY = 0x8,   /*!< @brief Filter out show not on this week day */
+    PVR_SERIE_SAME_TIME = 0x10,     /*!< @brief Filter out show not at this time */
+    PVR_SERIE_ONCE_PER_WEEK = 0x20, /*!< @brief Record only one matching show per week */
+    PVR_SERIE_ONCE_PER_DAY = 0x40   /*!< @brief Record only one matching show per day */
+  } PVR_TIMER_SERIE; 
+  /*!
    * @brief Properties passed to the Create() method of an add-on.
    */
   typedef struct PVR_PROPERTIES
@@ -159,6 +172,7 @@ extern "C" {
     bool bHandlesDemuxing;              /*!< @brief (optional) true if this add-on demultiplexes packets. */
     bool bSupportsRecordingFolders;     /*!< @brief (optional) true if the backend supports timers / recordings in folders. */
     bool bSupportsRecordingPlayCount;   /*!< @brief (optional) true if the backend supports play count for recordings. */
+    DWORD dwSupportsRecordingRules;     /*!< @bried (optional) bitflag (PVR_TIMER_SERIE) on when supported. */
   } ATTRIBUTE_PACKED PVR_ADDON_CAPABILITIES;
 
   /*!
@@ -276,6 +290,7 @@ extern "C" {
   typedef struct PVR_TIMER {
     unsigned int    iClientIndex;      /*!< @brief (required) the index of this timer given by the client */
     int             iClientChannelUid; /*!< @brief (required) unique identifier of the channel to record on */
+    int             iClientScheduleId; /*!< @brief (required) unique identifier of schedule (i.e Rules Serie) parent of this timer. */
     time_t          startTime;         /*!< @brief (required) start time of the recording in UTC. instant timers that are sent to the add-on by xbmc will have this value set to 0 */
     time_t          endTime;           /*!< @brief (required) end time of the recording in UTC */
     PVR_TIMER_STATE state;             /*!< @brief (required) the state of this timer */
@@ -292,6 +307,7 @@ extern "C" {
     unsigned int    iMarginEnd;        /*!< @brief (optional) if set, the backend ends the recording iMarginEnd minutes after endTime. */
     int             iGenreType;        /*!< @brief (optional) genre type */
     int             iGenreSubType;     /*!< @brief (optional) genre sub type */
+    int             iSerieRule;        /*!< @brief (optional) bitflag rules for recording series */
   } ATTRIBUTE_PACKED PVR_TIMER;
 
   /*!
