@@ -768,6 +768,7 @@ copy "$(TargetDir)*.dll" "$(ProjectDir)..\.."</Command>
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGuideOSD.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGuideSearch.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRRecordingInfo.cpp" />
+    <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRTimerSerie.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRTimerSettings.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\PVRDatabase.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\PVRGUIInfo.cpp" />
