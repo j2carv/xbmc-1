@@ -1124,7 +1124,7 @@ bool PVRClientMythTV::SwitchChannel(const PVR_CHANNEL &channelinfo)
     XBMC->Log(LOG_DEBUG,"%s - chanID: %i",__FUNCTION__,channelinfo.iUniqueId);
   MythChannel chan=m_channels.at(channelinfo.iUniqueId);
   bool retval=false;
-  //retval=m_rec.SetChannel(chan); //Disabled for now. Seeking will hang if using setchannel.
+  retval=m_rec.SetChannel(chan); //Disabled for now. Seeking will hang if using setchannel.
   if(!retval)
   {
     //XBMC->Log(LOG_INFO,"%s - Failed to change to channel: %s(%i) - Reopening Livestream.",__FUNCTION__,channelinfo.strChannelName,channelinfo.iUniqueId);
