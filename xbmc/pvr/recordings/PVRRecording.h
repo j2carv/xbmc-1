@@ -53,8 +53,9 @@ namespace PVR
     int           m_iLifetime;      /*!< lifetime of this recording */
     CStdString    m_strStreamURL;   /*!< stream URL. if empty use pvr client */
     CStdString    m_strDirectory;   /*!< directory of this recording on the client */
-    CStdString    m_defualt_icon;   /*!< url to locally stored image */
-    CStdString    m_fanart_image;   /*!< url to locally stored image */
+    bool          m_iRecPlayCount;  /*!< play count of this recording on the client */
+    CStdString    m_strIconPath;    /*!< url to locally stored image */
+    CStdString    m_strFanartPath;  /*!< url to locally stored image */
 
     CPVRRecording(void);
     CPVRRecording(const PVR_RECORDING &recording, unsigned int iClientId);
@@ -86,6 +87,13 @@ namespace PVR
      * @return True if it was renamed successfully, false otherwise.
      */
     bool Rename(const CStdString &strNewName);
+
+    /*!
+     * @brief Set this recording's play count on the client (if supported).
+     * @param count play count.
+     * @return True if play count was set successfully, false otherwise.
+     */
+    bool SetPlayCount(int count);
 
     /*!
      * @brief Update this tag with the contents of the given tag.
