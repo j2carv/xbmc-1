@@ -56,6 +56,7 @@ CPVRRecording::CPVRRecording(const PVR_RECORDING &recording, unsigned int iClien
   m_defualt_icon   = recording.strIconPath;
   m_fanart_image   = recording.strDefFanart;
   
+  m_iRecPlayCount  = recording.iPlayCount;
 }
 
 bool CPVRRecording::operator ==(const CPVRRecording& right) const
@@ -73,7 +74,8 @@ bool CPVRRecording::operator ==(const CPVRRecording& right) const
        m_iLifetime          == right.m_iLifetime &&
        m_strDirectory       == right.m_strDirectory &&
        m_strFileNameAndPath == right.m_strFileNameAndPath &&
-       m_strTitle           == right.m_strTitle);
+       m_strTitle           == right.m_strTitle &&
+       m_iRecPlayCount      == right.m_iRecPlayCount);
 }
 
 bool CPVRRecording::operator !=(const CPVRRecording& right) const
@@ -91,8 +93,8 @@ void CPVRRecording::Reset(void)
   m_iPriority          = -1;
   m_iLifetime          = -1;
   m_strFileNameAndPath = StringUtils::EmptyString;
-  m_defualt_icon       = StringUtils::EmptyString;
-  m_fanart_image       = StringUtils::EmptyString;
+  m_defualt_icon       = StringUtils::EmptyString;  m_fanart_image       = StringUtils::EmptyString;
+  m_iRecPlayCount      = 0;
 
   m_recordingTime.Reset();
   CVideoInfoTag::Reset();
@@ -123,6 +125,19 @@ bool CPVRRecording::Rename(const CStdString &strNewName)
   PVR_ERROR error;
   m_strTitle.Format("%s", strNewName);
   if (!g_PVRClients->RenameRecording(*this, &error))
+  {
+    DisplayError(error);
+    return false;
+  }
+
+  return true;
+}
+
+bool CPVRRecording::SetPlayCount(int count)
+{
+  PVR_ERROR error;
+  m_iRecPlayCount = count;
+  if (!g_PVRClients->SetRecordingPlayCount(*this, count, &error))
   {
     DisplayError(error);
     return false;
@@ -162,6 +177,7 @@ void CPVRRecording::Update(const CPVRRecording &tag)
   m_strGenre       = tag.m_strGenre;
   m_defualt_icon   = tag.m_defualt_icon;
   m_fanart_image   = tag.m_fanart_image;
+  m_iRecPlayCount  = tag.m_iRecPlayCount;
 
   CStdString strShow;
   strShow.Format("%s - ", g_localizeStrings.Get(20364).c_str());
