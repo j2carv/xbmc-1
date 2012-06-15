@@ -85,7 +85,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pvrclient_tvheadend", "..\..\xbmc\pvrclients\tvheadend\project\VS2010Express\XBMC_tvheadend.vcxproj", "{C04B0FB1-667D-4F1C-BDAE-A07CDFFA74A3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{00700E12-A63B-4E54-B962-4011A90584BD} = {00700E12-A63B-4E54-B962-4011A90584BD}
-		{E2DF1AC8-E9BF-43B8-B5D9-7EC3B513EEF1} = {E2DF1AC8-E9BF-43B8-B5D9-7EC3B513EEF1}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XbmcCommons", "XbmcCommons.vcxproj", "{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}"
@@ -607,6 +606,13 @@ Global
 		{C04B0FB1-667D-4F1C-BDAE-A07CDFFA74A3}.Release (OpenGL)|Win32.Build.0 = Release|Win32
 		{C04B0FB1-667D-4F1C-BDAE-A07CDFFA74A3}.Release|Win32.ActiveCfg = Release|Win32
 		{C04B0FB1-667D-4F1C-BDAE-A07CDFFA74A3}.Release|Win32.Build.0 = Release|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Debug (DirectX)|Win32.ActiveCfg = Debug|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Debug (OpenGL)|Win32.ActiveCfg = Debug|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Debug|Win32.ActiveCfg = Debug|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Debug|Win32.Build.0 = Debug|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Release (DirectX)|Win32.ActiveCfg = Release|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Release (OpenGL)|Win32.ActiveCfg = Release|Win32
+		{87DA0A1E-3F33-4927-A5E5-2D58F2C58E17}.Release|Win32.ActiveCfg = Release|Win32
 		{A55ACC6B-837D-4784-8E41-66947B1D9B8C}.Debug (DirectX)|Win32.ActiveCfg = Debug|Win32
 		{A55ACC6B-837D-4784-8E41-66947B1D9B8C}.Debug (DirectX)|Win32.Build.0 = Debug|Win32
 		{A55ACC6B-837D-4784-8E41-66947B1D9B8C}.Debug (OpenGL)|Win32.ActiveCfg = Debug|Win32
@@ -624,6 +630,7 @@ Global
 		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Debug (OpenGL)|Win32.ActiveCfg = Debug|Win32
 		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Debug (OpenGL)|Win32.Build.0 = Debug|Win32
 		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Debug|Win32.ActiveCfg = Debug|Win32
+		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Debug|Win32.Build.0 = Debug|Win32
 		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Release (DirectX)|Win32.ActiveCfg = Release|Win32
 		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Release (DirectX)|Win32.Build.0 = Release|Win32
 		{034B1D02-CA92-455D-8866-DB95BEE49C10}.Release (OpenGL)|Win32.ActiveCfg = Release|Win32

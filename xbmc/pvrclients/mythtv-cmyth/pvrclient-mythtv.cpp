@@ -593,12 +593,12 @@ PVR_ERROR PVRClientMythTV::GetRecordings(PVR_HANDLE handle)
       }
       time_t startTime = it->second.StartTime();
 
-      CStdString defIcon = GetArtWork(FILE_OPS_GET_COVERART,title);
-      if(defIcon == "")
-        defIcon = m_fOps2_client->getPreviewIconPath(id+".png");
-      CStdString fanIcon = GetArtWork(FILE_OPS_GET_FANART,title);
-      tag.strIconPath=defIcon.c_str();
-      tag.strDefFanart=fanIcon.c_str();
+      CStdString iconPath = GetArtWork(FILE_OPS_GET_COVERART,title);
+      if(iconPath == "")
+        iconPath = m_fOps2_client->getPreviewIconPath(id+".png");
+      CStdString fanartPath = GetArtWork(FILE_OPS_GET_FANART,title);
+      tag.strIconPath = iconPath.c_str();
+      tag.strFanartPath = fanartPath.c_str();
 
       //Unimplemented
       tag.iLifetime=0;

@@ -2104,7 +2104,7 @@
     <ClCompile Include="..\..\xbmc\addons\AddonCallbacksPVR.cpp">
       <Filter>addons</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\filesystem\CacheCircular.cpp">      <Filter>filesystem</Filter>    </ClCompile>    <ClCompile Include="..\..\lib\SlingboxLib\SlingboxLib.cpp">
+    <ClCompile Include="..\..\lib\SlingboxLib\SlingboxLib.cpp">
       <Filter>libs\SlingboxLib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\dialogs\GUIDialogPlayEject.cpp">
