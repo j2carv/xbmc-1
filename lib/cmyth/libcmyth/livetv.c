@@ -679,6 +679,7 @@ cmyth_livetv_chain_switch(cmyth_recorder_t rec, int dir)
 		PRINTF("**SSDEBUG:(cmyth_livetv_chain_switch): %s:%d\n",
 		"dooingSwitcheroo",ret);
 		rec->rec_livetv_file = ref_hold(rec->rec_livetv_chain->chain_files[ret]);
+    rec->rec_livetv_file->file_req = 0;
 		rec->rec_livetv_chain
 					->prog_update_callback(rec->rec_livetv_chain->progs[ret]);
 		ret = 1;
