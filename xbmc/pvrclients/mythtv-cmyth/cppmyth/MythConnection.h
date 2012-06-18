@@ -21,7 +21,7 @@ public:
   MythConnection(CStdString server,unsigned short port);
   MythRecorder GetFreeRecorder();
   MythRecorder GetRecorder(int n);
-  MythEventHandler CreateEventHandler();
+  MythEventHandler * CreateEventHandler();
   boost::unordered_map< CStdString, MythProgramInfo > GetRecordedPrograms();
   boost::unordered_map< CStdString, MythProgramInfo > GetPendingPrograms();
   boost::unordered_map< CStdString, MythProgramInfo > GetScheduledPrograms();
@@ -50,4 +50,5 @@ private:
   CStdString m_server;
   unsigned short m_port;
   int m_retry_count;
+  static MythEventHandler * m_pEventHandler;
 };

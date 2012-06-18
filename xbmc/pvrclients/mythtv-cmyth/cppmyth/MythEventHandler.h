@@ -20,7 +20,9 @@ public:
   void PreventLiveChainUpdate();
   void AllowLiveChainUpdate();
   void SetRecordingListener(MythFile &file, CStdString recId);
+  bool TryReconnect();
 private:
   class ImpMythEventHandler;
   boost::shared_ptr< ImpMythEventHandler > m_imp;
+  int m_retry_count;
 };

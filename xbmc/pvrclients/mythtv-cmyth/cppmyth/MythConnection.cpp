@@ -46,6 +46,8 @@ using namespace ADDON;
 *								MythConnection
 */
 
+MythEventHandler * MythConnection::m_pEventHandler = NULL;
+
 MythConnection::MythConnection():
 m_conn_t(new MythPointerThreadSafe<cmyth_conn_t>()),m_server(""),m_port(0),m_retry_count(0)
 {  
@@ -130,7 +132,13 @@ bool MythConnection::TryReconnect()
         retval = CMYTH->ConnReconnectCtrl( *m_conn_t );
         Unlock();
         if ( retval )
+        {
             m_retry_count = 0;
+            if ( MythConnection::m_pEventHandler && !MythConnection::m_pEventHandler->TryReconnect() )
+            {
+                XBMC->Log( LOG_ERROR, "%s - Unable to reconnect event handler", __FUNCTION__ );
+            }
+        }
     }
     if ( g_bExtraDebug && !retval )
         XBMC->Log( LOG_DEBUG, "%s - Unable to reconnect (retry count: %d)", __FUNCTION__, m_retry_count );
@@ -218,9 +226,15 @@ MythRecorder MythConnection::GetRecorder(int n)
   }
 
 
-MythEventHandler MythConnection::CreateEventHandler()
+MythEventHandler * MythConnection::CreateEventHandler()
 {
-  return MythEventHandler(m_server,m_port);
+    if ( MythConnection::m_pEventHandler )
+    {
+        delete( MythConnection::m_pEventHandler );
+        MythConnection::m_pEventHandler = NULL;
+    }
+    MythConnection::m_pEventHandler = new MythEventHandler( m_server, m_port );
+    return MythConnection::m_pEventHandler;
 }
 
 CStdString MythConnection::GetServer()
