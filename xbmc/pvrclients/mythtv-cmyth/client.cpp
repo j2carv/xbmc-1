@@ -615,6 +615,10 @@ int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
   if (g_client == NULL)
 			return -1;
   int dataread=g_client->ReadLiveStream(pBuffer,iBufferSize);
+  if(dataread<0)
+  {
+    XBMC->Log(LOG_ERROR,"%s: Failed to read liveStream. Errorcode: %i!",__FUNCTION__,dataread);
+  }
   return dataread;
 }
 
