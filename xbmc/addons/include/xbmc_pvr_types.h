@@ -311,8 +311,9 @@ extern "C" {
     int           iLifetime;            /*!< @brief (optional) life time in days of this recording */
     int           iGenreType;           /*!< @brief (optional) genre type */
     int           iGenreSubType;        /*!< @brief (optional) genre sub type */
-    const char *  strIconPath;          /*!< @brief (optional) icon path */    const char *  strDefFanart;         /*!< @brief (optional) fanart path */
     bool          iPlayCount;           /*!< @brief (optional) play count of this recording on the client */
+    const char *  strIconPath;          /*!< @brief (optional) icon path */
+    const char *  strFanartPath;        /*!< @brief (optional) fanart path */
   } ATTRIBUTE_PACKED PVR_RECORDING;
 
   /*!

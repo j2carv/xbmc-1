@@ -53,8 +53,9 @@ namespace PVR
     int           m_iLifetime;      /*!< lifetime of this recording */
     CStdString    m_strStreamURL;   /*!< stream URL. if empty use pvr client */
     CStdString    m_strDirectory;   /*!< directory of this recording on the client */
-    CStdString    m_defualt_icon;   /*!< url to locally stored image */    CStdString    m_fanart_image;   /*!< url to locally stored image */
     bool          m_iRecPlayCount;  /*!< play count of this recording on the client */
+    CStdString    m_strIconPath;    /*!< url to locally stored image */
+    CStdString    m_strFanartPath;  /*!< url to locally stored image */
 
     CPVRRecording(void);
     CPVRRecording(const PVR_RECORDING &recording, unsigned int iClientId);

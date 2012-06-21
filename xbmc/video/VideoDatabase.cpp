@@ -52,12 +52,9 @@
 #include "dbwrappers/dataset.h"
 #include "ThumbnailCache.h"
 #include "utils/LabelFormatter.h"
-<<<<<<< HEAD
-=======
 #include "XBDateTime.h"
 #include "pvr/PVRManager.h"
 #include "pvr/recordings/PVRRecordings.h"
->>>>>>> cc86aa0... Merge remote branch 'fetzerch/feature-pvr-markwatched-menu' into PR508
 
 using namespace std;
 using namespace dbiplus;

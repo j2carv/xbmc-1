@@ -229,17 +229,13 @@ CFileItem::CFileItem(const CPVRRecording& record)
   *GetPVRRecordingInfoTag() = record;
   SetLabel(record.m_strTitle);
   m_strLabel2 = record.m_strPlot;
-  if ((!record.m_defualt_icon.IsEmpty()) && 
-    ((record.m_defualt_icon.Left(1).CompareNoCase("/") == 0) ||
-    (record.m_defualt_icon.Left(8).CompareNoCase("special:") == 0)))
+  if (!record.m_strIconPath.IsEmpty())
   {
-    SetIconImage(record.m_defualt_icon.c_str());
+    SetIconImage(record.m_strIconPath.c_str());
   }
-  if ((!record.m_fanart_image.IsEmpty()) && 
-    ((record.m_fanart_image.Left(1).CompareNoCase("/") == 0) ||
-    (record.m_fanart_image.Left(8).CompareNoCase("special:") == 0)))
+  if (!record.m_strFanartPath.IsEmpty())
   {
-    SetProperty("Fanart_Image",record.m_fanart_image.c_str());
+    SetProperty("Fanart_Image",record.m_strFanartPath.c_str());
   }
   
 }
