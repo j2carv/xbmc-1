@@ -607,15 +607,16 @@ bool CEpgContainer::CheckPlayingEvents(void)
     CDateTime::GetCurrentDateTime().GetAsUTCDateTime().GetAsTime(m_iNextEpgActiveTagCheck);
     m_iNextEpgActiveTagCheck += g_advancedSettings.m_iEpgActiveTagCheckInterval;
 
-    if (bFoundChanges)
-    {
-      SetChanged();
-      NotifyObservers("epg-now", true);
-    }
-
     /* pvr tags always start on the full minute */
     if (g_PVRManager.IsStarted())
       m_iNextEpgActiveTagCheck -= m_iNextEpgActiveTagCheck % 60;
+
+    if (bFoundChanges)
+    {
+      SetChanged();
+      lock.Leave();
+      NotifyObservers("epg-now", true);
+    }
 
     bReturn = true;
   }
