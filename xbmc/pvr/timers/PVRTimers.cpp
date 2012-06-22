@@ -675,10 +675,10 @@ CPVRTimerInfoTag *CPVRTimers::GetMatch(const CEpgInfoTag *Epg)
     {
       CPVRTimerInfoTag *timer = it->second->at(iTimerPtr);
 
-      if (!Epg || !Epg->GetTable() || !Epg->GetTable()->Channel())
+      const CPVRChannel *channel = Epg ? Epg->ChannelTag() : NULL;
+      if (!channel)
         continue;
 
-      const CPVRChannel *channel = Epg->GetTable()->Channel();
       if (timer->ChannelNumber() != channel->ChannelNumber()
           || timer->m_bIsRadio != channel->IsRadio())
         continue;
@@ -716,8 +716,7 @@ CDateTime CPVRTimers::GetNextEventTime(void) const
   const CDateTimeSpan prewakeup(0, 0, g_guiSettings.GetInt("pvrpowermanagement.prewakeup"), 0);
   const CDateTimeSpan idle(0, 0, g_guiSettings.GetInt("pvrpowermanagement.backendidletime"), 0);
 
-  CDateTime timerwakeuptime;
-  CDateTime dailywakeuptime;
+  CDateTime wakeuptime;
 
   /* Check next active time */
   CPVRTimerInfoTag timer;
@@ -726,15 +725,16 @@ CDateTime CPVRTimers::GetNextEventTime(void) const
     const CDateTime start = timer.StartAsUTC();
 
     if ((start - idle) > now) {
-      timerwakeuptime = start - prewakeup;
+      wakeuptime = start - prewakeup;
     } else {
-      timerwakeuptime = now + idle;
+      wakeuptime = now + idle;
     }
   }
 
   /* check daily wake up */
   if (dailywakup)
   {
+    CDateTime dailywakeuptime;
     dailywakeuptime.SetFromDBTime(g_guiSettings.GetString("pvrpowermanagement.dailywakeuptime", false));
     dailywakeuptime = dailywakeuptime.GetAsUTCDateTime();
 
@@ -748,8 +748,10 @@ CDateTime CPVRTimers::GetNextEventTime(void) const
       const CDateTimeSpan oneDay(1,0,0,0);
       dailywakeuptime += oneDay;
     }
+    if (dailywakeuptime < wakeuptime)
+      wakeuptime = dailywakeuptime;
   }
 
-  const CDateTime retVal((dailywakeuptime < timerwakeuptime) ? dailywakeuptime : timerwakeuptime);
+  const CDateTime retVal(wakeuptime);
   return retVal;
 }

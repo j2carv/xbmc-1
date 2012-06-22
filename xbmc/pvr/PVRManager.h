@@ -437,6 +437,11 @@ namespace PVR
      */
     void LoadCurrentChannelSettings(void);
 
+    /*!
+     * @brief Executes "pvrpowermanagement.setwakeupcmd"
+     */
+    bool SetWakeupCommand(void);
+
   protected:
     /*!
      * @brief PVR update and control thread.
@@ -510,11 +515,6 @@ namespace PVR
      * @param iProgress The current progress in %.
      */
     void ShowProgressDialog(const CStdString &strText, int iProgress);
-
-    /*!
-     * @brief Executes "pvrpowermanagement.setwakeupcmd"
-     */
-    bool SetWakeupCommand(void);
 
     /*!
      * @brief Hide the progress dialog if it's visible.
