@@ -35,7 +35,7 @@ using namespace std;
 using namespace EPG;
 using namespace PVR;
 
-CEpgInfoTag::CEpgInfoTag(int iEpgId /* = -1 */, int iPVRChannelNumber /* = -1 */, int iPVRChannelID /* = -1 */, const CStdString &strTableName /* = StringUtils::EmptyString */) :
+CEpgInfoTag::CEpgInfoTag(CEpg *epg /* = NULL */, int iPVRChannelNumber /* = -1 */, int iPVRChannelID /* = -1 */, const CStdString &strTableName /* = StringUtils::EmptyString */, const CStdString &strIconPath /* = StringUtils::EmptyString */) :
     m_bNotify(false),
     m_bChanged(false),
     m_iBroadcastId(-1),
@@ -51,10 +51,10 @@ CEpgInfoTag::CEpgInfoTag(int iEpgId /* = -1 */, int iPVRChannelNumber /* = -1 */
     m_strPlotOutline(""),
     m_strPlot(""),
     m_strEpisodeName(""),
-    m_strIconPath(""),
+    m_strIconPath(strIconPath),
     m_strFileNameAndPath(""),
     m_iTimerId(-1),
-    m_iEpgId(iEpgId),
+    m_epg(epg),
     m_iPVRChannelNumber(iPVRChannelNumber),
     m_iPVRChannelID(iPVRChannelID),
     m_strTableName(strTableName)
@@ -80,7 +80,7 @@ CEpgInfoTag::CEpgInfoTag(const EPG_TAG &data) :
     m_strIconPath(""),
     m_strFileNameAndPath(""),
     m_iTimerId(-1),
-    m_iEpgId(-1),
+    m_epg(NULL),
     m_iPVRChannelNumber(-1),
     m_iPVRChannelID(-1)
 {
@@ -110,7 +110,7 @@ CEpgInfoTag::CEpgInfoTag(const CEpgInfoTag &tag) :
     m_endTime(tag.m_endTime),
     m_firstAired(tag.m_firstAired),
     m_iTimerId(tag.m_iTimerId),
-    m_iEpgId(tag.m_iEpgId),
+    m_epg(tag.m_epg),
     m_iPVRChannelNumber(tag.m_iPVRChannelNumber),
     m_iPVRChannelID(tag.m_iPVRChannelID),
     m_strTableName(tag.m_strTableName)
@@ -189,7 +189,7 @@ CEpgInfoTag &CEpgInfoTag::operator =(const CEpgInfoTag &other)
   m_firstAired         = other.m_firstAired;
   m_iTimerId           = other.m_iTimerId;
   m_timerStart         = other.m_timerStart;
-  m_iEpgId             = other.m_iEpgId;
+  m_epg                = other.m_epg;
   m_iPVRChannelNumber  = other.m_iPVRChannelNumber;
   m_iPVRChannelID      = other.m_iPVRChannelID;
   m_strTableName       = other.m_strTableName;
@@ -252,13 +252,11 @@ float CEpgInfoTag::ProgressPercentage(void) const
 
 const CEpgInfoTag *CEpgInfoTag::GetNextEvent(void) const
 {
-  CSingleLock lock(m_critSection);
   return GetTable()->GetNextEvent(*this);
 }
 
 const CEpgInfoTag *CEpgInfoTag::GetPreviousEvent(void) const
 {
-  CSingleLock lock(m_critSection);
   return GetTable()->GetPreviousEvent(*this);
 }
 
@@ -405,13 +403,19 @@ void CEpgInfoTag::SetTitle(const CStdString &strTitle)
     UpdatePath();
 }
 
-CStdString CEpgInfoTag::Title(void) const
+CStdString CEpgInfoTag::Title(bool bOverrideParental /* = false */) const
 {
   CStdString retVal;
   CSingleLock lock(m_critSection);
-  retVal = (m_strTitle.IsEmpty()) ?
-      g_localizeStrings.Get(19055) :
-      m_strTitle;
+  const CPVRChannel *channel(ChannelTag());
+
+  if (!bOverrideParental && channel && g_PVRManager.IsParentalLocked(*channel))
+    retVal = g_localizeStrings.Get(19266);
+  else if (m_strTitle.IsEmpty())
+    retVal = g_localizeStrings.Get(19055);
+  else
+    retVal = m_strTitle;
+
   return retVal;
 }
 
@@ -431,11 +435,15 @@ void CEpgInfoTag::SetPlotOutline(const CStdString &strPlotOutline)
     UpdatePath();
 }
 
-CStdString CEpgInfoTag::PlotOutline(void) const
+CStdString CEpgInfoTag::PlotOutline(bool bOverrideParental /* = false */) const
 {
   CStdString retVal;
   CSingleLock lock(m_critSection);
-  retVal = m_strPlotOutline;
+  const CPVRChannel *channel(ChannelTag());
+
+  if (bOverrideParental || !channel || !g_PVRManager.IsParentalLocked(*channel))
+    retVal = m_strPlotOutline;
+
   return retVal;
 }
 
@@ -459,11 +467,15 @@ void CEpgInfoTag::SetPlot(const CStdString &strPlot)
     UpdatePath();
 }
 
-CStdString CEpgInfoTag::Plot(void) const
+CStdString CEpgInfoTag::Plot(bool bOverrideParental /* = false */) const
 {
   CStdString retVal;
   CSingleLock lock(m_critSection);
-  retVal = m_strPlot;
+  const CPVRChannel *channel(ChannelTag());
+
+  if (bOverrideParental || !channel || !g_PVRManager.IsParentalLocked(*channel))
+    retVal = m_strPlot;
+
   return retVal;
 }
 
@@ -728,12 +740,9 @@ void CEpgInfoTag::SetIcon(const CStdString &strIconPath)
 CStdString CEpgInfoTag::Icon(void) const
 {
   CStdString retVal;
-  CEpg *epg = g_EpgContainer.GetById(m_iEpgId);
 
   CSingleLock lock(m_critSection);
   retVal = m_strIconPath;
-  if (retVal.IsEmpty() && epg && epg->HasPVRChannel())
-     retVal = epg->Channel()->IconPath();
   return retVal;
 }
 
@@ -878,7 +887,7 @@ bool CEpgInfoTag::Update(const CEpgInfoTag &tag, bool bUpdateBroadcastId /* = tr
         m_iSeriesNumber      != tag.m_iSeriesNumber ||
         m_strEpisodeName     != tag.m_strEpisodeName ||
         m_iUniqueBroadcastID != tag.m_iUniqueBroadcastID ||
-        m_iEpgId             != tag.m_iEpgId ||
+        EpgID()              != tag.EpgID() ||
         m_iPVRChannelID      != tag.m_iPVRChannelID ||
         m_iPVRChannelNumber  != tag.m_iPVRChannelNumber ||
         m_strTableName       != tag.m_strTableName ||
@@ -899,7 +908,7 @@ bool CEpgInfoTag::Update(const CEpgInfoTag &tag, bool bUpdateBroadcastId /* = tr
       m_endTime            = tag.m_endTime;
       m_iGenreType         = tag.m_iGenreType;
       m_iGenreSubType      = tag.m_iGenreSubType;
-      m_iEpgId             = tag.m_iEpgId;
+      m_epg                = tag.m_epg;
       m_iPVRChannelID      = tag.m_iPVRChannelID;
       m_iPVRChannelNumber  = tag.m_iPVRChannelNumber;
       m_strTableName       = tag.m_strTableName;
@@ -966,7 +975,7 @@ void CEpgInfoTag::UpdatePath(void)
   CStdString path;
   {
     CSingleLock lock(m_critSection);
-    path.Format("pvr://guide/%04i/%s.epg", m_iEpgId, m_startTime.GetAsDBDateTime().c_str());
+    path.Format("pvr://guide/%04i/%s.epg", EpgID(), m_startTime.GetAsDBDateTime().c_str());
   }
 
   SetPath(path);
@@ -974,5 +983,10 @@ void CEpgInfoTag::UpdatePath(void)
 
 const CEpg *CEpgInfoTag::GetTable() const
 {
-  return g_EpgContainer.GetById(m_iEpgId);
+  return m_epg;
+}
+
+const int CEpgInfoTag::EpgID(void) const
+{
+  return m_epg ? m_epg->EpgID() : -1;
 }
