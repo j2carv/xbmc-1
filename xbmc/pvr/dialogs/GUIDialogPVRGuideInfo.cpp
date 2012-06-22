@@ -26,10 +26,12 @@
 #include "dialogs/GUIDialogYesNo.h"
 
 #include "pvr/PVRManager.h"
+#include "pvr/addons/PVRClients.h"
 #include "pvr/channels/PVRChannelGroupsContainer.h"
 #include "epg/EpgInfoTag.h"
 #include "pvr/timers/PVRTimers.h"
 #include "pvr/timers/PVRTimerInfoTag.h"
+#include "GUIDialogPVRTimerSerie.h"
 
 using namespace std;
 using namespace PVR;
@@ -38,6 +40,7 @@ using namespace EPG;
 #define CONTROL_BTN_SWITCH              5
 #define CONTROL_BTN_RECORD              6
 #define CONTROL_BTN_OK                  7
+#define CONTROL_BTN_RECORD_SERIES       8
 
 CGUIDialogPVRGuideInfo::CGUIDialogPVRGuideInfo(void)
     : CGUIDialog(WINDOW_DIALOG_PVR_GUIDE_INFO, "DialogPVRGuideInfo.xml")
@@ -101,6 +104,46 @@ bool CGUIDialogPVRGuideInfo::ActionCancelTimer(const CPVRTimerInfoTag *tag)
   return bReturn;
 }
 
+bool CGUIDialogPVRGuideInfo::ActionRecordSerie(const CEpgInfoTag *tag)
+{
+  const CPVRChannel *channel = tag->ChannelTag();
+  DWORD dwSupportedRules=g_PVRClients->GetAddonCapabilities(channel->ClientID()).dwSupportsRecordingRules;
+
+  CPVRTimerInfoTag *newtimer=NULL;
+
+  if(dwSupportedRules==PVR_SERIE_ON)
+  {
+    CGUIDialogYesNo* pDialog = (CGUIDialogYesNo*)g_windowManager.GetWindow(WINDOW_DIALOG_YES_NO);
+    if (!pDialog)
+      return false;
+    pDialog->SetHeading(19257);
+    pDialog->SetLine(0, tag->Title());
+    pDialog->DoModal();
+
+    if (!pDialog->IsConfirmed())
+      return false;
+    newtimer = CPVRTimerInfoTag::CreateFromEpg(*tag);
+  }
+  else
+  {
+    CGUIDialogPVRTimerSerie* pDialog = (CGUIDialogPVRTimerSerie*)g_windowManager.GetWindow(WINDOW_DIALOG_PVR_TIMER_SERIE);
+    if (!pDialog)
+      return false;
+    pDialog->SetProgInfo(&(*m_progItem));
+    pDialog->DoModal();
+
+    if (!pDialog->IsConfirmed())
+      return false;
+    newtimer = CPVRTimerInfoTag::CreateFromEpg(*tag);
+    newtimer->SetSerieRules(pDialog->GetResult());
+  }
+
+  CFileItem *newTimerItem = new CFileItem(*newtimer);
+
+  return g_PVRTimers->AddTimer(*newTimerItem);
+}
+
+
 bool CGUIDialogPVRGuideInfo::OnClickButtonOK(CGUIMessage &message)
 {
   bool bReturn = false;
@@ -143,6 +186,29 @@ bool CGUIDialogPVRGuideInfo::OnClickButtonRecord(CGUIMessage &message)
   return bReturn;
 }
 
+bool CGUIDialogPVRGuideInfo::OnClickButtonRecordSerie(CGUIMessage &message)
+{
+  bool bReturn = false;
+
+  if (message.GetSenderId() == CONTROL_BTN_RECORD_SERIES)
+  {
+    bReturn = true;
+
+    const CEpgInfoTag *tag = m_progItem->GetEPGInfoTag();
+    if (!tag || !tag->HasPVRChannel())
+    {
+      /* invalid channel */
+      CGUIDialogOK::ShowAndGetInput(19033,19067,0,0);
+      Close();
+      return bReturn;
+    }
+    ActionRecordSerie(tag);
+  }
+
+  return bReturn;
+}
+
+
 bool CGUIDialogPVRGuideInfo::OnClickButtonSwitch(CGUIMessage &message)
 {
   bool bReturn = false;
@@ -172,7 +238,8 @@ bool CGUIDialogPVRGuideInfo::OnMessage(CGUIMessage& message)
   case GUI_MSG_CLICKED:
     return OnClickButtonOK(message) ||
            OnClickButtonRecord(message) ||
-           OnClickButtonSwitch(message);
+           OnClickButtonSwitch(message) ||
+           OnClickButtonRecordSerie(message);
   }
 
   return CGUIDialog::OnMessage(message);
@@ -195,6 +262,13 @@ void CGUIDialogPVRGuideInfo::Update()
   {
     /* no epg event selected */
     return;
+  }
+
+  const CPVRChannel *channel = tag->ChannelTag();
+  DWORD dwSupportedRules = g_PVRClients->GetAddonCapabilities(channel->ClientID()).dwSupportsRecordingRules;
+  if (!dwSupportedRules) 
+  {
+    SET_CONTROL_HIDDEN(CONTROL_BTN_RECORD_SERIES);
   }
 
   if (tag->EndAsLocalTime() <= CDateTime::GetCurrentDateTime())
@@ -221,4 +295,5 @@ void CGUIDialogPVRGuideInfo::Update()
     else
       SET_CONTROL_LABEL(CONTROL_BTN_RECORD, 19060);
   }
+
 }

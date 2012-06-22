@@ -85,21 +85,6 @@ void CPVRClient::ResetProperties(void)
 
 void CPVRClient::ResetAddonCapabilities(void)
 {
-<<<<<<< HEAD
-  m_addonCapabilities.bSupportsChannelSettings    = false;
-  m_addonCapabilities.bSupportsTimeshift          = false;
-  m_addonCapabilities.bSupportsEPG                = false;
-  m_addonCapabilities.bSupportsTV                 = false;
-  m_addonCapabilities.bSupportsRadio              = false;
-  m_addonCapabilities.bSupportsRecordings         = false;
-  m_addonCapabilities.bSupportsTimers             = false;
-  m_addonCapabilities.bSupportsChannelGroups      = false;
-  m_addonCapabilities.bSupportsChannelScan        = false;
-  m_addonCapabilities.bHandlesInputStream         = false;
-  m_addonCapabilities.bHandlesDemuxing            = false;
-  m_addonCapabilities.bSupportsRecordingFolders   = false;
-  m_addonCapabilities.bSupportsRecordingPlayCount = false;
-=======
   m_addonCapabilities.bSupportsChannelSettings  = false;
   m_addonCapabilities.bSupportsTimeshift        = false;
   m_addonCapabilities.bSupportsEPG              = false;
@@ -113,7 +98,6 @@ void CPVRClient::ResetAddonCapabilities(void)
   m_addonCapabilities.bHandlesDemuxing          = false;
   m_addonCapabilities.bSupportsRecordingFolders = false;
   m_addonCapabilities.dwSupportsRecordingRules  = 0;
->>>>>>> 8b1ee5b... pvr: Serie Recording.
 }
 
 bool CPVRClient::Create(int iClientId)

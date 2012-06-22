@@ -409,7 +409,8 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
   pCapabilities->bHandlesDemuxing            = false;
   pCapabilities->bSupportsChannelScan        = false;
   pCapabilities->bSupportsRecordingPlayCount = true;
-
+  pCapabilities->dwSupportsRecordingRules    = PVR_SERIE_ON|PVR_SERIE_SAME_CHANNEL
+    |PVR_SERIE_SAME_WEEKDAY|PVR_SERIE_SAME_TIME|PVR_SERIE_ONCE_PER_WEEK|PVR_SERIE_ONCE_PER_DAY;
   return PVR_ERROR_NO_ERROR;
 }
 

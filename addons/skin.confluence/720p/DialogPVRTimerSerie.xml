@@ -167,7 +167,7 @@
           <width>560</width>
           <height>40</height>
           <font>font13</font>
-          <label>$LOCALIZE[192562]</label>
+          <label>$LOCALIZE[19262]</label>
           <textcolor>grey2</textcolor>
           <focusedcolor>white</focusedcolor>
           <texturefocus border="5">button-focus2.png</texturefocus>
@@ -178,7 +178,7 @@
           <width>560</width>
           <height>40</height>
           <font>font13</font>
-          <label>$LOCALIZE[192563]</label>
+          <label>$LOCALIZE[19263]</label>
           <textcolor>grey2</textcolor>
           <focusedcolor>white</focusedcolor>
           <texturefocus border="5">button-focus2.png</texturefocus>

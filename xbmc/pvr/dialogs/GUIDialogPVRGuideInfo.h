@@ -46,10 +46,11 @@ namespace PVR
     void Update();
     bool ActionStartTimer(const EPG::CEpgInfoTag *tag);
     bool ActionCancelTimer(const CPVRTimerInfoTag *tag);
-
+    bool ActionRecordSerie(const EPG::CEpgInfoTag *tag);
     bool OnClickButtonOK(CGUIMessage &message);
     bool OnClickButtonRecord(CGUIMessage &message);
     bool OnClickButtonSwitch(CGUIMessage &message);
+    bool OnClickButtonRecordSerie(CGUIMessage &message);
 
     CFileItemPtr m_progItem;
   };

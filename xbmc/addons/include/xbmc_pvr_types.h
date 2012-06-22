@@ -136,13 +136,13 @@ extern "C" {
    */
   typedef enum
   {
-    PVR_SERIE_ON = 0x1,             /*!< @brief record the serie (All episodes on all channels)*/
-    PVR_SERIE_SAME_CHANNEL = 0x2,   /*!< @brief Filter out episodes not on this channel */
-    PVR_SERIE_SKIP_REPEAT = 0x4,    /*!< @brief skip the repeat */
-    PVR_SERIE_SAME_WEEKDAY = 0x8,   /*!< @brief Filter out show not on this week day */
-    PVR_SERIE_SAME_TIME = 0x10,     /*!< @brief Filter out show not at this time */
-    PVR_SERIE_ONCE_PER_WEEK = 0x20, /*!< @brief Record only one matching show per week */
-    PVR_SERIE_ONCE_PER_DAY = 0x40   /*!< @brief Record only one matching show per day */
+    PVR_SERIE_ON            = 0x1,   /*!< @brief record the serie (All episodes on all channels)*/
+    PVR_SERIE_SAME_CHANNEL  = 0x2,   /*!< @brief Filter out episodes not on this channel */
+    PVR_SERIE_SKIP_REPEAT   = 0x4,   /*!< @brief skip the repeat */
+    PVR_SERIE_SAME_WEEKDAY  = 0x8,   /*!< @brief Filter out show not on this week day */
+    PVR_SERIE_SAME_TIME     = 0x10,  /*!< @brief Filter out show not at this time */
+    PVR_SERIE_ONCE_PER_WEEK = 0x20,  /*!< @brief Record only one matching show per week */
+    PVR_SERIE_ONCE_PER_DAY  = 0x40   /*!< @brief Record only one matching show per day */    
   } PVR_TIMER_SERIE; 
   /*!
    * @brief Properties passed to the Create() method of an add-on.

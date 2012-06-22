@@ -66,6 +66,7 @@ CPVRTimerInfoTag::CPVRTimerInfoTag(void)
   m_StartTime          = CDateTime::GetUTCDateTime();
   m_StopTime           = m_StartTime;
   m_state              = PVR_TIMER_STATE_SCHEDULED;
+  m_iSerieRule         = 0;
   m_FirstDay.SetValid(false);
 }
 

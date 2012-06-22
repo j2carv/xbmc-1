@@ -889,6 +889,30 @@ PVR_ERROR PVRClientMythTV::AddTimer(const PVR_TIMER &timer)
   CStdString title=mt.Title(false);
   mt.SearchType(m_db.FindProgram(timer.startTime,timer.iClientChannelUid,title,NULL)?MythTimer::NoSearch:MythTimer::ManualSearch);
   mt.Type(timer.bIsRepeating? (timer.iWeekdays==127? MythTimer::TimeslotRecord : MythTimer::WeekslotRecord) : MythTimer::SingleRecord);
+  if(timer.iSerieRule)
+  {
+    switch(timer.iSerieRule)
+    {
+    case PVR_SERIE_ON:
+      mt.Type(MythTimer::AllRecord);
+      break;
+    case PVR_SERIE_SAME_CHANNEL:
+      mt.Type(MythTimer::ChannelRecord);
+      break;
+    case PVR_SERIE_SAME_WEEKDAY:
+      mt.Type(MythTimer::WeekslotRecord);
+      break;
+    case PVR_SERIE_SAME_TIME:
+      mt.Type(MythTimer::TimeslotRecord);
+      break;
+    case PVR_SERIE_ONCE_PER_WEEK:
+      mt.Type(MythTimer::FindWeeklyRecord);
+      break;
+    case PVR_SERIE_ONCE_PER_DAY:
+      mt.Type(MythTimer::FindDailyRecord);
+      break;
+    }
+  }
   int id=m_db.AddTimer(mt);
   if(id<0)
     return PVR_ERROR_NOT_POSSIBLE;

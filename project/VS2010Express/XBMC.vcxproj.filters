@@ -2727,6 +2727,10 @@
     <ClCompile Include="..\..\xbmc\cores\paplayer\PCMCodec.cpp">
       <Filter>cores\paplayer</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\utils\XBMCTinyXML.cpp" />
+    <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRTimerSerie.cpp">
+      <Filter>pvr\dialogs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -5464,6 +5468,7 @@
     <ClInclude Include="..\..\xbmc\cores\paplayer\PCMCodec.h">
       <Filter>cores\paplayer</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\xbmc\utils\XBMCTinyXML.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\xbmc\win32\XBMC_PC.rc">
