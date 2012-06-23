@@ -97,6 +97,8 @@ void CPVRClient::ResetAddonCapabilities(void)
   m_addonCapabilities.bHandlesInputStream       = false;
   m_addonCapabilities.bHandlesDemuxing          = false;
   m_addonCapabilities.bSupportsRecordingFolders = false;
+  m_addonCapabilities.bSupportsRecordingPlayCount = false;
+  m_addonCapabilities.bSupportsLastPlayedPosition = false;
 }
 
 bool CPVRClient::Create(int iClientId)
@@ -188,8 +190,8 @@ inline void PVRWriteClientRecordingInfo(const CPVRRecording &xbmcRecording, PVR_
   addonRecording.iLifetime      = xbmcRecording.m_iLifetime;
   addonRecording.strDirectory   = xbmcRecording.m_strDirectory.c_str();
   addonRecording.strStreamURL   = xbmcRecording.m_strStreamURL.c_str();
-  addonRecording.strIconPath    = xbmcRecording.m_defualt_icon.c_str();
-
+  addonRecording.strIconPath    = xbmcRecording.m_strIconPath.c_str();
+  addonRecording.strFanartPath  = xbmcRecording.m_strFanartPath.c_str();
 }
 
 /*!
@@ -634,6 +636,85 @@ PVR_ERROR CPVRClient::RenameRecording(const CPVRRecording &recording)
   }
 
   return retVal;
+}
+
+PVR_ERROR CPVRClient::SetRecordingPlayCount(const CPVRRecording &recording, int count)
+{
+  PVR_ERROR retVal = PVR_ERROR_UNKNOWN;
+  if (!m_bReadyToUse)
+    return retVal;
+
+  if (!m_addonCapabilities.bSupportsRecordingPlayCount)
+    return PVR_ERROR_NOT_IMPLEMENTED;
+
+  try
+  {
+    PVR_RECORDING tag;
+    PVRWriteClientRecordingInfo(recording, tag);
+
+    retVal = m_pStruct->SetRecordingPlayCount(tag, count);
+
+    LogError(retVal, __FUNCTION__);
+  }
+  catch (exception &e)
+  {
+    CLog::Log(LOGERROR, "PVRClient - %s - exception '%s' caught while trying to call SetRecordingPlayCount() on addon '%s'. please contact the developer of this addon: %s",
+        __FUNCTION__, e.what(), GetFriendlyName().c_str(), Author().c_str());
+  }
+
+  return retVal;
+}
+
+PVR_ERROR CPVRClient::SetRecordingLastPlayedPosition(const CPVRRecording &recording, int lastplayedposition)
+{
+  PVR_ERROR retVal = PVR_ERROR_UNKNOWN;
+  if (!m_bReadyToUse)
+    return retVal;
+
+  if (!m_addonCapabilities.bSupportsLastPlayedPosition)
+    return PVR_ERROR_NOT_IMPLEMENTED;
+
+  try
+  {
+    PVR_RECORDING tag;
+    PVRWriteClientRecordingInfo(recording, tag);
+
+    retVal = m_pStruct->SetRecordingLastPlayedPosition(tag, lastplayedposition);
+
+    LogError(retVal, __FUNCTION__);
+  }
+  catch (exception &e)
+  {
+    CLog::Log(LOGERROR, "PVRClient - %s - exception '%s' caught while trying to call SetRecordingLastPlayedPosition() on addon '%s'. please contact the developer of this addon: %s",
+        __FUNCTION__, e.what(), GetFriendlyName().c_str(), Author().c_str());
+  }
+
+  return retVal;
+}
+
+int CPVRClient::GetRecordingLastPlayedPosition(const CPVRRecording &recording)
+{
+  int iReturn = -1;
+  if (!m_bReadyToUse)
+    return iReturn;
+
+  if (!m_addonCapabilities.bSupportsLastPlayedPosition)
+    return iReturn;
+
+  try
+  {
+    PVR_RECORDING tag;
+    PVRWriteClientRecordingInfo(recording, tag);
+
+    iReturn = m_pStruct->GetRecordingLastPlayedPosition(tag);
+  }
+  catch (exception &e)
+  {
+    CLog::Log(LOGERROR, "PVRClient - %s - exception '%s' caught while trying to call GetRecordingLastPlayedPosition() on addon '%s'. please contact the developer of this addon: %s",
+        __FUNCTION__, e.what(), GetFriendlyName().c_str(), Author().c_str());
+  }
+
+  return iReturn;
 }
 
 int CPVRClient::GetTimersAmount(void)

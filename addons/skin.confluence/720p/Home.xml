@@ -666,7 +666,7 @@
 						<onright>607</onright>
 						<onup>9003</onup>
 						<ondown>9000</ondown>
-						<onclick>XBMC.PlayerControl(Forward)</onclick>
+						<onclick>XBMC.PlayerControl(record)</onclick>
 					</control>
 				</control>
 				<control type="button" id="603">
@@ -902,7 +902,7 @@
 						<textcolor>grey3</textcolor>
 						<align>center</align>
 						<aligny>center</aligny>
-						<label>[UPPERCASE]$INFO[ListItem.Label][/UPPERCASE]</label>
+						<label>$INFO[ListItem.Label]</label>
 					</control>
 				</itemlayout>
 				<focusedlayout height="60" width="300">
@@ -929,7 +929,7 @@
 						<textcolor>grey3</textcolor>
 						<align>center</align>
 						<aligny>center</aligny>
-						<label>[UPPERCASE]$INFO[ListItem.Label][/UPPERCASE]</label>
+						<label>$INFO[ListItem.Label]</label>
 					</control>
 					<control type="label">
 						<posx>150</posx>
@@ -940,7 +940,7 @@
 						<textcolor>blue</textcolor>
 						<align>center</align>
 						<aligny>center</aligny>
-						<label>[UPPERCASE]$INFO[ListItem.Label][/UPPERCASE]</label>
+						<label>$INFO[ListItem.Label]</label>
 						<visible>Control.HasFocus(9000)</visible>
 						<include>VisibleFadeEffect</include>
 					</control>

@@ -81,6 +81,7 @@
 #include "addons/AddonManager.h"
 #include "interfaces/info/InfoBool.h"
 #include "TextureCache.h"
+#include "cores/AudioEngine/Utils/AEUtil.h"
 
 #define SYSHEATUPDATEINTERVAL 60000
 
@@ -538,7 +539,9 @@ const infomap listitem_labels[]= {{ "thumb",            LISTITEM_THUMB },
                                   { "isrecording",      LISTITEM_ISRECORDING },
                                   { "isencrypted",      LISTITEM_ISENCRYPTED },
                                   { "progress",         LISTITEM_PROGRESS },
-                                  { "dateadded",        LISTITEM_DATE_ADDED }};
+                                  { "dateadded",        LISTITEM_DATE_ADDED },
+                                  { "dbtype",           LISTITEM_DBTYPE },
+                                  { "dbid",             LISTITEM_DBID }};
 
 const infomap visualisation[] =  {{ "locked",           VISUALISATION_LOCKED },
                                   { "preset",           VISUALISATION_PRESET },
@@ -970,11 +973,11 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
       }
       if (prop.name == "sortdirection")
       {
-        SORT_ORDER order = SORT_ORDER_NONE;
+        SortOrder order = SortOrderNone;
         if (prop.param().Equals("ascending"))
-          order = SORT_ORDER_ASC;
+          order = SortOrderAscending;
         else if (prop.param().Equals("descending"))
-          order = SORT_ORDER_DESC;
+          order = SortOrderDescending;
         return AddMultiInfo(GUIInfo(CONTAINER_SORT_DIRECTION, order));
       }
       else if (prop.name == "sort")
@@ -1111,7 +1114,7 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
       CStdString platform = info[2].name;
       if (platform == "linux") return SYSTEM_PLATFORM_LINUX;
       else if (platform == "windows") return SYSTEM_PLATFORM_WINDOWS;
-      else if (platform == "osx")  return SYSTEM_PLATFORM_OSX;
+      else if (platform == "darwin")  return SYSTEM_PLATFORM_DARWIN;
       else if (platform == "osx")  return SYSTEM_PLATFORM_DARWIN_OSX;
       else if (platform == "ios")  return SYSTEM_PLATFORM_DARWIN_IOS;
       else if (platform == "atv2") return SYSTEM_PLATFORM_DARWIN_ATV2;
@@ -1283,7 +1286,7 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow, CStdString *fa
     strLabel.Format("%02.2f", m_fps);
     break;
   case PLAYER_VOLUME:
-    strLabel.Format("%2.1f dB", g_settings.m_fVolumeLevel);
+    strLabel.Format("%2.1f dB", CAEUtil::PercentToGain(g_settings.m_fVolumeLevel));
     break;
   case PLAYER_SUBTITLE_DELAY:
     strLabel.Format("%2.3f s", g_settings.m_currentVideoSettings.m_SubtitleDelay);
@@ -1695,16 +1698,10 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow, CStdString *fa
     break;
 
   case SKIN_THEME:
-    if (g_guiSettings.GetString("lookandfeel.skintheme").Equals("skindefault"))
-      strLabel = g_localizeStrings.Get(15109);
-    else
-      strLabel = g_guiSettings.GetString("lookandfeel.skintheme");
+    strLabel = g_guiSettings.GetString("lookandfeel.skintheme");
     break;
   case SKIN_COLOUR_THEME:
-    if (g_guiSettings.GetString("lookandfeel.skincolors").Equals("skindefault"))
-      strLabel = g_localizeStrings.Get(15109);
-    else
-      strLabel = g_guiSettings.GetString("lookandfeel.skincolors");
+    strLabel = g_guiSettings.GetString("lookandfeel.skincolors");
     break;
 #ifdef HAS_LCD
   case LCD_PROGRESS_BAR:
@@ -2038,7 +2035,7 @@ bool CGUIInfoManager::GetBool(int condition1, int contextWindow, const CGUIListI
     bReturn = g_application.IsMusicScanning();
   }
   else if (condition == SYSTEM_PLATFORM_LINUX)
-#if defined(_LINUX) && !defined(__APPLE__)
+#if defined(_LINUX) && !defined(TARGET_DARWIN)
     bReturn = true;
 #else
     bReturn = false;
@@ -2049,8 +2046,7 @@ bool CGUIInfoManager::GetBool(int condition1, int contextWindow, const CGUIListI
 #else
     bReturn = false;
 #endif
-  else if (condition == SYSTEM_PLATFORM_OSX)
-  // TODO: rename SYSTEM_PLATFORM_OSX to SYSTEM_PLATFORM_DARWIN after eden release.
+  else if (condition == SYSTEM_PLATFORM_DARWIN)
 #ifdef TARGET_DARWIN
     bReturn = true;
 #else
@@ -2387,7 +2383,7 @@ bool CGUIInfoManager::GetBool(int condition1, int contextWindow, const CGUIListI
       if (m_currentFile->HasPVRChannelInfoTag())
       {
         CEpgInfoTag epgTag;
-        bReturn = m_currentFile->GetPVRChannelInfoTag()->GetEPGNow(epgTag);
+        bReturn = g_PVRManager.GetPlayingTag(epgTag);
       }
     break;
     default: // default, use integer value different from 0 as true
@@ -3514,7 +3510,7 @@ CStdString CGUIInfoManager::GetVideoLabel(int item)
     if (m_currentFile->HasPVRChannelInfoTag())
     {
       CEpgInfoTag tag;
-      return m_currentFile->GetPVRChannelInfoTag()->GetEPGNow(tag) ? tag.Title() : g_localizeStrings.Get(19055);
+      return g_PVRManager.GetPlayingTag(tag) ? tag.Title() : g_localizeStrings.Get(19055);
     }
     if (m_currentFile->HasVideoInfoTag() && !m_currentFile->GetVideoInfoTag()->m_strTitle.IsEmpty())
       return m_currentFile->GetVideoInfoTag()->m_strTitle;
@@ -3537,50 +3533,52 @@ CStdString CGUIInfoManager::GetVideoLabel(int item)
   }
   else if (m_currentFile->HasPVRChannelInfoTag())
   {
-    CPVRChannel* tag = m_currentFile->GetPVRChannelInfoTag();
     CEpgInfoTag epgTag;
-
+    const CEpgInfoTag *epgNextTag = NULL;
+    bool validTag = g_PVRManager.GetPlayingTag(epgTag);
+    if  (validTag)
+      epgNextTag = epgTag.GetNextEvent();
     switch (item)
     {
     /* Now playing infos */
     case VIDEOPLAYER_ORIGINALTITLE:
-      return tag->GetEPGNow(epgTag) ? epgTag.Title() : g_localizeStrings.Get(19055);
+      return validTag ? epgTag.Title() : g_localizeStrings.Get(19055);
     case VIDEOPLAYER_GENRE:
-      return tag->GetEPGNow(epgTag) ? StringUtils::Join(epgTag.Genre(), g_advancedSettings.m_videoItemSeparator) : StringUtils::EmptyString;
+      return validTag ? StringUtils::Join(epgTag.Genre(), g_advancedSettings.m_videoItemSeparator) : StringUtils::EmptyString;
     case VIDEOPLAYER_PLOT:
-      return tag->GetEPGNow(epgTag) ? epgTag.Plot() : StringUtils::EmptyString;
+      return validTag ? epgTag.Plot() : StringUtils::EmptyString;
     case VIDEOPLAYER_PLOT_OUTLINE:
-      return tag->GetEPGNow(epgTag) ? epgTag.PlotOutline() : StringUtils::EmptyString;
+      return validTag ? epgTag.PlotOutline() : StringUtils::EmptyString;
     case VIDEOPLAYER_STARTTIME:
-      return tag->GetEPGNow(epgTag) ? epgTag.StartAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
+      return validTag ? epgTag.StartAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
     case VIDEOPLAYER_ENDTIME:
-      return tag->GetEPGNow(epgTag) ? epgTag.EndAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
+      return validTag ? epgTag.EndAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
 
     /* Next playing infos */
     case VIDEOPLAYER_NEXT_TITLE:
-      return tag->GetEPGNext(epgTag) ? epgTag.Title() : g_localizeStrings.Get(19055);
+      return epgNextTag ? epgNextTag->Title() : g_localizeStrings.Get(19055);
     case VIDEOPLAYER_NEXT_GENRE:
-      return tag->GetEPGNext(epgTag) ? StringUtils::Join(epgTag.Genre(), g_advancedSettings.m_videoItemSeparator) : StringUtils::EmptyString;
+      return epgNextTag ? StringUtils::Join(epgNextTag->Genre(), g_advancedSettings.m_videoItemSeparator) : StringUtils::EmptyString;
     case VIDEOPLAYER_NEXT_PLOT:
-      return tag->GetEPGNext(epgTag) ? epgTag.Plot() : StringUtils::EmptyString;
+      return epgNextTag ? epgNextTag->Plot() : StringUtils::EmptyString;
     case VIDEOPLAYER_NEXT_PLOT_OUTLINE:
-      return tag->GetEPGNext(epgTag) ? epgTag.PlotOutline() : StringUtils::EmptyString;
+      return epgNextTag ? epgNextTag->PlotOutline() : StringUtils::EmptyString;
     case VIDEOPLAYER_NEXT_STARTTIME:
-      return tag->GetEPGNext(epgTag) ? epgTag.StartAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
+      return epgNextTag ? epgNextTag->StartAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
     case VIDEOPLAYER_NEXT_ENDTIME:
-      return tag->GetEPGNext(epgTag) ? epgTag.EndAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
+      return epgNextTag ? epgNextTag->EndAsLocalTime().GetAsLocalizedTime("", false) : CDateTime::GetCurrentDateTime().GetAsLocalizedTime("", false);
     case VIDEOPLAYER_NEXT_DURATION:
       {
         CStdString duration;
-        if (tag->GetEPGNext(epgTag) && epgTag.GetDuration() > 0)
-          duration = StringUtils::SecondsToTimeString(epgTag.GetDuration());
+        if (epgNextTag && epgNextTag->GetDuration() > 0)
+          duration = StringUtils::SecondsToTimeString(epgNextTag->GetDuration());
         return duration;
       }
 
     case VIDEOPLAYER_PARENTAL_RATING:
       {
         CStdString rating;
-        if (tag->GetEPGNow(epgTag) && epgTag.ParentalRating() > 0)
+        if (validTag && epgTag.ParentalRating() > 0)
           rating.Format("%i", epgTag.ParentalRating());
         return rating;
       }
@@ -3588,16 +3586,16 @@ CStdString CGUIInfoManager::GetVideoLabel(int item)
 
     /* General channel infos */
     case VIDEOPLAYER_CHANNEL_NAME:
-      return tag->ChannelName();
+      return m_currentFile->GetPVRChannelInfoTag()->ChannelName();
     case VIDEOPLAYER_CHANNEL_NUMBER:
       {
         CStdString strNumber;
-        strNumber.Format("%i", tag->ChannelNumber());
+        strNumber.Format("%i", m_currentFile->GetPVRChannelInfoTag()->ChannelNumber());
         return strNumber;
       }
     case VIDEOPLAYER_CHANNEL_GROUP:
       {
-        if (tag && !tag->IsRadio())
+        if (m_currentFile->GetPVRChannelInfoTag() && !m_currentFile->GetPVRChannelInfoTag()->IsRadio())
           return g_PVRManager.GetPlayingGroup(false)->GroupName();
       }
     }
@@ -3860,12 +3858,8 @@ void CGUIInfoManager::SetCurrentMovie(CFileItem &item)
   // Find a thumb for this file.
   if (!item.HasThumbnail())
   {
-    if (!CVideoThumbLoader::FillThumb(item))
-    {
-      CStdString thumb = CVideoThumbLoader::GetEmbeddedThumbURL(item);
-      if (CTextureCache::Get().HasCachedImage(thumb))
-        item.SetThumbnailImage(thumb);
-    }
+    CVideoThumbLoader loader;
+    loader.LoadItem(m_currentFile);
   }
 
   // find a thumb for this stream
@@ -3919,7 +3913,7 @@ string CGUIInfoManager::GetSystemHeatInfo(int info)
       text.Format("%i%%", m_fanSpeed * 2);
       break;
     case SYSTEM_CPU_USAGE:
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(TARGET_DARWIN) || defined(_WIN32)
       text.Format("%d%%", g_cpuInfo.getUsedPercentage());
 #else
       text.Format("%s", g_cpuInfo.GetCoresUsageString());
@@ -4763,6 +4757,24 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info, CStdSt
   case LISTITEM_DATE_ADDED:
     if (item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_dateAdded.IsValid())
       return item->GetVideoInfoTag()->m_dateAdded.GetAsLocalizedDate();
+    break;
+  case LISTITEM_DBTYPE:
+    if (item->HasVideoInfoTag())
+      return item->GetVideoInfoTag()->m_type;
+    break;
+  case LISTITEM_DBID:
+    if (item->HasVideoInfoTag())
+      {
+        CStdString dbid;
+        dbid.Format("%i", item->GetVideoInfoTag()->m_iDbId);
+        return dbid;
+      }
+    if (item->HasMusicInfoTag())
+      {
+        CStdString dbid;
+        dbid.Format("%i", item->GetMusicInfoTag()->GetDatabaseId());
+        return dbid;
+      }
     break;
   }
   return "";

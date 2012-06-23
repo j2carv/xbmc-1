@@ -281,6 +281,8 @@ bool CEpgContainer::UpdateEntry(const CEpg &entry, bool bUpdateDatabase /* = fal
   {
     /* table does not exist yet, create a new one */
     unsigned int iEpgId = m_bIgnoreDbForClient || entry.EpgID() <= 0 ? NextEpgId() : entry.EpgID();
+    if (m_iNextEpgId < iEpgId)
+      m_iNextEpgId = iEpgId + 1;
     epg = CreateEpg(iEpgId);
     if (epg)
     {
@@ -291,6 +293,16 @@ bool CEpgContainer::UpdateEntry(const CEpg &entry, bool bUpdateDatabase /* = fal
   else
   {
     bReturn = epg->UpdateMetadata(entry, bUpdateDatabase);
+  }
+
+  if (g_PVRManager.IsStarted())
+  {
+    CPVRChannel *channel = g_PVRChannelGroups->GetChannelByEpgId(epg->EpgID());
+    if (epg->EpgID() > 0 && !channel)
+    {
+      DeleteEpg(*epg);
+      bReturn = false;
+    }
   }
 
   m_bPreventUpdates = false;
@@ -595,15 +607,16 @@ bool CEpgContainer::CheckPlayingEvents(void)
     CDateTime::GetCurrentDateTime().GetAsUTCDateTime().GetAsTime(m_iNextEpgActiveTagCheck);
     m_iNextEpgActiveTagCheck += g_advancedSettings.m_iEpgActiveTagCheckInterval;
 
-    if (bFoundChanges)
-    {
-      SetChanged();
-      NotifyObservers("epg-now", true);
-    }
-
     /* pvr tags always start on the full minute */
     if (g_PVRManager.IsStarted())
       m_iNextEpgActiveTagCheck -= m_iNextEpgActiveTagCheck % 60;
+
+    if (bFoundChanges)
+    {
+      SetChanged();
+      lock.Leave();
+      NotifyObservers("epg-now", true);
+    }
 
     bReturn = true;
   }

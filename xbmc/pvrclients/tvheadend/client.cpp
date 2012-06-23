@@ -294,6 +294,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
   pCapabilities->bSupportsChannelScan     = false;
   pCapabilities->bHandlesInputStream      = true;
   pCapabilities->bHandlesDemuxing         = true;
+  pCapabilities->bSupportsLastPlayedPosition = false;
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -481,7 +482,7 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
   if (HTSPDemuxer && HTSPDemuxer->GetSignalStatus(signalStatus))
     return PVR_ERROR_NO_ERROR;
 
-  return PVR_ERROR_SERVER_ERROR;
+  return PVR_ERROR_NOT_POSSIBLE;
 }
 
 void DemuxAbort(void)
@@ -551,4 +552,7 @@ long long SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */) { re
 long long PositionLiveStream(void) { return -1; }
 long long LengthLiveStream(void) { return -1; }
 const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
+PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count) { return PVR_ERROR_NOT_IMPLEMENTED; }
+PVR_ERROR SetRecordingLastPlayedPosition(const PVR_RECORDING &recording, int lastplayedposition) { return PVR_ERROR_NOT_IMPLEMENTED; }
+int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording) { return -1; }
 }

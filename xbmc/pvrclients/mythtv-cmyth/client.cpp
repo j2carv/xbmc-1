@@ -408,6 +408,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES *pCapabilities)
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = false;
   pCapabilities->bSupportsChannelScan        = false;
+  pCapabilities->bSupportsRecordingPlayCount = true;
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -538,6 +539,14 @@ PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
   return PVR_ERROR_NOT_IMPLEMENTED;
 }
 
+PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
+{
+   if (g_client == NULL)
+			return PVR_ERROR_SERVER_ERROR;
+
+      return g_client->SetRecordingPlayCount(recording, count);
+}
+
 /*******************************************/
 /** PVR Timer Functions                   **/
 
@@ -606,6 +615,10 @@ int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
   if (g_client == NULL)
 			return -1;
   int dataread=g_client->ReadLiveStream(pBuffer,iBufferSize);
+  if(dataread<0)
+  {
+    XBMC->Log(LOG_ERROR,"%s: Failed to read liveStream. Errorcode: %i!",__FUNCTION__,dataread);
+  }
   return dataread;
 }
 

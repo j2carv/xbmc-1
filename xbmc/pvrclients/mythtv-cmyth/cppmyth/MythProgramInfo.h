@@ -9,6 +9,8 @@
 class MythProgramInfo 
 {
   friend class MythConnection;
+  friend class MythDatabase;
+
 public:
   typedef cmyth_proginfo_rec_status_t record_status;
 
@@ -30,6 +32,7 @@ public:
   int Duration();
   CStdString Category();
   CStdString RecordingGroup();
+  bool IsWatched();
   long long uid();
   bool IsNull();
 private:

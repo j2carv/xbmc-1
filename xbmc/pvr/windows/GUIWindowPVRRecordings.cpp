@@ -66,15 +66,39 @@ CStdString CGUIWindowPVRRecordings::GetResumeString(CFileItem item)
   CStdString resumeString;
   if (item.IsPVRRecording())
   {
-    CVideoDatabase db;
-    if (db.Open())
+
+    // First try to find the resume position on the back-end, if that fails use video database
+    CPVRRecording recording = *item.GetPVRRecordingInfoTag();
+    int positionInSeconds = g_PVRManager.GetRecordingLastPlayedPosition(recording);
+    // If the back-end does report a saved position then make sure there is a corresponding resume bookmark
+    if (positionInSeconds > 0)
     {
       CBookmark bookmark;
-      CStdString itemPath(item.GetPVRRecordingInfoTag()->m_strFileNameAndPath);
-      if (db.GetResumeBookMark(itemPath, bookmark) )
-        resumeString.Format(g_localizeStrings.Get(12022).c_str(), StringUtils::SecondsToTimeString(lrint(bookmark.timeInSeconds)).c_str());
-      db.Close();
+      bookmark.timeInSeconds = positionInSeconds;
+      CVideoDatabase db;
+      if (db.Open())
+      {
+        CStdString itemPath(item.GetPVRRecordingInfoTag()->m_strFileNameAndPath);
+        db.AddBookMarkToFile(itemPath, bookmark, CBookmark::RESUME);
+        db.Close();
+      }
     }
+    else if (positionInSeconds < 0)
+    {
+      CVideoDatabase db;
+      if (db.Open())
+      {
+        CBookmark bookmark;
+        CStdString itemPath(item.GetPVRRecordingInfoTag()->m_strFileNameAndPath);
+        if (db.GetResumeBookMark(itemPath, bookmark) )
+          positionInSeconds = lrint(bookmark.timeInSeconds);
+        db.Close();
+      }
+    }
+
+    // Suppress resume from 0
+    if (positionInSeconds > 0)
+      resumeString.Format(g_localizeStrings.Get(12022).c_str(), StringUtils::SecondsToTimeString(positionInSeconds).c_str());
   }
   return resumeString;
 }
@@ -92,6 +116,19 @@ void CGUIWindowPVRRecordings::GetContextButtons(int itemNumber, CContextButtons 
   if (!resumeString.IsEmpty())
   {
     buttons.Add(CONTEXT_BUTTON_RESUME_ITEM, resumeString);
+  }
+  if (pItem->m_bIsFolder)
+  {
+    // Have both options for folders since we don't know whether all childs are watched/unwatched
+    buttons.Add(CONTEXT_BUTTON_MARK_UNWATCHED, 16104); /* Mark as UnWatched */
+    buttons.Add(CONTEXT_BUTTON_MARK_WATCHED, 16103);   /* Mark as Watched */
+  }
+  if (pItem->HasPVRRecordingInfoTag())
+  {
+    if (pItem->GetPVRRecordingInfoTag()->m_playCount > 0)
+      buttons.Add(CONTEXT_BUTTON_MARK_UNWATCHED, 16104); /* Mark as UnWatched */
+    else
+      buttons.Add(CONTEXT_BUTTON_MARK_WATCHED, 16103);   /* Mark as Watched */
   }
   buttons.Add(CONTEXT_BUTTON_RENAME, 118);      /* Rename this recording */
   buttons.Add(CONTEXT_BUTTON_DELETE, 117);      /* Delete this recording */
@@ -137,6 +174,7 @@ bool CGUIWindowPVRRecordings::OnContextButton(int itemNumber, CONTEXT_BUTTON but
       OnContextButtonRename(pItem.get(), button) ||
       OnContextButtonDelete(pItem.get(), button) ||
       OnContextButtonInfo(pItem.get(), button) ||
+      OnContextButtonMarkWatched(pItem, button) ||
       CGUIWindowPVRCommon::OnContextButton(itemNumber, button);
 }
 
@@ -316,6 +354,33 @@ bool CGUIWindowPVRRecordings::OnContextButtonRename(CFileItem *item, CONTEXT_BUT
       if (g_PVRRecordings->RenameRecording(*item, strNewName))
         UpdateData();
     }
+  }
+
+  return bReturn;
+}
+
+bool CGUIWindowPVRRecordings::OnContextButtonMarkWatched(const CFileItemPtr &item, CONTEXT_BUTTON button)
+{
+  bool bReturn = false;
+
+  if (button == CONTEXT_BUTTON_MARK_WATCHED)
+  {
+    bReturn = true;
+
+    int newSelection = m_parent->m_viewControl.GetSelectedItem();
+    g_PVRRecordings->SetRecordingsPlayCount(item, 1);
+    m_parent->m_viewControl.SetSelectedItem(newSelection);
+
+    UpdateData();
+  }
+
+  if (button == CONTEXT_BUTTON_MARK_UNWATCHED)
+  {
+    bReturn = true;
+
+    g_PVRRecordings->SetRecordingsPlayCount(item, 0);
+
+    UpdateData();
   }
 
   return bReturn;

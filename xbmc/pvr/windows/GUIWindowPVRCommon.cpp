@@ -57,7 +57,7 @@ CGUIWindowPVRCommon::CGUIWindowPVRCommon(CGUIWindowPVR *parent, PVRWindow window
   m_iControlList    = iControlList;
   m_bUpdateRequired = false;
   m_iSelected       = 0;
-  m_iSortOrder      = SORT_ORDER_ASC;
+  m_iSortOrder      = SortOrderAscending;
   m_iSortMethod     = SORT_METHOD_DATE;
   if( m_parent->GetViewState() )
   {
@@ -223,13 +223,13 @@ bool CGUIWindowPVRCommon::OnContextButtonSortByDate(CFileItem *item, CONTEXT_BUT
     if (m_iSortMethod != SORT_METHOD_DATE)
     {
       m_iSortMethod = SORT_METHOD_DATE;
-      m_iSortOrder  = SORT_ORDER_ASC;
+      m_iSortOrder  = SortOrderAscending;
       CGUIMessage message(GUI_MSG_CHANGE_SORT_METHOD, m_parent->GetID(), 0, m_iSortMethod, 0); 
       m_parent->OnMessage(message);
     }
     else
     {
-      m_iSortOrder = m_iSortOrder == SORT_ORDER_ASC ? SORT_ORDER_DESC : SORT_ORDER_ASC;
+      m_iSortOrder = m_iSortOrder == SortOrderAscending ? SortOrderDescending : SortOrderAscending;
     }
     CGUIMessage message(GUI_MSG_CHANGE_SORT_DIRECTION, m_parent->GetID(), 0, m_iSortOrder, 0); 
     m_parent->OnMessage(message);
@@ -250,13 +250,13 @@ bool CGUIWindowPVRCommon::OnContextButtonSortByName(CFileItem *item, CONTEXT_BUT
     if (m_iSortMethod != SORT_METHOD_LABEL)
     {
       m_iSortMethod = SORT_METHOD_LABEL;
-      m_iSortOrder  = SORT_ORDER_ASC;
+      m_iSortOrder  = SortOrderAscending;
       CGUIMessage message(GUI_MSG_CHANGE_SORT_METHOD, m_parent->GetID(), 0, m_iSortMethod, 0); 
       m_parent->OnMessage(message);
     }
     else
     {
-      m_iSortOrder = m_iSortOrder == SORT_ORDER_ASC ? SORT_ORDER_DESC : SORT_ORDER_ASC;
+      m_iSortOrder = m_iSortOrder == SortOrderAscending ? SortOrderDescending : SortOrderAscending;
     }
     CGUIMessage message(GUI_MSG_CHANGE_SORT_DIRECTION, m_parent->GetID(), 0, m_iSortOrder, 0); 
     m_parent->OnMessage(message);
@@ -277,11 +277,11 @@ bool CGUIWindowPVRCommon::OnContextButtonSortByChannel(CFileItem *item, CONTEXT_
     if (m_iSortMethod != SORT_METHOD_CHANNEL)
     {
       m_iSortMethod = SORT_METHOD_CHANNEL;
-      m_iSortOrder  = SORT_ORDER_ASC;
+      m_iSortOrder  = SortOrderAscending;
     }
     else
     {
-      m_iSortOrder = m_iSortOrder == SORT_ORDER_ASC ? SORT_ORDER_DESC : SORT_ORDER_ASC;
+      m_iSortOrder = m_iSortOrder == SortOrderAscending ? SortOrderDescending : SortOrderAscending;
     }
 
     UpdateData();
@@ -418,7 +418,8 @@ bool CGUIWindowPVRCommon::ActionRecord(CFileItem *item)
   if (!epgTag)
     return bReturn;
 
-  if (!epgTag->HasPVRChannel())
+  const CPVRChannel *channel = epgTag->ChannelTag();
+  if (!channel || !g_PVRManager.CheckParentalLock(*channel))
     return bReturn;
 
   if (epgTag->Timer() == NULL)
@@ -618,7 +619,7 @@ bool CGUIWindowPVRCommon::PlayRecording(CFileItem *item, bool bPlayMinimized /* 
 
       CFileItemList items;
       CDirectory::GetDirectory(dir, items);
-      items.Sort(SORT_METHOD_FILE ,SORT_ORDER_ASC);
+      items.Sort(SORT_METHOD_FILE, SortOrderAscending);
 
       vector<int> stack;
       for (int i = 0; i < items.Size(); ++i)
@@ -655,19 +656,14 @@ bool CGUIWindowPVRCommon::PlayRecording(CFileItem *item, bool bPlayMinimized /* 
 
 bool CGUIWindowPVRCommon::PlayFile(CFileItem *item, bool bPlayMinimized /* = false */)
 {
-  if (bPlayMinimized)
+  if (item->GetPath() == g_application.CurrentFile())
   {
-    if (item->GetPath() == g_application.CurrentFile())
-    {
-      CGUIMessage msg(GUI_MSG_FULLSCREEN, 0, m_parent->GetID());
-      g_windowManager.SendMessage(msg);
-      return true;
-    }
-    else
-    {
-      g_settings.m_bStartVideoWindowed = true;
-    }
+    CGUIMessage msg(GUI_MSG_FULLSCREEN, 0, m_parent->GetID());
+    g_windowManager.SendMessage(msg);
+    return true;
   }
+
+  g_settings.m_bStartVideoWindowed = bPlayMinimized;
 
   if (item->GetPath().Left(17) == "pvr://recordings/")
   {
@@ -677,11 +673,12 @@ bool CGUIWindowPVRCommon::PlayFile(CFileItem *item, bool bPlayMinimized /* = fal
   {
     bool bSwitchSuccessful(false);
 
+    CPVRChannel *channel = item->HasPVRChannelInfoTag() ? item->GetPVRChannelInfoTag() : NULL;
+
     /* try a fast switch */
-    if (item->IsPVRChannel() && (g_PVRManager.IsPlayingTV() || g_PVRManager.IsPlayingRadio()) &&
-        (item->GetPVRChannelInfoTag()->IsRadio() == g_PVRManager.IsPlayingRadio()) && g_application.m_pPlayer)
+    if (channel && (g_PVRManager.IsPlayingTV() || g_PVRManager.IsPlayingRadio()) &&
+        (channel->IsRadio() == g_PVRManager.IsPlayingRadio()) && g_application.m_pPlayer)
     {
-      CPVRChannel* channel = item->GetPVRChannelInfoTag();
       if (channel->StreamURL().IsEmpty())
         bSwitchSuccessful = g_application.m_pPlayer->SwitchChannel(*channel);
     }
@@ -708,7 +705,9 @@ bool CGUIWindowPVRCommon::StartRecordFile(CFileItem *item)
     return false;
 
   CEpgInfoTag *tag = item->GetEPGInfoTag();
-  if (!tag || !tag->HasPVRChannel())
+  const CPVRChannel *channel = tag ? tag->ChannelTag() : NULL;
+
+  if (!channel || g_PVRManager.CheckParentalLock(*channel))
     return false;
 
   CPVRTimerInfoTag *timer = g_PVRTimers->GetMatch(item);
@@ -755,13 +754,16 @@ bool CGUIWindowPVRCommon::StopRecordFile(CFileItem *item)
 void CGUIWindowPVRCommon::ShowEPGInfo(CFileItem *item)
 {
   CFileItem *tag = NULL;
+  const CPVRChannel *channel = NULL;
   if (item->IsEPG())
   {
     tag = new CFileItem(*item);
+    channel = item->GetEPGInfoTag()->ChannelTag();
   }
   else if (item->IsPVRChannel())
   {
     CEpgInfoTag epgnow;
+    channel = item->GetPVRChannelInfoTag();
     if (!item->GetPVRChannelInfoTag()->GetEPGNow(epgnow))
     {
       CGUIDialogOK::ShowAndGetInput(19033,0,19055,0);
@@ -772,13 +774,17 @@ void CGUIWindowPVRCommon::ShowEPGInfo(CFileItem *item)
 
   if (tag)
   {
-    CGUIDialogPVRGuideInfo* pDlgInfo = (CGUIDialogPVRGuideInfo*)g_windowManager.GetWindow(WINDOW_DIALOG_PVR_GUIDE_INFO);
-    if (!pDlgInfo)
-      return;
+    if (g_PVRManager.CheckParentalLock(channel))
+    {
+      CGUIDialogPVRGuideInfo* pDlgInfo = (CGUIDialogPVRGuideInfo*)g_windowManager.GetWindow(WINDOW_DIALOG_PVR_GUIDE_INFO);
+      if (pDlgInfo)
+      {
+        pDlgInfo->SetProgInfo(tag);
+        pDlgInfo->DoModal();
 
-    pDlgInfo->SetProgInfo(tag);
-    pDlgInfo->DoModal();
-
+        UpdateData();
+      }
+    }
     delete tag;
   }
 }

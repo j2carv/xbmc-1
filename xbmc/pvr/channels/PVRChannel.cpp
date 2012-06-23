@@ -62,6 +62,7 @@ CPVRChannel::CPVRChannel(bool bRadio /* = false */)
   m_bIsRadio                = bRadio;
   m_bIsHidden               = false;
   m_bIsUserSetIcon          = false;
+  m_bIsLocked               = false;
   m_strIconPath             = StringUtils::EmptyString;
   m_strChannelName          = StringUtils::EmptyString;
   m_bIsVirtual              = false;
@@ -90,6 +91,7 @@ CPVRChannel::CPVRChannel(const PVR_CHANNEL &channel, unsigned int iClientId)
   m_bIsRadio                = channel.bIsRadio;
   m_bIsHidden               = channel.bIsHidden;
   m_bIsUserSetIcon          = false;
+  m_bIsLocked               = false;
   m_strIconPath             = channel.strIconPath;
   m_strChannelName          = channel.strChannelName;
   m_iUniqueId               = channel.iUniqueId;
@@ -103,7 +105,7 @@ CPVRChannel::CPVRChannel(const PVR_CHANNEL &channel, unsigned int iClientId)
   m_strFileNameAndPath      = StringUtils::EmptyString;
   m_bIsVirtual              = false;
   m_iLastWatched            = 0;
-  m_bEPGEnabled             = true;
+  m_bEPGEnabled             = !channel.bIsHidden;
   m_strEPGScraper           = "client";
   m_iEpgId                  = -1;
   m_bEPGCreated             = false;
@@ -126,6 +128,7 @@ CPVRChannel &CPVRChannel::operator=(const CPVRChannel &channel)
   m_bIsRadio                = channel.m_bIsRadio;
   m_bIsHidden               = channel.m_bIsHidden;
   m_bIsUserSetIcon          = channel.m_bIsUserSetIcon;
+  m_bIsLocked               = channel.m_bIsLocked;
   m_strIconPath             = channel.m_strIconPath;
   m_strChannelName          = channel.m_strChannelName;
   m_bIsVirtual              = channel.m_bIsVirtual;
@@ -174,13 +177,14 @@ bool CPVRChannel::Delete(void)
 
 CEpg *CPVRChannel::GetEPG(void) const
 {
-  CEpg *epg(NULL);
+  int iEpgId(-1);
   {
     CSingleLock lock(m_critSection);
     if (!m_bIsHidden && m_bEPGEnabled && m_iEpgId > 0)
-      epg = g_EpgContainer.GetById(m_iEpgId);
+      iEpgId = m_iEpgId;
   }
-  return epg;
+
+  return iEpgId > 0 ? g_EpgContainer.GetById(iEpgId) : NULL;
 }
 
 bool CPVRChannel::UpdateFromClient(const CPVRChannel &channel)
@@ -277,6 +281,29 @@ bool CPVRChannel::SetHidden(bool bIsHidden, bool bSaveInDb /* = false */)
 
   return bReturn;
 }
+
+bool CPVRChannel::SetLocked(bool bIsLocked, bool bSaveInDb /* = false */)
+{
+  bool bReturn(false);
+  CSingleLock lock(m_critSection);
+
+  if (m_bIsLocked != bIsLocked)
+  {
+    /* update the locked flag */
+    m_bIsLocked = bIsLocked;
+    SetChanged();
+    m_bChanged = true;
+
+    /* persist the changes */
+    if (bSaveInDb)
+      Persist();
+
+    bReturn = true;
+  }
+
+  return bReturn;
+}
+
 
 bool CPVRChannel::IsRecording(void) const
 {
@@ -730,6 +757,15 @@ bool CPVRChannel::GetEPGNow(CEpgInfoTag &tag) const
   return epg ? epg->InfoTagNow(tag) : false;
 }
 
+bool CPVRChannel::GetEPGTag(EPG::CEpgInfoTag &tag, const CDateTime &time) const
+{
+  CEpg *epg = GetEPG();
+  const EPG::CEpgInfoTag *newTag = epg ? epg->GetTagAround(time) : NULL;
+  if (newTag)
+    tag = *newTag;
+  return newTag != NULL;
+}
+
 bool CPVRChannel::GetEPGNext(CEpgInfoTag &tag) const
 {
   CEpg *epg = GetEPG();
@@ -794,4 +830,9 @@ void CPVRChannel::SetCachedChannelNumber(unsigned int iChannelNumber)
 {
   CSingleLock lock(m_critSection);
   m_iCachedChannelNumber = iChannelNumber;
+}
+
+void CPVRChannel::ToSortable(SortItem& sortable)
+{
+  sortable[FieldChannelName] = m_strChannelName;
 }
