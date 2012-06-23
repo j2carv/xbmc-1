@@ -128,14 +128,6 @@ std::vector<MythRecordingProfile > MythDatabase::GetRecordingProfiles()
 
 int MythDatabase::SetWatchedStatus(MythProgramInfo &recording, bool watched)
 {
-<<<<<<< HEAD
-  int watched = 0;
-  CMYTH_DB_CALL( watched, watched < 0, GetWatchedStatusMysql( *m_database_t, recordid ) );
-  return watched==1;
-}
-
-int MythDatabase::SetWatchedStatus(int recordid,bool watched)
-{
   int retval = 0;
   CMYTH_DB_CALL( retval, retval < 0, SetWatchedStatusMysql( *m_database_t, *recording.m_proginfo_t, watched?1:0 ) );
   return retval;
