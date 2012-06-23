@@ -159,22 +159,22 @@ extern "C" {
    */
   typedef struct PVR_ADDON_CAPABILITIES
   {
-    bool bSupportsChannelSettings;      /*!< @brief (optional) true if this add-on supports changing channel settings on the backend */
-    bool bSupportsTimeshift;            /*!< @brief (optional) true if the backend will handle timeshift. false if XBMC should handle it. */
-    bool bSupportsEPG;                  /*!< @brief (optional) true if the add-on provides EPG information */
-    bool bSupportsTV;                   /*!< @brief (optional) true if this add-on provides TV channels */
-    bool bSupportsRadio;                /*!< @brief (optional) true if this add-on supports radio channels */
-    bool bSupportsRecordings;           /*!< @brief (optional) true if this add-on supports playback of recordings stored on the backend */
-    bool bSupportsTimers;               /*!< @brief (optional) true if this add-on supports the creation and editing of timers */
-    bool bSupportsChannelGroups;        /*!< @brief (optional) true if this add-on supports channel groups */
-    bool bSupportsChannelScan;          /*!< @brief (optional) true if this add-on support scanning for new channels on the backend */
-    bool bHandlesInputStream;           /*!< @brief (optional) true if this add-on provides an input stream. false if XBMC handles the stream. */
-    bool bHandlesDemuxing;              /*!< @brief (optional) true if this add-on demultiplexes packets. */
-    bool bSupportsRecordingFolders;     /*!< @brief (optional) true if the backend supports timers / recordings in folders. */
-    bool bSupportsRecordingPlayCount;   /*!< @brief (optional) true if the backend supports play count for recordings. */
-    DWORD dwSupportsRecordingRules;     /*!< @bried (optional) bitflag (PVR_TIMER_SERIE) on when supported. */
+    bool bSupportsChannelSettings;          /*!< @brief (optional) true if this add-on supports changing channel settings on the backend */
+    bool bSupportsTimeshift;                /*!< @brief (optional) true if the backend will handle timeshift. false if XBMC should handle it. */
+    bool bSupportsEPG;                      /*!< @brief (optional) true if the add-on provides EPG information */
+    bool bSupportsTV;                       /*!< @brief (optional) true if this add-on provides TV channels */
+    bool bSupportsRadio;                    /*!< @brief (optional) true if this add-on supports radio channels */
+    bool bSupportsRecordings;               /*!< @brief (optional) true if this add-on supports playback of recordings stored on the backend */
+    bool bSupportsTimers;                   /*!< @brief (optional) true if this add-on supports the creation and editing of timers */
+    bool bSupportsChannelGroups;            /*!< @brief (optional) true if this add-on supports channel groups */
+    bool bSupportsChannelScan;              /*!< @brief (optional) true if this add-on support scanning for new channels on the backend */
+    bool bHandlesInputStream;               /*!< @brief (optional) true if this add-on provides an input stream. false if XBMC handles the stream. */
+    bool bHandlesDemuxing;                  /*!< @brief (optional) true if this add-on demultiplexes packets. */
+    bool bSupportsRecordingFolders;         /*!< @brief (optional) true if the backend supports timers / recordings in folders. */
+    bool bSupportsRecordingPlayCount;       /*!< @brief (optional) true if the backend supports play count for recordings. */
+    unsigned int iSupportsRecordingRules;   /*!< @bried (optional) bitflag (PVR_TIMER_SERIE) on when supported. */
   } ATTRIBUTE_PACKED PVR_ADDON_CAPABILITIES;
-
+  
   /*!
    * @brief PVR stream properties
    */

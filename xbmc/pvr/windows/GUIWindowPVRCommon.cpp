@@ -715,10 +715,10 @@ bool CGUIWindowPVRCommon::RecordSerie(CFileItem *item)
   }
 
   const CPVRChannel *channel = tag->ChannelTag();
-  DWORD dwSupportedRules=g_PVRClients->GetAddonCapabilities(channel->ClientID()).dwSupportsRecordingRules;
+  unsigned int iSupportedRules = g_PVRClients->GetAddonCapabilities(channel->ClientID()).iSupportsRecordingRules;
   CPVRTimerInfoTag *newtimer=NULL;
 
-  if(dwSupportedRules==PVR_SERIE_ON)
+  if(iSupportedRules==PVR_SERIE_ON)
   {
     CGUIDialogYesNo* pDialog = (CGUIDialogYesNo*)g_windowManager.GetWindow(WINDOW_DIALOG_YES_NO);
     if (!pDialog)

@@ -97,7 +97,7 @@ void CPVRClient::ResetAddonCapabilities(void)
   m_addonCapabilities.bHandlesInputStream       = false;
   m_addonCapabilities.bHandlesDemuxing          = false;
   m_addonCapabilities.bSupportsRecordingFolders = false;
-  m_addonCapabilities.dwSupportsRecordingRules  = 0;
+  m_addonCapabilities.iSupportsRecordingRules  = 0;
 }
 
 bool CPVRClient::Create(int iClientId)

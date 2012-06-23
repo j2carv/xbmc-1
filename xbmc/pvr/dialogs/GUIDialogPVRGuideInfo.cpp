@@ -107,11 +107,11 @@ bool CGUIDialogPVRGuideInfo::ActionCancelTimer(const CPVRTimerInfoTag *tag)
 bool CGUIDialogPVRGuideInfo::ActionRecordSerie(const CEpgInfoTag *tag)
 {
   const CPVRChannel *channel = tag->ChannelTag();
-  DWORD dwSupportedRules=g_PVRClients->GetAddonCapabilities(channel->ClientID()).dwSupportsRecordingRules;
+  unsigned int iSupportedRules = g_PVRClients->GetAddonCapabilities(channel->ClientID()).iSupportsRecordingRules;
 
   CPVRTimerInfoTag *newtimer=NULL;
 
-  if(dwSupportedRules==PVR_SERIE_ON)
+  if(iSupportedRules==PVR_SERIE_ON)
   {
     CGUIDialogYesNo* pDialog = (CGUIDialogYesNo*)g_windowManager.GetWindow(WINDOW_DIALOG_YES_NO);
     if (!pDialog)
@@ -265,8 +265,8 @@ void CGUIDialogPVRGuideInfo::Update()
   }
 
   const CPVRChannel *channel = tag->ChannelTag();
-  DWORD dwSupportedRules = g_PVRClients->GetAddonCapabilities(channel->ClientID()).dwSupportsRecordingRules;
-  if (!dwSupportedRules) 
+  unsigned int iSupportedRules = g_PVRClients->GetAddonCapabilities(channel->ClientID()).iSupportsRecordingRules;
+  if (!iSupportedRules) 
   {
     SET_CONTROL_HIDDEN(CONTROL_BTN_RECORD_SERIES);
   }

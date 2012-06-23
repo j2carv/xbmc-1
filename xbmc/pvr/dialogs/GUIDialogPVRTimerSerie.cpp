@@ -77,17 +77,17 @@ void CGUIDialogPVRTimerSerie::OnWindowLoaded()
   tag = m_progItem->GetEPGInfoTag();
   const CPVRTimerInfoTag *timer = g_PVRTimers->GetMatch(tag);
   const CPVRChannel *channel = tag->ChannelTag();
-  DWORD dwSupportedRules=0;
+  unsigned int iSupportedRules = 0;
   m_iResult=0;
   this->SetProperty("DayOfTheWeek", tag->StartAsLocalTime().GetDayOfWeek()!=0  ?  g_localizeStrings.Get(tag->StartAsLocalTime().GetDayOfWeek()+10) : g_localizeStrings.Get(17)); 
   if(channel)
-    dwSupportedRules=g_PVRClients->GetAddonCapabilities(channel->ClientID()).dwSupportsRecordingRules;
-  UpdateButton(CONTROL_BTN_THIS_CHANNEL, PVR_SERIE_SAME_CHANNEL, timer, dwSupportedRules);
-  UpdateButton(CONTROL_BTN_SKIP_REPEAT, PVR_SERIE_SKIP_REPEAT, timer, dwSupportedRules);
-  UpdateButton(CONTROL_BTN_SAME_WEEKDAY, PVR_SERIE_SAME_WEEKDAY, timer, dwSupportedRules);
-  UpdateButton(CONTROL_BTN_SAME_TIME, PVR_SERIE_SAME_TIME, timer, dwSupportedRules);
-  UpdateButton(CONTROL_BTN_ONCE_A_WEEK, PVR_SERIE_ONCE_PER_WEEK, timer, dwSupportedRules);
-  UpdateButton(CONTROL_BTN_ONCE_A_DAY, PVR_SERIE_ONCE_PER_DAY, timer, dwSupportedRules);
+    iSupportedRules = g_PVRClients->GetAddonCapabilities(channel->ClientID()).iSupportsRecordingRules;
+  UpdateButton(CONTROL_BTN_THIS_CHANNEL, PVR_SERIE_SAME_CHANNEL, timer, iSupportedRules);
+  UpdateButton(CONTROL_BTN_SKIP_REPEAT, PVR_SERIE_SKIP_REPEAT, timer, iSupportedRules);
+  UpdateButton(CONTROL_BTN_SAME_WEEKDAY, PVR_SERIE_SAME_WEEKDAY, timer, iSupportedRules);
+  UpdateButton(CONTROL_BTN_SAME_TIME, PVR_SERIE_SAME_TIME, timer, iSupportedRules);
+  UpdateButton(CONTROL_BTN_ONCE_A_WEEK, PVR_SERIE_ONCE_PER_WEEK, timer, iSupportedRules);
+  UpdateButton(CONTROL_BTN_ONCE_A_DAY, PVR_SERIE_ONCE_PER_DAY, timer, iSupportedRules);
 
   return CGUIDialog::OnWindowLoaded();
 }
