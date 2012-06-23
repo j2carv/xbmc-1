@@ -249,7 +249,7 @@ bool CDVDInputStreamPVRManager::GetSelectedChannel(CPVRChannel &channel) const
 
 bool CDVDInputStreamPVRManager::UpdateItem(CFileItem& item)
 {
-  if (m_pLiveTV)
+  if (m_pLiveTV && !g_PVRManager.IsPlayingRecording())
     return m_pLiveTV->UpdateItem(item);
   return false;
 }
@@ -264,7 +264,8 @@ bool CDVDInputStreamPVRManager::NextStream()
   {
     if(m_pFile->SkipNext())
     {
-      m_eof = false;
+      if (m_pLiveTV&& !g_PVRManager.IsPlayingRecording())
+        m_eof = false;
       return true;
     }
   }

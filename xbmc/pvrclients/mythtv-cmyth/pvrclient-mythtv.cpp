@@ -1236,16 +1236,18 @@ void PVRClientMythTV::CloseRecordedStream()
 
 int PVRClientMythTV::ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-
-  XBMC->Log(LOG_DEBUG,"%s - curPos: %i TotalLength: %i",__FUNCTION__,(int)m_file.CurrentPosition(),(int)m_file.Duration());
-
+  //XBMC->Log(LOG_DEBUG,"%s - curPos: %i TotalLength: %i",__FUNCTION__,(int)m_file.CurrentPosition(),(int)m_file.Duration());
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - size: %i",__FUNCTION__,iBufferSize);
   int dataread=m_file.Read(pBuffer,iBufferSize);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s: Read %i Bytes",__FUNCTION__,dataread);
   else if(dataread==0)
+  {
     XBMC->Log(LOG_INFO,"%s: Read 0 Bytes!",__FUNCTION__);
+    //if((int)m_file.CurrentPosition()>=m_file.Duration())
+    //  return -1;//needed to signal EoF
+  }
   return dataread;
 }
 
@@ -1257,6 +1259,8 @@ long long PVRClientMythTV::SeekRecordedStream(long long iPosition, int iWhence)
   long long retval= m_file.Seek(iPosition,whence);
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - pos: %i",__FUNCTION__,retval);
+  if(retval >= m_file.Duration())
+    retval = -1;//To signal EoF
   return retval;
 }
 

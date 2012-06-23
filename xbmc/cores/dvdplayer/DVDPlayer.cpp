@@ -3613,7 +3613,7 @@ bool CDVDPlayer::OnAction(const CAction &action)
     }
   }
 
-  if (dynamic_cast<CDVDInputStream::IChannel*>(m_pInputStream))
+  if (dynamic_cast<CDVDInputStream::IChannel*>(m_pInputStream) && !g_PVRManager.IsPlayingRecording())
   {
     switch (action.GetID())
     {

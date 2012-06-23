@@ -34,6 +34,8 @@
 #include "utils/StringUtils.h"
 #include "threads/SingleLock.h"
 #include "video/VideoDatabase.h"
+#include "PlayListPlayer.h"
+#include "playlists/PlayList.h"
 
 using namespace PVR;
 
@@ -88,6 +90,7 @@ void CGUIWindowPVRRecordings::GetContextButtons(int itemNumber, CContextButtons 
   buttons.Add(CONTEXT_BUTTON_INFO, 19053);      /* Get Information of this recording */
   buttons.Add(CONTEXT_BUTTON_FIND, 19003);      /* Find similar program */
   buttons.Add(CONTEXT_BUTTON_PLAY_ITEM, 12021); /* Play this recording */
+  buttons.Add(CONTEXT_BUTTON_QUEUE_ITEM, 13347); /* Play this recording */
   CStdString resumeString = GetResumeString(*pItem);
   if (!resumeString.IsEmpty())
   {
@@ -110,6 +113,8 @@ void CGUIWindowPVRRecordings::GetContextButtons(int itemNumber, CContextButtons 
   buttons.Add(CONTEXT_BUTTON_DELETE, 117);      /* Delete this recording */
   buttons.Add(CONTEXT_BUTTON_SORTBY_NAME, 103);       /* sort by name */
   buttons.Add(CONTEXT_BUTTON_SORTBY_DATE, 104);       /* sort by date */
+  if (g_playlistPlayer.GetPlaylist(PLAYLIST_VIDEO).size() > 0)
+    buttons.Add(CONTEXT_BUTTON_NOW_PLAYING, 13350);
   // Update sort by button
 //if (m_guiState->GetSortMethod()!=SORT_METHOD_NONE)
 //{
@@ -142,11 +147,18 @@ bool CGUIWindowPVRRecordings::OnAction(const CAction &action)
 
 bool CGUIWindowPVRRecordings::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 {
+  if( button == CONTEXT_BUTTON_NOW_PLAYING)
+  {
+    g_windowManager.ActivateWindow(WINDOW_VIDEO_PLAYLIST);
+    return true;
+  }
+
   if (itemNumber < 0 || itemNumber >= m_parent->m_vecItems->Size())
     return false;
   CFileItemPtr pItem = m_parent->m_vecItems->Get(itemNumber);
 
   return OnContextButtonPlay(pItem.get(), button) ||
+      OnContextButtonQueue(pItem.get(), button) ||
       OnContextButtonRename(pItem.get(), button) ||
       OnContextButtonDelete(pItem.get(), button) ||
       OnContextButtonInfo(pItem.get(), button) ||
@@ -306,13 +318,74 @@ bool CGUIWindowPVRRecordings::OnContextButtonPlay(CFileItem *item, CONTEXT_BUTTO
   bool bReturn = false;
 
   if ((button == CONTEXT_BUTTON_PLAY_ITEM) ||
-      (button == CONTEXT_BUTTON_RESUME_ITEM))
+    (button == CONTEXT_BUTTON_RESUME_ITEM))
   {
-    item->m_lStartOffset = button == CONTEXT_BUTTON_RESUME_ITEM ? STARTOFFSET_RESUME : 0;
-    bReturn = PlayFile(item, false); /* play recording */
+
+    // if its a folder, build a temp playlist
+    if (item->m_bIsFolder)
+    {
+      CFileItemPtr pItem(new  CFileItem(*item));
+
+      // skip ".."
+      if (pItem->IsParentFolder())
+        return true;
+
+      // recursively add items to list
+      CFileItemList queuedItems;
+      AddItemToPlayList(pItem, queuedItems);
+
+      g_playlistPlayer.ClearPlaylist(PLAYLIST_VIDEO);
+      g_playlistPlayer.Reset();
+      g_playlistPlayer.Add(PLAYLIST_VIDEO, queuedItems);
+      g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_VIDEO);
+      g_playlistPlayer.Play();
+      bReturn = true;
+    }
+    else
+    {
+      item->m_lStartOffset = button == CONTEXT_BUTTON_RESUME_ITEM ? STARTOFFSET_RESUME : 0;
+      bReturn = PlayFile(item, false); /* play recording */
+    }
   }
 
   return bReturn;
+}
+
+bool CGUIWindowPVRRecordings::OnContextButtonQueue(CFileItem *item, CONTEXT_BUTTON button)
+{
+  bool bReturn = false;
+
+  if (button == CONTEXT_BUTTON_QUEUE_ITEM )
+  {
+    CFileItemPtr pItem(new  CFileItem(*item));
+    CFileItemList queuedItems;
+    AddItemToPlayList(pItem,queuedItems);
+    g_playlistPlayer.Add(PLAYLIST_VIDEO, queuedItems);
+    g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_VIDEO);    
+    bReturn = true;
+  }
+
+  return bReturn;
+}
+
+ void CGUIWindowPVRRecordings::AddItemToPlayList(const CFileItemPtr &pItem, CFileItemList &queuedItems)
+{
+  if (pItem->m_bIsFolder)
+  {
+    if (pItem->IsParentFolder())
+      return;
+
+    // recursive
+    CFileItemList items;
+    g_PVRRecordings->GetDirectory(pItem->GetPath(), items);
+
+    for (int i = 0; i < items.Size(); ++i)
+    {
+      AddItemToPlayList(items[i], queuedItems);
+    }
+  }
+  else
+     queuedItems.Add(pItem);  
 }
 
 bool CGUIWindowPVRRecordings::OnContextButtonRename(CFileItem *item, CONTEXT_BUTTON button)
