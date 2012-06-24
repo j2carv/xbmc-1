@@ -247,19 +247,24 @@ bool CGUIWindowPVRRecordings::OnClickList(CGUIMessage &message)
     /* process actions */
     if (iAction == ACTION_SELECT_ITEM || iAction == ACTION_MOUSE_LEFT_CLICK || iAction == ACTION_PLAY)
     {
-      int choice = CONTEXT_BUTTON_PLAY_ITEM;
-      CStdString resumeString = GetResumeString(*pItem);
-      if (!resumeString.IsEmpty())
-      {
-        CContextButtons choices;
-        choices.Add(CONTEXT_BUTTON_RESUME_ITEM, resumeString);
-        choices.Add(CONTEXT_BUTTON_PLAY_ITEM, 12021);
-        choice = CGUIDialogContextMenu::ShowAndGetChoice(choices);
-      }
-      if (choice < 0)
-        bReturn = true;
+      if(pItem.get()->m_bIsFolder)
+        bReturn = false;
       else
-        bReturn = OnContextButtonPlay(pItem.get(), (CONTEXT_BUTTON)choice);
+      {
+        int choice = CONTEXT_BUTTON_PLAY_ITEM;
+        CStdString resumeString = GetResumeString(*pItem);
+        if (!resumeString.IsEmpty())
+        {
+          CContextButtons choices;
+          choices.Add(CONTEXT_BUTTON_RESUME_ITEM, resumeString);
+          choices.Add(CONTEXT_BUTTON_PLAY_ITEM, 12021);
+          choice = CGUIDialogContextMenu::ShowAndGetChoice(choices);
+        }
+        if (choice < 0)
+          bReturn = true;
+        else
+          bReturn = OnContextButtonPlay(pItem.get(), (CONTEXT_BUTTON)choice);
+      }
     }
     else if (iAction == ACTION_CONTEXT_MENU || iAction == ACTION_MOUSE_RIGHT_CLICK)
       m_parent->OnPopupMenu(iItem);
