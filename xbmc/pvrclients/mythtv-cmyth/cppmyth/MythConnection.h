@@ -21,12 +21,13 @@ public:
   MythConnection(CStdString server,unsigned short port);
   MythRecorder GetFreeRecorder();
   MythRecorder GetRecorder(int n);
-  MythEventHandler CreateEventHandler();
+  MythEventHandler * CreateEventHandler();
   boost::unordered_map< CStdString, MythProgramInfo > GetRecordedPrograms();
   boost::unordered_map< CStdString, MythProgramInfo > GetPendingPrograms();
   boost::unordered_map< CStdString, MythProgramInfo > GetScheduledPrograms();
   bool DeleteRecording(MythProgramInfo &recording);
   bool IsConnected();
+  bool TryReconnect();
   CStdString GetServer();
   int GetProtocolVersion();
   bool GetDriveSpace(long long &total,long long &used);
@@ -48,4 +49,6 @@ private:
   boost::shared_ptr< MythPointerThreadSafe< cmyth_conn_t > > m_conn_t;
   CStdString m_server;
   unsigned short m_port;
+  int m_retry_count;
+  static MythEventHandler * m_pEventHandler;
 };

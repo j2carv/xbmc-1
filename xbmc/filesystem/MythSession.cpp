@@ -49,6 +49,18 @@ using namespace std;
 
 #define MYTH_IDLE_TIMEOUT     5 * 60 // 5 minutes in seconds
 
+/* Call 'call', then if 'cond' condition is true reconnect
+ * the control connection. If successful, call 'call' again. */
+#define DLL_CTRL_CALL( var, cond, ctrl, call )  { \
+                                                    var = m_dll->call; \
+                                                    if ( cond ) \
+                                                    { \
+                                                        ctrl = GetControl(); \
+                                                        if ( ctrl ) \
+                                                            var = m_dll->call; \
+                                                    } \
+                                                }
+
 CCriticalSection       CMythSession::m_section_session;
 vector<CMythSession*>  CMythSession::m_sessions;
 
@@ -432,6 +444,10 @@ void CMythSession::Process()
       break;
     case CMYTH_EVENT_CLOSE:
       CLog::Log(LOGDEBUG, "%s - MythTV event EVENT_CLOSE", __FUNCTION__);
+      if ( m_dll->conn_reconnect_event( m_event ) )
+        CLog::Log( LOGDEBUG, "%s - Connected client to event socket", __FUNCTION__ );
+      else
+        CLog::Log( LOGDEBUG, "%s - Could not connect client to event socket", __FUNCTION__ );
       break;
     case CMYTH_EVENT_RECORDING_LIST_CHANGE:
       CLog::Log(LOGDEBUG, "%s - MythTV event RECORDING_LIST_CHANGE", __FUNCTION__);
@@ -514,21 +530,41 @@ cmyth_conn_t CMythSession::GetControl()
   if (!m_control)
   {
     if (!m_dll->IsLoaded())
-      return false;
+      return NULL;
 
     m_control = m_dll->conn_connect_ctrl((char*)m_hostname.c_str(), m_port, 16*1024, 4096);
     if (!m_control)
       CLog::Log(LOGERROR, "%s - unable to connect to server on %s:%d", __FUNCTION__, m_hostname.c_str(), m_port);
   }
+  else
+  {
+    if ( !m_dll->IsLoaded() )
+      return NULL;
+
+    if ( m_dll->conn_hung( m_control ) && !m_dll->conn_reconnect_ctrl( m_control ) )
+    {
+      CLog::Log( LOGERROR, "%s - unable to re-connect to server on %s:%d", __FUNCTION__, m_hostname.c_str(), m_port );
+      m_dll->ref_release( m_control );
+      m_control = NULL;
+    }
+  }
   return m_control;
 }
 
-cmyth_database_t CMythSession::GetDatabase()
+cmyth_database_t CMythSession::GetDatabase( bool reconnect /* = false */ )
 {
+  if ( m_database && reconnect )
+  {
+    if ( !m_dll->IsLoaded() )
+      return NULL;
+    m_dll->database_close( m_database );
+    m_dll->ref_release( m_database );
+    m_database = NULL;
+  }
   if (!m_database)
   {
     if (!m_dll->IsLoaded())
-      return false;
+      return NULL;
 
     m_database = m_dll->database_init((char*)m_hostname.c_str(), (char*)MYTH_DEFAULT_DATABASE,
                                       (char*)m_username.c_str(), (char*)m_password.c_str());
@@ -553,6 +589,19 @@ bool CMythSession::SetListener(IEventListener *listener)
     }
     /* start event handler thread */
     CThread::Create(false, THREAD_MINSTACKSIZE);
+  }
+  else if ( listener )
+  {
+    if ( !m_dll->IsLoaded() )
+      return false;
+
+    if ( m_dll->conn_hung( m_event ) && !m_dll->conn_reconnect_event( m_event ) )
+    {
+      CLog::Log( LOGERROR, "%s - unable to re-connect to server on %s:%d", __FUNCTION__, m_hostname.c_str(), m_port );
+      m_dll->ref_release( m_event );
+      m_event = NULL;
+      return false;
+    }
   }
   CSingleLock lock(m_section);
   m_listener = listener;
@@ -583,7 +632,7 @@ cmyth_proglist_t CMythSession::GetAllRecordedPrograms()
     if (!control)
       return NULL;
 
-    m_all_recorded = m_dll->proglist_get_all_recorded(control);
+    DLL_CTRL_CALL( m_all_recorded, m_all_recorded == NULL, control, proglist_get_all_recorded(control) );
   }
   /*
    * An extra reference is needed to prevent a race condition while resetting the proglist from

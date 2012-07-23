@@ -106,6 +106,8 @@ struct cmyth_conn {
 	unsigned long	conn_version;	/**< protocol version */
 	volatile int	conn_hang;	/**< is connection stuck? */
 	int		conn_tcp_rcvbuf;/**< TCP receive buffer size */
+	char *          server;         /**< hostname of server */
+	unsigned short  port;           /**< port of server */
 };
 
 /* Sergio: Added to support new livetv protocol */

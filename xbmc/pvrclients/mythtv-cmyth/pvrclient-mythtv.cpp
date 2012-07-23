@@ -93,7 +93,7 @@ void RecordingRule::SaveTimerString(PVR_TIMER& timer)
 
 
 PVRClientMythTV::PVRClientMythTV()
-  :m_con(),m_eventHandler(),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap(),m_fOps2_client(0)
+  :m_con(),m_pEventHandler(NULL),m_db(),m_protocolVersion(""),m_connectionString(""),m_EPGstart(0),m_EPGend(0),m_channelGroups(),m_categoryMap(),m_fOps2_client(0)
 {
   m_categoryMap.insert(catbimap::value_type("Movie",0x10));
   m_categoryMap.insert(catbimap::value_type("Movie", 0x10));
@@ -265,7 +265,12 @@ PVRClientMythTV::~PVRClientMythTV()
     delete m_fOps2_client;
     m_fOps2_client = 0;
   }
-  m_eventHandler.Stop();
+  if ( m_pEventHandler )
+  {
+    m_pEventHandler->Stop();
+    delete ( m_pEventHandler );
+    m_pEventHandler = NULL;
+  }
 }
 
 CStdString PVRClientMythTV::GetArtWork(FILE_OPTIONS storageGroup, CStdString shwTitle) {
@@ -353,7 +358,12 @@ bool PVRClientMythTV::Connect()
     XBMC->QueueNotification(QUEUE_ERROR,"%s: Failed to connect to MythTV backend %s:%i",__FUNCTION__,g_szHostname.c_str(),g_iMythPort);
     return false;
   }
-  m_eventHandler=m_con.CreateEventHandler();
+  m_pEventHandler=m_con.CreateEventHandler();
+  if ( !m_pEventHandler )
+  {
+    XBMC->QueueNotification( QUEUE_ERROR, "Failed to create MythTV Event Handler" );
+    return false;
+  }
   m_protocolVersion.Format("%i",m_con.GetProtocolVersion());
   m_connectionString.Format("%s:%i",g_szHostname,g_iMythPort);
   m_fOps2_client = new fileOps2(m_con);
@@ -361,14 +371,20 @@ bool PVRClientMythTV::Connect()
   if(m_db.IsNull())
   {
     XBMC->QueueNotification(QUEUE_ERROR,"Failed to connect to MythTV MySQL database %s@%s %s/%s",g_szMythDBname.c_str(),g_szHostname.c_str(),g_szMythDBuser.c_str(),g_szMythDBpassword.c_str());
-    m_eventHandler.Stop();
+    if ( m_pEventHandler )
+    {
+      m_pEventHandler->Stop();
+    }
     return false;
   }
   CStdString db_test;
   if(!m_db.TestConnection(db_test))
   {
     XBMC->QueueNotification(QUEUE_ERROR,"Failed to connect to MythTV MySQL database %s@%s %s/%s \n %s",g_szMythDBname.c_str(),g_szHostname.c_str(),g_szMythDBuser.c_str(),g_szMythDBpassword.c_str(),db_test.c_str());
-    m_eventHandler.Stop();
+    if ( m_pEventHandler )
+    {
+      m_pEventHandler->Stop();
+    }
     return false;
   }
   m_channels=m_db.ChannelList();
@@ -1053,16 +1069,22 @@ bool PVRClientMythTV::OpenLiveStream(const PVR_CHANNEL &channel)
       m_rec=m_con.GetRecorder(*it);
       if(!m_rec.IsRecording() && m_rec.IsTunable(chan))
       {
-	      if(g_bExtraDebug)
-	        XBMC->Log(LOG_DEBUG,"%s: Opening new recorder %i",__FUNCTION__,m_rec.ID());
-        m_eventHandler.SetRecorder(m_rec);
+	    if(g_bExtraDebug)
+	      XBMC->Log(LOG_DEBUG,"%s: Opening new recorder %i",__FUNCTION__,m_rec.ID());
+        if ( m_pEventHandler )
+        {
+	      m_pEventHandler->SetRecorder(m_rec);
+        }
         if(m_rec.SpawnLiveTV(chan))
         {
           return true;
         }
       }
       m_rec=MythRecorder();
-      m_eventHandler.SetRecorder(m_rec);//Redundant
+      if ( m_pEventHandler )
+      {
+        m_pEventHandler->SetRecorder(m_rec);//Redundant
+      }
     }
     if(g_bExtraDebug)
       XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
@@ -1082,11 +1104,17 @@ void PVRClientMythTV::CloseLiveStream()
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
   SingleLock<PLATFORM::CMutex> lock(&m_lock); 
-  m_eventHandler.PreventLiveChainUpdate();
+  if ( m_pEventHandler )
+  {
+    m_pEventHandler->PreventLiveChainUpdate();
+  }
   m_rec.Stop();
   m_rec=MythRecorder();
-  m_eventHandler.SetRecorder(m_rec);
-  m_eventHandler.AllowLiveChainUpdate();
+  if ( m_pEventHandler )
+  {
+    m_pEventHandler->SetRecorder(m_rec);
+    m_pEventHandler->AllowLiveChainUpdate();
+  }
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done",__FUNCTION__);
   return;
@@ -1169,7 +1197,11 @@ PVR_ERROR PVRClientMythTV::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s",__FUNCTION__);
-  MythSignal signal=m_eventHandler.GetSignal();
+  MythSignal signal;
+  if ( m_pEventHandler )
+  {
+    signal=m_pEventHandler->GetSignal();
+  }
   signalStatus.dAudioBitrate=0;
   signalStatus.dDolbyBitrate=0;
   signalStatus.dVideoBitrate=0;
@@ -1195,7 +1227,10 @@ bool PVRClientMythTV::OpenRecordedStream(const PVR_RECORDING &recinfo)
   if(*id.rbegin() == '@')
     id = id.substr(0,id.size()-1);
   m_file=m_con.ConnectFile(m_recordings.at(id));
-  m_eventHandler.SetRecordingListener(m_file,id);
+  if ( m_pEventHandler )
+  {
+    m_pEventHandler->SetRecordingListener(m_file,id);
+  }
   if(g_bExtraDebug)
     XBMC->Log(LOG_DEBUG,"%s - Done - %i",__FUNCTION__,!m_file.IsNull());
   return !m_file.IsNull();

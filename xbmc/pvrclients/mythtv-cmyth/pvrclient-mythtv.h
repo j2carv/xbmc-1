@@ -91,7 +91,7 @@ private:
   int Genre(CStdString g);
   CStdString Genre(int g);
   MythConnection m_con;
-  MythEventHandler m_eventHandler;
+  MythEventHandler * m_pEventHandler;
   MythDatabase m_db;
   MythRecorder m_rec;
   CMutex m_lock;

@@ -10,6 +10,39 @@ using namespace ADDON;
 *								Myth Recorder
 */
 
+/* Call 'call', then if 'cond' condition is true see if we're still
+ * connected to the control socket and try to re-connect if not.
+ * If reconnection is ok, call 'call' again. */
+#define CMYTH_REC_CALL( var, cond, call )  m_conn.Lock(); \
+                                           var = CMYTH->call; \
+                                           m_conn.Unlock(); \
+                                           if ( cond ) \
+                                           { \
+                                               if ( !m_conn.IsConnected() && m_conn.TryReconnect() ) \
+                                               { \
+                                                   m_conn.Lock(); \
+                                                   var = CMYTH->call; \
+                                                   m_conn.Unlock(); \
+                                               } \
+                                           } \
+
+/* Similar to CMYTH_CONN_CALL, but it will release 'var' if it was not NULL
+ * right before calling 'call' again. */
+#define CMYTH_REC_CALL_REF( var, cond, call )  m_conn.Lock(); \
+                                               var = CMYTH->call; \
+                                               m_conn.Unlock(); \
+                                               if ( cond ) \
+                                               { \
+                                                   if ( !m_conn.IsConnected() && m_conn.TryReconnect() ) \
+                                                   { \
+                                                       m_conn.Lock(); \
+                                                       if ( var != NULL ) \
+                                                           CMYTH->RefRelease( var ); \
+                                                       var = CMYTH->call; \
+                                                       m_conn.Unlock(); \
+                                                   } \
+                                               } \
+
 
 MythRecorder::MythRecorder():
 m_recorder_t(new MythPointerThreadSafe<cmyth_recorder_t>()),livechainupdated(new int(0)),m_conn()
@@ -30,7 +63,9 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
   //m_recorder_t->Lock();
   //check channel
   *livechainupdated=0;
-  *m_recorder_t=(CMYTH->SpawnLiveTv(*m_recorder_t,64*1024, 16*1024,MythRecorder::prog_update_callback,&pErr,channelNum.GetBuffer()));
+  cmyth_recorder_t recorder = NULL;
+  CMYTH_REC_CALL( recorder, recorder == NULL, SpawnLiveTv( *m_recorder_t, 64*1024, 16*1024, MythRecorder::prog_update_callback, &pErr, channelNum.GetBuffer() ) );
+  *m_recorder_t=recorder;
   int i=20;
   while(*livechainupdated==0&&i--!=0)
   {
@@ -51,17 +86,16 @@ bool MythRecorder::SpawnLiveTV(MythChannel &channel)
 
 bool MythRecorder::LiveTVChainUpdate(CStdString chainID)
 {
-  m_conn.Lock();
   char* buffer=strdup(chainID.c_str());
   //m_recorder_t->Lock();
-  bool retval=CMYTH->LivetvChainUpdate(*m_recorder_t,buffer,16*1024)==0;
-  if(!retval)
+  int retval = 0;
+  CMYTH_REC_CALL( retval, retval < 0, LivetvChainUpdate( *m_recorder_t, buffer, 16*1024 ) );
+  if(retval != 0)
     XBMC->Log(LOG_ERROR,"LiveTVChainUpdate failed on chainID: %s",buffer);
   *livechainupdated=1;
   //m_recorder_t->Unlock();
   free(buffer);
-  m_conn.Unlock();
-  return retval;
+  return retval==0;
 }
 
 void MythRecorder::prog_update_callback(cmyth_proginfo_t prog)
@@ -82,12 +116,11 @@ bool MythRecorder::IsNull()
 
 bool MythRecorder::IsRecording()
 {
-  m_conn.Lock();
   //m_recorder_t->Lock();
-  bool retval=CMYTH->RecorderIsRecording(*m_recorder_t)==1;
+  int retval = 0;
+  CMYTH_REC_CALL( retval, retval < 0, RecorderIsRecording( *m_recorder_t ) );
   //m_recorder_t->Unlock();
-  m_conn.Unlock();
-  return retval;
+  return retval==1;
 }
 
 bool MythRecorder::IsTunable(MythChannel &channel)
@@ -133,12 +166,11 @@ bool MythRecorder::IsTunable(MythChannel &channel)
 
 bool MythRecorder::CheckChannel(MythChannel &channel)
 {
-  m_conn.Lock();
   //m_recorder_t->Lock();
   CStdString channelNum=channel.Number();
-  bool retval=CMYTH->RecorderCheckChannel(*m_recorder_t,channelNum.GetBuffer())==0;
+  int retval = 0;
+  CMYTH_REC_CALL( retval, retval < 0, RecorderCheckChannel( *m_recorder_t, channelNum.GetBuffer() ) );
   //m_recorder_t->Unlock();
-  m_conn.Unlock();
   return retval;
 }
 
@@ -209,56 +241,51 @@ bool MythRecorder::SetChannel(MythChannel &channel)
 
 int MythRecorder::ReadLiveTV(void* buffer,long long length)
 {
-  m_conn.Lock();
   //m_recorder_t->Lock();
-  int bytesRead=CMYTH->LivetvRead(*m_recorder_t,static_cast<char*>(buffer),length);
+  int bytesRead=0;
+  CMYTH_REC_CALL( bytesRead, bytesRead < 0, LivetvRead( *m_recorder_t, static_cast<char*>( buffer ), length ) );
   //m_recorder_t->Unlock();
-  m_conn.Unlock();
   return bytesRead;
 }
 
 MythProgramInfo MythRecorder::GetCurrentProgram()
 {
-  m_conn.Lock();
   //m_recorder_t->Lock();
-  MythProgramInfo retval=CMYTH->RecorderGetCurProginfo(*m_recorder_t);
+  cmyth_proginfo_t proginfo = NULL;
+  CMYTH_REC_CALL_REF( proginfo, proginfo == NULL, RecorderGetCurProginfo( *m_recorder_t ) );
+  MythProgramInfo retval = proginfo;
   //m_recorder_t->Unlock();
-  m_conn.Unlock();
   return retval;
 }
 
 long long MythRecorder::LiveTVSeek(long long offset, int whence)
 {
-  m_conn.Lock();
   //m_recorder_t->Lock();
-  long long retval = CMYTH->LivetvSeek(*m_recorder_t,offset,whence);
+  long long retval = 0;
+  CMYTH_REC_CALL( retval, retval < 0, LivetvSeek( *m_recorder_t, offset, whence ) );
   //m_recorder_t->Unlock();
-  m_conn.Unlock();
   return retval;
 }
 
 long long MythRecorder::LiveTVDuration()
 {
-  m_conn.Lock();
   //m_recorder_t->Lock();
-  long long retval = CMYTH->LivetvChainDuration(*m_recorder_t);
+  long long retval = 0;
+  CMYTH_REC_CALL( retval, retval < 0, LivetvChainDuration( *m_recorder_t ) );
   //m_recorder_t->Unlock();
-  m_conn.Unlock();
   return retval;
 }
 
 int MythRecorder::ID()
 {
-  m_conn.Lock();
-  int retval = CMYTH->RecorderGetRecorderId(*m_recorder_t);
-  m_conn.Unlock();
+  int retval = 0;
+  CMYTH_REC_CALL( retval, retval < 0, RecorderGetRecorderId( *m_recorder_t ) );
   return retval;
 }
 
  bool  MythRecorder::Stop()
  {
-   m_conn.Lock();
-   bool retval = CMYTH->RecorderStopLivetv(*m_recorder_t)==0;
-   m_conn.Unlock();
-   return retval;
+   int retval = 0;
+   CMYTH_REC_CALL( retval, retval < 0, RecorderStopLivetv( *m_recorder_t ) );
+   return retval==0;
  }

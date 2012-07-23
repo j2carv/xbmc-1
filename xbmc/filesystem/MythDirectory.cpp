@@ -43,6 +43,30 @@ extern "C"
 using namespace XFILE;
 using namespace std;
 
+/* Call 'call', then if 'cond' condition is true reconnect to
+ * the database. If successful, call 'call' again. */
+#define DLL_DB_CALL( var, cond, db, call )  { \
+                                                var = m_dll->call; \
+                                                if ( cond ) \
+                                                { \
+                                                    db = m_session->GetDatabase( true ); \
+                                                    if ( db ) \
+                                                        var = m_dll->call; \
+                                                } \
+                                            }
+
+/* Call 'call', then if 'cond' condition is true reconnect
+ * the control connection. If successful, call 'call' again. */
+#define DLL_CTRL_CALL( var, cond, ctrl, call )  { \
+                                                    var = m_dll->call; \
+                                                    if ( cond ) \
+                                                    { \
+                                                        ctrl = m_session->GetControl(); \
+                                                        if ( ctrl ) \
+                                                            var = m_dll->call; \
+                                                    } \
+                                                }
+
 CMythDirectory::CMythDirectory()
 {
   m_session  = NULL;
@@ -99,7 +123,8 @@ bool CMythDirectory::GetGuide(const CStdString& base, CFileItemList &items)
   if (!db)
     return false;
 
-  cmyth_chanlist_t list = m_dll->mysql_get_chanlist(db);
+  cmyth_chanlist_t list;
+  DLL_DB_CALL( list, list == NULL, db, mysql_get_chanlist(db) );
   if (!list)
   {
     CLog::Log(LOGERROR, "%s - Unable to get list of channels: %s", __FUNCTION__, base.c_str());
@@ -172,7 +197,8 @@ bool CMythDirectory::GetGuideForChannel(const CStdString& base, CFileItemList &i
 
   cmyth_program_t *program = NULL;
   // TODO: See if there is a way to just get the entries for the chosen channel rather than ALL
-  int count = m_dll->mysql_get_guide(database, &program, now, end);
+  int count = 0;
+  DLL_DB_CALL( count, count <= 0, database, mysql_get_guide(database, &program, now, end) );
   CLog::Log(LOGDEBUG, "%s - %i entries in guide data", __FUNCTION__, count);
   if (count <= 0)
     return false;
@@ -413,7 +439,8 @@ bool CMythDirectory::GetChannels(const CStdString& base, CFileItemList &items)
   vector<cmyth_proginfo_t> channels;
   for (unsigned i = 0; i < 16; i++)
   {
-    cmyth_recorder_t recorder = m_dll->conn_get_recorder_from_num(control, i);
+    cmyth_recorder_t recorder = NULL;
+    DLL_CTRL_CALL( recorder, recorder == NULL, control, conn_get_recorder_from_num(control, i) );
     if (!recorder)
       continue;
 

@@ -32,7 +32,9 @@ class DllLibCMythInterface
 public:
   virtual ~DllLibCMythInterface() {}
   virtual cmyth_conn_t     conn_connect_ctrl        (char *server, unsigned short port, unsigned buflen, int tcp_rcvbuf)=0;
+  virtual int              conn_reconnect_ctrl      (cmyth_conn_t control)=0;
   virtual cmyth_conn_t     conn_connect_event       (char *server, unsigned short port, unsigned buflen, int tcp_rcvbuf)=0;
+  virtual int              conn_reconnect_event     (cmyth_conn_t control)=0;
   virtual cmyth_file_t     conn_connect_file        (cmyth_proginfo_t prog, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf)=0;
   virtual cmyth_file_t     conn_connect_path        (char* path, cmyth_conn_t control, unsigned buflen, int tcp_rcvbuf, char* sgToGetFrom)=0;
   virtual cmyth_recorder_t conn_get_free_recorder   (cmyth_conn_t conn)=0;
@@ -129,6 +131,7 @@ public:
   virtual time_t           timestamp_to_unixtime    (cmyth_timestamp_t ts)=0;
   virtual int              timestamp_compare        (cmyth_timestamp_t ts1, cmyth_timestamp_t ts2)=0;
   virtual cmyth_database_t database_init            (char *host, char *db_name, char *user, char *pass)=0;
+  virtual void             database_close           (cmyth_database_t db)=0;
   virtual cmyth_chanlist_t mysql_get_chanlist       (cmyth_database_t db)=0;
 
   virtual cmyth_commbreaklist_t get_commbreaklist   (cmyth_conn_t control, cmyth_proginfo_t prog)=0;
@@ -140,7 +143,9 @@ class DllLibCMyth : public DllDynamic, DllLibCMythInterface
 {
   DECLARE_DLL_WRAPPER(DllLibCMyth, DLL_PATH_LIBCMYTH)
   DEFINE_METHOD4(cmyth_conn_t,        conn_connect_ctrl,        (char *p1, unsigned short p2, unsigned p3, int p4))
+  DEFINE_METHOD1(int,                 conn_reconnect_ctrl,      (cmyth_conn_t p1))
   DEFINE_METHOD4(cmyth_conn_t,        conn_connect_event,       (char *p1, unsigned short p2, unsigned p3, int p4))
+  DEFINE_METHOD1(int,                 conn_reconnect_event,     (cmyth_conn_t p1))
   DEFINE_METHOD4(cmyth_file_t,        conn_connect_file,        (cmyth_proginfo_t p1, cmyth_conn_t p2, unsigned p3, int p4))
   DEFINE_METHOD5(cmyth_file_t,        conn_connect_path,        (char* p1, cmyth_conn_t p2, unsigned p3, int p4, char* p5))
 
@@ -236,6 +241,7 @@ class DllLibCMyth : public DllDynamic, DllLibCMythInterface
   DEFINE_METHOD1(time_t,              timestamp_to_unixtime,    (cmyth_timestamp_t p1))
   DEFINE_METHOD2(int,                 timestamp_compare,        (cmyth_timestamp_t p1, cmyth_timestamp_t p2))
   DEFINE_METHOD4(cmyth_database_t,    database_init,            (char *p1, char *p2, char *p3, char *p4))
+  DEFINE_METHOD1(void,                database_close,           (cmyth_database_t p1))
   DEFINE_METHOD1(cmyth_chanlist_t,    mysql_get_chanlist,       (cmyth_database_t p1))
 
   DEFINE_METHOD2(cmyth_commbreaklist_t, get_commbreaklist,      (cmyth_conn_t p1, cmyth_proginfo_t p2))
@@ -243,7 +249,9 @@ class DllLibCMyth : public DllDynamic, DllLibCMythInterface
 
   BEGIN_METHOD_RESOLVE()
     RESOLVE_METHOD_RENAME(cmyth_conn_connect_ctrl, conn_connect_ctrl)
+    RESOLVE_METHOD_RENAME(cmyth_conn_reconnect_ctrl, conn_reconnect_ctrl)
     RESOLVE_METHOD_RENAME(cmyth_conn_connect_event, conn_connect_event)
+    RESOLVE_METHOD_RENAME(cmyth_conn_reconnect_event, conn_reconnect_event)
     RESOLVE_METHOD_RENAME(cmyth_conn_connect_file, conn_connect_file)
     RESOLVE_METHOD_RENAME(cmyth_conn_connect_path, conn_connect_path)
     RESOLVE_METHOD_RENAME(cmyth_conn_get_free_recorder, conn_get_free_recorder)
@@ -336,6 +344,7 @@ class DllLibCMyth : public DllDynamic, DllLibCMythInterface
     RESOLVE_METHOD_RENAME(cmyth_timestamp_to_unixtime, timestamp_to_unixtime)
     RESOLVE_METHOD_RENAME(cmyth_timestamp_compare, timestamp_compare)
     RESOLVE_METHOD_RENAME(cmyth_database_init, database_init)
+    RESOLVE_METHOD_RENAME(cmyth_database_close, database_close)
     RESOLVE_METHOD_RENAME(cmyth_mysql_get_chanlist, mysql_get_chanlist)
 
     RESOLVE_METHOD_RENAME(cmyth_get_commbreaklist, get_commbreaklist)

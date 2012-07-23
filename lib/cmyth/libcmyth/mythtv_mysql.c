@@ -141,32 +141,34 @@ cmyth_db_check_connection(cmyth_database_t db)
     int new_conn = 0;
     if(db->mysql != NULL)
     {
-	/* Fetch the mysql stats (uptime and stuff) to check the connection is
-	 * still good
-	 */
-	if(mysql_stat(db->mysql) == NULL)
-	{
-	    cmyth_database_close(db);
-	}
+        /* Fetch the mysql stats (uptime and stuff) to check the connection is
+         * still good
+        */
+        if(mysql_stat(db->mysql) == NULL)
+        {
+            fprintf(stderr, "%s: mysql_stat() failed: %s\n", __FUNCTION__, mysql_error(db->mysql));
+	          cmyth_database_close(db);
+            mysql_close(db->mysql);
+            db->mysql = NULL;
+        }
     }
     if(db->mysql == NULL)
     {
-	db->mysql = mysql_init(NULL);
-	new_conn = 1;
-	if(db->mysql == NULL)
-	{
-	    fprintf(stderr,"%s: mysql_init() failed, insufficient memory?",
-		    __FUNCTION__);
-	    return -1;
-	}
-	if(NULL == mysql_real_connect(db->mysql,
-		    db->db_host,db->db_user,db->db_pass,db->db_name,0,NULL,0))
-	{
-	    fprintf(stderr,"%s: mysql_connect() failed: %s", __FUNCTION__,
-		    mysql_error(db->mysql));
-	    cmyth_database_close(db);
-	    return -1;
-	}
+        db->mysql = mysql_init(NULL);
+        new_conn = 1;
+        if(db->mysql == NULL)
+        {
+            fprintf(stderr,"%s: mysql_init() failed, insufficient memory?\n", __FUNCTION__);
+            return -1;
+        }
+        if(NULL == mysql_real_connect(db->mysql,db->db_host,db->db_user,db->db_pass,db->db_name,0,NULL,0))
+        {
+            fprintf(stderr,"%s: mysql_connect() failed: %s\n", __FUNCTION__, mysql_error(db->mysql));
+            cmyth_database_close(db);
+            mysql_close(db->mysql);
+            db->mysql = NULL;
+            return -1;
+        }
     }
     return 0;
 }

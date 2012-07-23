@@ -58,7 +58,7 @@ public:
 
   bool             SetListener(IEventListener *listener);
   cmyth_conn_t     GetControl();
-  cmyth_database_t GetDatabase();
+  cmyth_database_t GetDatabase(bool reconnect = false);
   DllLibCMyth*     GetLibrary();
   cmyth_proglist_t GetAllRecordedPrograms();
   void             ResetAllRecordedPrograms();

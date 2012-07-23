@@ -39,6 +39,30 @@ extern "C" {
 using namespace XFILE;
 using namespace std;
 
+/* Call 'call', then if 'cond' condition is true reconnect to
+ * the database. If successful, call 'call' again. */
+#define DLL_DB_CALL( var, cond, db, call )  { \
+                                                var = m_dll->call; \
+                                                if ( cond ) \
+                                                { \
+                                                    db = m_session->GetDatabase( true ); \
+                                                    if ( db ) \
+                                                        var = m_dll->call; \
+                                                } \
+                                            }
+
+/* Call 'call', then if 'cond' condition is true reconnect
+ * the control connection. If successful, call 'call' again. */
+#define DLL_CTRL_CALL( var, cond, ctrl, call )  { \
+                                                    var = m_dll->call; \
+                                                    if ( cond ) \
+                                                    { \
+                                                        ctrl = m_session->GetControl(); \
+                                                        if ( ctrl ) \
+                                                            var = m_dll->call; \
+                                                    } \
+                                                }
+
 static void prog_update_callback(cmyth_proginfo_t prog)
 {
   CLog::Log(LOGDEBUG, "%s - prog_update_callback", __FUNCTION__);
@@ -130,14 +154,14 @@ bool CMythFile::SetupRecording(const CURL& url)
 
   m_filename = url.GetFileNameWithoutPath();
 
-  m_program = m_dll->proginfo_get_from_basename(m_control, m_filename.c_str());
+  DLL_CTRL_CALL( m_program, m_program == NULL, m_control, proginfo_get_from_basename(m_control, m_filename.c_str()) );
   if(!m_program)
   {
     CLog::Log(LOGERROR, "%s - unable to get find selected file", __FUNCTION__);
     return false;
   }
 
-  m_file = m_dll->conn_connect_file(m_program, m_control, 16*1024, 4096);
+  DLL_CTRL_CALL( m_file, m_file == NULL, m_control, conn_connect_file(m_program, m_control, 16*1024, 4096) );
   if(!m_file)
   {
     CLog::Log(LOGERROR, "%s - unable to connect to file", __FUNCTION__);
@@ -165,7 +189,8 @@ bool CMythFile::SetupRecording(const CURL& url)
               __FUNCTION__, end.GetAsLocalizedDateTime().c_str());
     for(int i=0;i<16 && !m_recording;i++)
     {
-      cmyth_recorder_t recorder = m_dll->conn_get_recorder_from_num(m_control, i);
+      cmyth_recorder_t recorder = NULL;
+      DLL_CTRL_CALL( recorder, recorder == NULL, m_control, conn_get_recorder_from_num(m_control, i) );
       if(!recorder)
         continue;
       if(m_dll->recorder_is_recording(recorder))
@@ -204,7 +229,7 @@ bool CMythFile::SetupLiveTV(const CURL& url)
 
   for(int i=0;i<16;i++)
   {
-    m_recorder = m_dll->conn_get_recorder_from_num(m_control, i);
+    DLL_CTRL_CALL( m_recorder, m_recorder == NULL, m_control, conn_get_recorder_from_num(m_control, i) );
     if(!m_recorder)
       continue;
 
@@ -281,7 +306,7 @@ bool CMythFile::SetupFile(const CURL& url)
 
   m_filename = url.GetFileName().Mid(6);
   CStdString storagegroup;
-  m_file = m_dll->conn_connect_path((char*)m_filename.c_str(), m_control, 16*1024, 4096, (char*)storagegroup.c_str());
+  DLL_CTRL_CALL( m_file, m_file == NULL, m_control, conn_connect_path((char*)m_filename.c_str(), m_control, 16*1024, 4096, (char*)storagegroup.c_str()) );
   if(!m_file)
   {
     CLog::Log(LOGERROR, "%s - unable to connect to file", __FUNCTION__);
@@ -412,7 +437,7 @@ bool CMythFile::Exists(const CURL& url)
       return false;
 
     m_filename = url.GetFileNameWithoutPath();
-    m_program = m_dll->proginfo_get_from_basename(m_control, m_filename.c_str());
+    DLL_CTRL_CALL( m_program, m_program == NULL, m_control, proginfo_get_from_basename(m_control, m_filename.c_str()) );
     if(!m_program)
     {
       CLog::Log(LOGERROR, "%s - unable to get find %s", __FUNCTION__, m_filename.c_str());
@@ -440,7 +465,9 @@ bool CMythFile::Delete(const CURL& url)
     if(!m_program)
       return false;
 
-    if(m_dll->proginfo_delete_recording(m_control, m_program))
+    int ret = 0;
+    DLL_CTRL_CALL( ret, ret < 0, m_control, proginfo_delete_recording(m_control, m_program) );
+    if(ret)
     {
       CLog::Log(LOGDEBUG, "%s - Error deleting recording: %s", __FUNCTION__, url.GetFileName().c_str());
       return false;
@@ -669,10 +696,13 @@ bool CMythFile::Record(bool bOnOff)
 
     int ret;
     if(bOnOff)
-      ret = m_dll->livetv_keep_recording(m_recorder, m_database, 1);
+    {
+      DLL_DB_CALL( ret, ret < 0, m_database, livetv_keep_recording(m_recorder, m_database, 1) );
+    }
     else
-      ret = m_dll->livetv_keep_recording(m_recorder, m_database, 0);
-
+    {
+      DLL_DB_CALL( ret, ret < 0, m_database, livetv_keep_recording(m_recorder, m_database, 0) );
+    }
     if(ret < 0)
     {
       CLog::Log(LOGERROR, "%s - failed to turn on recording", __FUNCTION__);
@@ -686,7 +716,9 @@ bool CMythFile::Record(bool bOnOff)
   {
     if(m_recording)
     {
-      if(m_dll->proginfo_stop_recording(m_control, m_program) < 0)
+      int ret = 0;
+      DLL_CTRL_CALL( ret, ret < 0, m_control, proginfo_stop_recording(m_control, m_program) );
+      if(ret < 0)
         return false;
 
       m_recording = false;
@@ -700,7 +732,7 @@ bool CMythFile::GetCommBreakList(cmyth_commbreaklist_t& commbreaklist)
 {
   if (m_program)
   {
-    commbreaklist = m_dll->get_commbreaklist(m_control, m_program);
+    DLL_CTRL_CALL( commbreaklist, commbreaklist == NULL, m_control, get_commbreaklist(m_control, m_program) );
     return true;
   }
   return false;
@@ -710,7 +742,7 @@ bool CMythFile::GetCutList(cmyth_commbreaklist_t& commbreaklist)
 {
   if (m_program)
   {
-    commbreaklist = m_dll->get_cutlist(m_control, m_program);
+    DLL_CTRL_CALL( commbreaklist, commbreaklist == NULL, m_control, get_cutlist(m_control, m_program) );
     return true;
   }
   return false;

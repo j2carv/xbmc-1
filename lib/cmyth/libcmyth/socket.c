@@ -108,7 +108,7 @@ cmyth_send_message(cmyth_conn_t conn, char *request)
 		FD_SET(conn->conn_fd, &fds);
 		if (select((int)conn->conn_fd+1, NULL, &fds, NULL, &tv) == 0) {
 			conn->conn_hang = 1;
-			continue;
+			return -ETIMEDOUT;
 		} else {
 			conn->conn_hang = 0;
 		}
@@ -117,6 +117,7 @@ cmyth_send_message(cmyth_conn_t conn, char *request)
 			cmyth_dbg(CMYTH_DBG_ERROR, "%s: write() failed (%d)\n",
 				  __FUNCTION__, errno);
 			free(msg);
+			conn->conn_hang = 1;
 			return -errno;
 		}
 		written += w;
@@ -148,7 +149,7 @@ cmyth_rcv_length(cmyth_conn_t conn)
 	char buf[16];
 	int rtot = 0;
 	int r;
-  int hangcount = 0;
+	int hangcount = 0;
 	int ret;
 	struct timeval tv;
 	fd_set fds;
@@ -174,20 +175,21 @@ cmyth_rcv_length(cmyth_conn_t conn)
 			conn->conn_hang = 1;
       hangcount++;
       if(++hangcount>6&&r>0)
-        return -1;
-			continue;
+			return -ETIMEDOUT;
 		} else if (r > 0) {
 			conn->conn_hang = 0;
 			r = recv(conn->conn_fd, &buf[rtot], 8 - rtot, 0);
 		}
-		if (r <= 0) {
+		if (r < 0) {
 			cmyth_dbg(CMYTH_DBG_ERROR, "%s: read() failed (%d)\n",
 				  __FUNCTION__, errno);
+            conn->conn_hang = 1;
 			return -errno;
 		}
 		if (r == 0) {
 			cmyth_dbg(CMYTH_DBG_ERROR, "%s: read() failed (%d)\n",
 				  __FUNCTION__, errno);
+            conn->conn_hang = 1;
 			return -EBADF;
 		}
 		rtot += r;
@@ -244,7 +246,7 @@ cmyth_conn_refill(cmyth_conn_t conn, int len)
 		FD_SET(conn->conn_fd, &fds);
 		if ((r=select((int)conn->conn_fd+1, &fds, NULL, NULL, &tv)) == 0) {
 			conn->conn_hang = 1;
-			continue;
+			return -ETIMEDOUT;
 		} else if (r > 0) {
 			conn->conn_hang = 0;
 			r = recv(conn->conn_fd, p, len, 0);
@@ -254,7 +256,11 @@ cmyth_conn_refill(cmyth_conn_t conn, int len)
 				cmyth_dbg(CMYTH_DBG_ERROR,
 					  "%s: read failed (%d)\n",
 					  __FUNCTION__, errno);
-				return -1 * errno;
+	            conn->conn_hang = 1;
+				if ( r == 0 )
+					return -1 * EBADF;
+				else
+					return -1 * errno;
 			}
 			/*
 			 * There were bytes read before the error, use them and
@@ -2909,7 +2915,7 @@ cmyth_rcv_data(cmyth_conn_t conn, int *err, unsigned char *buf, int count)
 		FD_SET(conn->conn_fd, &fds);
 		if (select((int)conn->conn_fd+1, &fds, NULL, NULL, &tv) == 0) {
 			conn->conn_hang = 1;
-			continue;
+			return -ETIMEDOUT;
 		} else {
 			conn->conn_hang = 0;
 		}
@@ -2919,7 +2925,11 @@ cmyth_rcv_data(cmyth_conn_t conn, int *err, unsigned char *buf, int count)
 				cmyth_dbg(CMYTH_DBG_ERROR,
 					  "%s: read failed (%d)\n",
 					  __FUNCTION__, errno);
-				*err = -1 * errno;
+	            conn->conn_hang = 1;
+				if (r == 0)
+					*err = -1 * EBADF;
+				else
+					*err = -1 * errno;
 				return 0;
 			}
 			/*
